@@ -1,0 +1,14 @@
+build/bin/
+node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+*.tsbuildinfo
+.DS_Store
+logs/
+*.log
+
+tests/integration/.runtime/
+
+.idea/
+build/*.zip

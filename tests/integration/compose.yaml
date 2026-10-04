@@ -1,0 +1,54 @@
+services:
+  mysql:
+    image: mysql:8.0.39
+    environment:
+      MYSQL_ROOT_PASSWORD: infradex-fixture-only
+      MYSQL_DATABASE: infradex_test
+    ports: ['127.0.0.1:49306:3306']
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-pinfradex-fixture-only']
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--requirepass', 'infradex-fixture-only']
+    ports: ['127.0.0.1:49379:6379']
+  mongo:
+    image: mongo:7.0
+    profiles: ['extended']
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: infradex-fixture-only
+    ports: ['127.0.0.1:49017:27017']
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    profiles: ['extended']
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: infradex-fixture-only
+      CLICKHOUSE_DB: infradex_test
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
+    ports: ['127.0.0.1:48123:8123']
+  kafka:
+    image: apache/kafka:3.9.1
+    profiles: ['extended']
+    environment:
+      KAFKA_NODE_ID: '1'
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:49092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:49092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: '1'
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: '1'
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: '0'
+      KAFKA_HEAP_OPTS: '-Xmx384m -Xms128m'
+    ports: ['127.0.0.1:49092:49092']
+  k3s:
+    image: rancher/k3s:v1.32.5-k3s1
+    profiles: ['cluster']
+    command: ['server', '--disable-agent', '--disable=traefik,servicelb,metrics-server,local-storage,coredns', '--tls-san=127.0.0.1', '--token=infradex-fixture-only']
+    ports: ['127.0.0.1:49443:6443']

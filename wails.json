@@ -1,0 +1,20 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "infradex",
+  "outputfilename": "Infradex",
+  "frontend:install": "npm ci",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "askuy",
+    "email": "askuygo@foxmail.com"
+  },
+  "info": {
+    "companyName": "Infradex",
+    "productName": "Infradex",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright 2026 Infradex",
+    "comments": "Your infrastructure, connected."
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "mysql": {
+    "language": "SQL",
+    "resourceLabel": "Tables",
+    "scopeLabel": "Database",
+    "canSelectDatabase": true,
+    "canInspect": true,
+    "canPageResources": false,
+    "features": [
+      "Read-only SQL",
+      "Table columns & indexes",
+      "DDL inspection",
+      "Database navigation",
+      "SSH tunnel (password, private key or agent)"
+    ],
+    "limitations": [
+      "Data editing and schema changes are not available yet."
+    ]
+  },
+  "redis": {
+    "language": "Redis commands",
+    "resourceLabel": "Keys",
+    "scopeLabel": "Database index",
+    "canSelectDatabase": false,
+    "canInspect": true,
+    "canPageResources": true,
+    "features": [
+      "Cursor-based key scanning",
+      "String, hash, list, set, sorted set & stream previews",
+      "Key type & TTL",
+      "Read-only commands",
+      "SSH tunnel (password, private key or agent)"
+    ],
+    "limitations": [
+      "Cluster and Sentinel profiles are not available yet.",
+      "Value previews are bounded; a changing keyspace can change scan results."
+    ]
+  },
+  "mongo": {
+    "language": "JSON find",
+    "resourceLabel": "Collections",
+    "scopeLabel": "Database",
+    "canSelectDatabase": true,
+    "canInspect": false,
+    "canPageResources": false,
+    "features": [
+      "Collection browsing",
+      "Read-only find",
+      "Database navigation",
+      "Authentication database",
+      "Projection, ordered sort & paged find",
+      "Extended JSON filters",
+      "SSH tunnel (password, private key or agent)"
+    ],
+    "limitations": [
+      "Document editing, aggregation, SRV and replica-set profiles are not available yet."
+    ]
+  },
+  "kafka": {
+    "language": "Topic name",
+    "resourceLabel": "Topics",
+    "scopeLabel": "Broker",
+    "canSelectDatabase": false,
+    "canInspect": false,
+    "canPageResources": false,
+    "features": [
+      "Topic discovery",
+      "Partition leaders",
+      "Replica metadata",
+      "SSH tunnel (password, private key or agent)"
+    ],
+    "limitations": [
+      "Messages, consumer groups and SCRAM authentication are not available yet."
+    ]
+  },
+  "clickhouse": {
+    "language": "SQL",
+    "resourceLabel": "Tables",
+    "scopeLabel": "Database",
+    "canSelectDatabase": true,
+    "canInspect": true,
+    "canPageResources": false,
+    "features": [
+      "Read-only SQL over HTTP / HTTPS",
+      "Column types",
+      "Skipping indexes & DDL",
+      "Database navigation",
+      "SSH tunnel (password, private key or agent)"
+    ],
+    "limitations": [
+      "The native TCP protocol and data mutations are not available yet."
+    ]
+  },
+  "k8s": {
+    "language": "get <resource> [namespace]",
+    "resourceLabel": "Resources",
+    "scopeLabel": "Namespace",
+    "canSelectDatabase": true,
+    "canInspect": false,
+    "canPageResources": false,
+    "features": [
+      "Pod & workload lists",
+      "Services & events",
+      "Resource JSON",
+      "Kubeconfig context discovery",
+      "Namespace navigation",
+      "Resource detail inspector",
+      "Events matched by resource UID",
+      "Pod log snapshots & previous container logs",
+      "SSH tunnel (password, private key or agent)"
+    ],
+    "limitations": [
+      "Exec authentication, a live log stream and resource editing are not available yet.",
+      "Log snapshots are limited to 2000 lines and 256 KiB."
+    ]
+  },
+  "k3s": {
+    "language": "get <resource> [namespace]",
+    "resourceLabel": "Resources",
+    "scopeLabel": "Namespace",
+    "canSelectDatabase": true,
+    "canInspect": false,
+    "canPageResources": false,
+    "features": [
+      "Pod & workload lists",
+      "Services & events",
+      "Resource JSON",
+      "Kubeconfig context discovery",
+      "Namespace navigation",
+      "Resource detail inspector",
+      "Events matched by resource UID",
+      "Pod log snapshots & previous container logs",
+      "SSH tunnel (password, private key or agent)"
+    ],
+    "limitations": [
+      "Exec authentication, a live log stream and resource editing are not available yet.",
+      "Log snapshots are limited to 2000 lines and 256 KiB."
+    ]
+  }
+}
