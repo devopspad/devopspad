@@ -63,6 +63,7 @@ import { ClusterInspector } from "./ClusterInspector";
 import { Modal } from "./Modal";
 import "./style.css";
 import "./desktop.css";
+import "./orca.css";
 
 const firstTab: Tab = {
   id: "welcome-orders",

@@ -1,0 +1,3 @@
+Geist Variable is included under the SIL Open Font License, Version 1.1.
+Copyright (c) Vercel, Inc.
+https://github.com/vercel/geist-font

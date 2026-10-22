@@ -6,7 +6,7 @@ An English-language, Navicat-inspired **read-only exploration MVP**. First launc
 
 Product scope, milestones, and acceptance criteria: [implementation plan](PLAN.md).
 
-The workspace uses a narrow navigation rail, a collapsible left AI task panel, an Explorer tree, and top-level query tabs above the editor and results. The neutral desktop styling follows the supplied visual reference; see the [design QA report](design-qa.md) for comparisons and viewport checks.
+The workspace uses a narrow navigation rail, a collapsible left AI task panel, an Explorer tree, and top-level query tabs above the editor and results. The dark chrome follows the local Orca workspace: Geist, a near-black canvas, and a slightly lighter sidebar.
 
 ![Infradex workbench](artifacts/desktop-reference-1480.png)
 
