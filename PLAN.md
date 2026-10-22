@@ -130,6 +130,17 @@ P3 验收：AI 不编造已执行结果；清楚说明发送给模型的上下�
 
 P4 验收：发行产物经过目标系统测试；升级保留配置；复杂运维任务有恢复路径；功能和限制与文档一致。
 
+### OPC 机群发版（进行中）
+
+目的：在本机查看并群控多台 OPC 机器的 k3s 服务和 Nginx，并用同一套规范发版。查询工作台保持只读。发版和 Nginx 写入只来自 `internal/release`。
+
+- [x] 发版规范校验、本机 fleet 文件、`infradexctl release validate` 和 `fleet list`。
+- [ ] 单机和机群 plan/apply：镜像、重启、ConfigMap、迁移 Job、Nginx `-t` 与 reload。
+- [ ] 桌面机群状态、漂移、服务表和 Nginx 只读。
+- [ ] 桌面确认后调用同一个 Apply；手工 Nginx 编辑在 `-t` 失败时恢复原文件。
+
+规范见 [OPC 机群发版规范](docs/superpowers/specs/2026-10-21-opc-release-design.md)。第一期不打开 SSH，也不写发布记录。
+
 ## 5. 当前连接能力边界
 
 | 引擎 | 已实现 | 尚未实现的主要能力 |

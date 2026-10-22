@@ -146,6 +146,17 @@ artifacts/                Verified interface screenshots
 
 Ego supplies component configuration/logging; Wails owns the desktop lifecycle. Ego container construction is serialized and temporary credential configuration is cleared afterward. The eredis version used here does not propagate named ACL users and can drop verified TLS configuration, so those modes use upstream go-redis. egorm imports the ClickHouse v1 SQL driver; the HTTP adapter avoids duplicate SQL driver registration from importing v2 alongside it. References: [ego components](https://github.com/gotomicro/ego#3-ego-component), [ClickHouse HTTP interface](https://clickhouse.com/docs/interfaces/http).
 
+## OPC release checks
+
+`infradexctl` validates a service release spec locally. It does not open SSH, write a release record, or change the read-only query workbench.
+
+```sh
+go run ./cmd/infradexctl release validate -f service.release.yaml
+INFRADEX_CONFIG_DIR="$HOME/Library/Application Support/Infradex" go run ./cmd/infradexctl fleet list
+```
+
+Rules, fleet file format, and later apply order: [OPC release spec](docs/superpowers/specs/2026-10-21-opc-release-design.md).
+
 ## Verify
 
 ```sh
