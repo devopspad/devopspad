@@ -1,0 +1,27 @@
+apiVersion: infradex.release/v1
+service: heartie-admin
+version: 1.4.2
+fleet: hk
+machines: []
+images:
+  - workload: heartie-admin
+    kind: Deployment
+    namespace: default
+    container: app
+    image: registry.example/heartie-admin@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+configMaps:
+  - file: deploy/configmap.yaml
+nginx:
+  - file: deploy/nginx/heartie.conf
+    name: heartie.conf
+migrate:
+  jobFile: deploy/migrate-job.yaml
+  waitTimeoutSeconds: 180
+restart:
+  - name: heartie-admin
+    kind: Deployment
+    namespace: default
+check:
+  url: https://heartie.example/healthz
+  expectStatus: 200
+  timeoutSeconds: 10

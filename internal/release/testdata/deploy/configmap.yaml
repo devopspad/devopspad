@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: heartie-admin
+  namespace: default
+data: {}
