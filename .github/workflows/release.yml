@@ -143,11 +143,13 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$APP"
           codesign --verify --strict --verbose=2 build/cli/devopspadctl
           if [ "$NOTARIZE" = true ]; then
+            # stapler talks to CloudKit, which sometimes drops the connection on hosted runners.
+            retry() { for i in 1 2 3 4 5; do "$@" && return; sleep 15; done; return 1; }
             spctl --assess --type execute --verbose=2 "$APP"
-            xcrun stapler validate "$APP"
+            retry xcrun stapler validate "$APP"
             for dmg in dist/*.dmg; do
               spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
-              xcrun stapler validate "$dmg"
+              retry xcrun stapler validate "$dmg"
             done
           fi
           (cd dist && shasum -a 256 * > SHA256SUMS)
