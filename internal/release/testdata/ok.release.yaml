@@ -1,4 +1,4 @@
-apiVersion: infradex.release/v1
+apiVersion: devopspad.release/v1
 service: heartie-admin
 version: 1.4.2
 fleet: hk

@@ -1,5 +1,5 @@
 {
-  "apiVersion": "infradex.run-event/v1",
+  "apiVersion": "devopspad.run-event/v1",
   "id": "65f6db59-1a63-4be2-91be-000000000001",
   "runId": "d2123752-39ab-4ae6-9e87-8856419db18b",
   "type": "start",

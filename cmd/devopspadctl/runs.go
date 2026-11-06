@@ -9,12 +9,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"infradex/internal/ops"
+	"devopspad/internal/ops"
 )
 
 func projectRoot(root string) (string, error) {
 	if root == "" {
-		root = os.Getenv("INFRADEX_PROJECT_DIR")
+		root = os.Getenv("DEVOPSPAD_PROJECT_DIR")
 	}
 	if root == "" {
 		dir, err := configDir()
@@ -37,7 +37,7 @@ func projectStore(root string) (*ops.Store, error) {
 		return nil, err
 	}
 	if _, err := os.Stat(filepath.Join(root, "project.yaml")); err != nil {
-		return nil, errors.New("project.yaml not found; attach an application in Infradex or specify --project")
+		return nil, errors.New("project.yaml not found; attach an application in DevOpsPad or specify --project")
 	}
 	return ops.New(root)
 }
@@ -47,7 +47,7 @@ func cmdRuns(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "usage: infradexctl runs record|list|get --project <directory> [-f <event.json>|--id <run-id>]")
+		fmt.Fprintln(stderr, "usage: devopspadctl runs record|list|get --project <directory> [-f <event.json>|--id <run-id>]")
 		return 2
 	}
 	fs := flag.NewFlagSet("runs "+args[0], flag.ContinueOnError)

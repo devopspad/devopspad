@@ -40,7 +40,7 @@ export async function demoClusterDetails(
       { name: "Status", value: pod ? "Running (sample)" : "Sample resource" },
     ],
     labels: {
-      "app.kubernetes.io/name": "infradex-demo",
+      "app.kubernetes.io/name": "devopspad-demo",
       environment: "sample",
     },
     containers,

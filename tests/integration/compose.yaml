@@ -2,32 +2,32 @@ services:
   mysql:
     image: mysql:8.0.39
     environment:
-      MYSQL_ROOT_PASSWORD: infradex-fixture-only
-      MYSQL_DATABASE: infradex_test
+      MYSQL_ROOT_PASSWORD: devopspad-fixture-only
+      MYSQL_DATABASE: devopspad_test
     ports: ['127.0.0.1:49306:3306']
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-pinfradex-fixture-only']
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-pdevopspad-fixture-only']
       interval: 3s
       timeout: 3s
       retries: 40
   redis:
     image: redis:7-alpine
-    command: ['redis-server', '--requirepass', 'infradex-fixture-only']
+    command: ['redis-server', '--requirepass', 'devopspad-fixture-only']
     ports: ['127.0.0.1:49379:6379']
   mongo:
     image: mongo:7.0
     profiles: ['extended']
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: infradex-fixture-only
+      MONGO_INITDB_ROOT_PASSWORD: devopspad-fixture-only
     ports: ['127.0.0.1:49017:27017']
   clickhouse:
     image: clickhouse/clickhouse-server:24.8
     profiles: ['extended']
     environment:
       CLICKHOUSE_USER: default
-      CLICKHOUSE_PASSWORD: infradex-fixture-only
-      CLICKHOUSE_DB: infradex_test
+      CLICKHOUSE_PASSWORD: devopspad-fixture-only
+      CLICKHOUSE_DB: devopspad_test
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
     ports: ['127.0.0.1:48123:8123']
   kafka:
@@ -50,5 +50,5 @@ services:
   k3s:
     image: rancher/k3s:v1.32.5-k3s1
     profiles: ['cluster']
-    command: ['server', '--disable-agent', '--disable=traefik,servicelb,metrics-server,local-storage,coredns', '--tls-san=127.0.0.1', '--token=infradex-fixture-only']
+    command: ['server', '--disable-agent', '--disable=traefik,servicelb,metrics-server,local-storage,coredns', '--tls-san=127.0.0.1', '--token=devopspad-fixture-only']
     ports: ['127.0.0.1:49443:6443']

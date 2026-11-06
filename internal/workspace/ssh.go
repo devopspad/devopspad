@@ -218,7 +218,7 @@ func (c sshSQLConnector) Connect(ctx context.Context) (driver.Conn, error) {
 func init() {
 	// One permanent registration, with the session carried in the connection
 	// context. No global per-profile registrations or credential-bearing DSNs.
-	mysql.RegisterDialContext("infradex-ssh", func(ctx context.Context, addr string) (net.Conn, error) {
+	mysql.RegisterDialContext("devopspad-ssh", func(ctx context.Context, addr string) (net.Conn, error) {
 		tunnel, ok := ctx.Value(sshContextKey{}).(*sshTunnel)
 		if !ok {
 			return nil, errors.New("SSH session is unavailable")

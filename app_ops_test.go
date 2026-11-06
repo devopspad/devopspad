@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"devopspad/internal/ops"
+	"devopspad/internal/workspace"
 	"github.com/google/uuid"
-	"infradex/internal/ops"
-	"infradex/internal/workspace"
 )
 
 func TestOpsActionsBridgePersistsFailureAndConsumesPlan(t *testing.T) {
@@ -61,7 +61,7 @@ func TestOpsActionsBridgePersistsFailureAndConsumesPlan(t *testing.T) {
 		t.Fatal(err)
 	}
 	snap, _ := a.GetOpsProject()
-	yaml := "apiVersion: infradex.project/v1\nname: Test\nenvironments:\n- name: pro\n  connection: local\n  namespace: default\n- name: dev\n  connection: local\n  namespace: dev\napplications:\n- name: svc-user\n  selector: app=svc-user\n"
+	yaml := "apiVersion: devopspad.project/v1\nname: Test\nenvironments:\n- name: pro\n  connection: local\n  namespace: default\n- name: dev\n  connection: local\n  namespace: dev\napplications:\n- name: svc-user\n  selector: app=svc-user\n"
 	if _, err = a.SaveOpsProject(yaml, snap.Revision); err != nil {
 		t.Fatal(err)
 	}

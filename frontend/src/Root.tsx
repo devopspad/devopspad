@@ -6,7 +6,7 @@ import "./workspace-navigation.css";
 type Route = "workbench" | "infra" | "infra/resources";
 function route(): Route {
   const value =
-    window.location.hash.slice(1) || localStorage.getItem("infradex-workspace");
+    window.location.hash.slice(1) || localStorage.getItem("devopspad-workspace");
   if (value === "infra/resources") return value;
   return value === "infra" || value?.startsWith("apps") ? "infra" : "workbench";
 }
@@ -22,7 +22,7 @@ export default function Root() {
       if (window.location.hash !== `#${next}`)
         window.history.replaceState(null, "", `#${next}`);
       setCurrent(next);
-      localStorage.setItem("infradex-workspace", next);
+      localStorage.setItem("devopspad-workspace", next);
       if (next !== "infra") {
         setVisited(true);
         setResourceMode(next === "infra/resources" ? "infra" : "workbench");

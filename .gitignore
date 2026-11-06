@@ -12,3 +12,4 @@ tests/integration/.runtime/
 
 .idea/
 build/*.zip
+dist/

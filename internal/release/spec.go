@@ -178,8 +178,8 @@ func parse(raw []byte, dir string) (Spec, error) {
 }
 
 func validateFields(spec Spec) error {
-	if spec.APIVersion != "infradex.release/v1" {
-		return errors.New("apiVersion must be infradex.release/v1")
+	if spec.APIVersion != "devopspad.release/v1" {
+		return errors.New("apiVersion must be devopspad.release/v1")
 	}
 	if !serviceName.MatchString(spec.Service) {
 		return fmt.Errorf("service %q is invalid", spec.Service)

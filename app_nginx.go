@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"devopspad/internal/ops"
+	"devopspad/internal/workspace"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"infradex/internal/ops"
-	"infradex/internal/workspace"
 	"time"
 )
 

@@ -67,7 +67,7 @@ export function Assistant({
     <aside className="assistant">
       <div className="panel-header">
         <span>
-          Infradex <span className="agent-label">Assistant</span>
+          DevOpsPad <span className="agent-label">Assistant</span>
         </span>
         <button
           className="icon-button"
@@ -102,7 +102,7 @@ export function Assistant({
               <span>
                 <Layers3 size={17} />
               </span>
-              <strong>Infradex</strong>
+              <strong>DevOpsPad</strong>
             </div>
             <p className="ai-description">
               I can help you write queries and understand your infrastructure.
@@ -158,7 +158,7 @@ export function Assistant({
                   "You"
                 ) : (
                   <>
-                    <Sparkles size={13} /> Infradex AI{" "}
+                    <Sparkles size={13} /> DevOpsPad AI{" "}
                   </>
                 )}
               </span>
@@ -217,7 +217,7 @@ export function Assistant({
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Message Infradex…"
+            placeholder="Message DevOpsPad…"
             aria-label="Message AI assistant"
             maxLength={16000}
             onKeyDown={(e) => {

@@ -22,7 +22,7 @@ func TestReleaseSpecAcceptsPinnedImage(t *testing.T) {
 }
 
 func TestReleaseSpecRejectsUnsafeInput(t *testing.T) {
-	header := "apiVersion: infradex.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\n"
+	header := "apiVersion: devopspad.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\n"
 	cases := []string{
 		header + "images:\n  - {workload: app, kind: Deployment, namespace: default, container: app, image: app:latest}\n",
 		header + "images:\n  - {workload: app, kind: Deployment, namespace: default, container: app, image: app:1.2}\n",
@@ -39,7 +39,7 @@ func TestReleaseSpecRejectsUnsafeInput(t *testing.T) {
 }
 
 func TestReleaseSpecRejectsMissingStepsAndBounds(t *testing.T) {
-	header := "apiVersion: infradex.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\n"
+	header := "apiVersion: devopspad.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\n"
 	if _, err := ParseSpecBytes([]byte(header)); err == nil {
 		t.Fatal("accepted a spec with no release steps")
 	}
@@ -64,7 +64,7 @@ func TestValidateImagesAllowsExplicitTagButNotLatest(t *testing.T) {
 }
 
 func TestReleaseSpecRejectsSecretsAndWrongManifestKind(t *testing.T) {
-	header := "apiVersion: infradex.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\n"
+	header := "apiVersion: devopspad.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\n"
 	dsn := header + "images:\n  - {workload: app, kind: Deployment, namespace: default, container: app, image: registry.example/app@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}\ncheck:\n  url: user:secret@tcp(db:3306)/app\n  expectStatus: 200\n  timeoutSeconds: 10\n"
 	if _, err := ParseSpecBytes([]byte(dsn)); err == nil || !strings.Contains(err.Error(), "DSN") {
 		t.Fatalf("dsn error = %v", err)
@@ -76,7 +76,7 @@ func TestReleaseSpecRejectsSecretsAndWrongManifestKind(t *testing.T) {
 		t.Fatal(err)
 	}
 	specPath := filepath.Join(dir, "service.release.yaml")
-	raw := "apiVersion: infradex.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\nmigrate:\n  jobFile: job.yaml\n  waitTimeoutSeconds: 30\n"
+	raw := "apiVersion: devopspad.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\nmigrate:\n  jobFile: job.yaml\n  waitTimeoutSeconds: 30\n"
 	if err := os.WriteFile(specPath, []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestReleaseSpecRejectsTooManyResources(t *testing.T) {
 		t.Fatal(err)
 	}
 	specPath := filepath.Join(dir, "service.release.yaml")
-	raw := "apiVersion: infradex.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\nconfigMaps:\n  - file: cms.yaml\n"
+	raw := "apiVersion: devopspad.release/v1\nservice: app\nversion: 1.0.0\nfleet: hk\nconfigMaps:\n  - file: cms.yaml\n"
 	if err := os.WriteFile(specPath, []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}

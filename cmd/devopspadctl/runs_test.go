@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"devopspad/internal/ops"
 	"github.com/google/uuid"
-	"infradex/internal/ops"
 )
 
 func TestRunCommandReadsAndWritesSharedProject(t *testing.T) {
@@ -32,7 +32,7 @@ func TestRunCommandReadsAndWritesSharedProject(t *testing.T) {
 			t.Fatal(code, out, errOut)
 		}
 	}
-	t.Setenv("INFRADEX_PROJECT_DIR", s.Root)
+	t.Setenv("DEVOPSPAD_PROJECT_DIR", s.Root)
 	code, out, errOut := run([]string{"runs", "get", "--id", id})
 	if code != 0 {
 		t.Fatal(code, errOut)

@@ -8,7 +8,7 @@ async function installBridge(page: import("@playwright/test").Page) {
     w.__configSaves = [];
     w.__savedConfigs = {};
     const project = {
-      apiVersion: "infradex.project/v1",
+      apiVersion: "devopspad.project/v1",
       name: "applications",
       environments: [
         { name: "pro", connection: "k3s", namespace: "team" },
@@ -25,7 +25,7 @@ async function installBridge(page: import("@playwright/test").Page) {
           GetOpsProject: async () => ({
             root: "/local/project",
             revision: "r1",
-            yaml: `apiVersion: infradex.project/v1\nname: applications\nenvironments: ${JSON.stringify(project.environments)}\napplications: ${JSON.stringify(project.applications)}\n# retained comment\n`,
+            yaml: `apiVersion: devopspad.project/v1\nname: applications\nenvironments: ${JSON.stringify(project.environments)}\napplications: ${JSON.stringify(project.applications)}\n# retained comment\n`,
             project,
             artifacts: [],
             releases: [],

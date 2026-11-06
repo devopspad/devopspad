@@ -2,13 +2,13 @@
 
 日期：2026-10-21
 
-桌面负责查看和群控多台 OPC 机器。`infradexctl` 负责可重复发版。两者调用同一套 `internal/release`。本文件是该规范的仓库副本。查询工作台保持只读。发版和 Nginx 写入只来自 `internal/release`，当前只实现了规范校验和本机 fleet 文件。
+桌面负责查看和群控多台 OPC 机器。`devopspadctl` 负责可重复发版。两者调用同一套 `internal/release`。本文件是该规范的仓库副本。查询工作台保持只读。发版和 Nginx 写入只来自 `internal/release`，当前只实现了规范校验和本机 fleet 文件。
 
 ## 机群
 
 每台机器是一个独立管理端点，可同时承担 `cluster` 和 `edge` 角色。群控是对多台端点做同一动作。
 
-fleet 文件位于 `os.UserConfigDir()/Infradex/fleet.json`，权限 0600。机器引用 Infradex 已有连接。SSH 秘密留在 `infradex` 钥匙串。一个 fleet 最多 32 台，名字在 fleet 内唯一。角色只有 `cluster` 和 `edge`，至少有一个。连接被删除时，fleet 校验失败并指出机器名。
+fleet 文件位于 `os.UserConfigDir()/DevOpsPad/fleet.json`，权限 0600。机器引用 DevOpsPad 已有连接。SSH 秘密留在 `devopspad` 钥匙串。一个 fleet 最多 32 台，名字在 fleet 内唯一。角色只有 `cluster` 和 `edge`，至少有一个。连接被删除时，fleet 校验失败并指出机器名。
 
 远端 kubeconfig 通过 SFTP 读取绝对路径，最多 1 MiB，拒绝 exec 插件。内容不进入前端和 `workspace.json`。API 地址使用 kubeconfig 里的 server，经 SSH `direct-tcpip` 从 SSH 服务器侧拨号。
 
@@ -17,7 +17,7 @@ fleet 文件位于 `os.UserConfigDir()/Infradex/fleet.json`，权限 0600。机�
 规范文件放在服务仓库，建议命名为 `service.release.yaml`。
 
 ```yaml
-apiVersion: infradex.release/v1
+apiVersion: devopspad.release/v1
 service: heartie-admin
 version: 1.4.2
 fleet: hk
@@ -50,7 +50,7 @@ check:
 
 校验在本地完成：
 
-1. `apiVersion` 只能是 `infradex.release/v1`。未知字段失败。
+1. `apiVersion` 只能是 `devopspad.release/v1`。未知字段失败。
 2. `service` 匹配 `^[a-z][a-z0-9-]{1,62}$`。`version` 匹配 `^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.]+)?$`。
 3. `fleet` 非空。机器是否属于本机 fleet 文件，在 plan/apply 时检查。
 4. 至少有一个 `images`、`configMaps`、`nginx`、`migrate` 或 `restart` 步骤。
@@ -61,7 +61,7 @@ check:
 9. `waitTimeoutSeconds` 和 `timeoutSeconds` 的范围是 1–180。
 10. 规范文件不包含 DSN（`@tcp(`）、私钥、kubeconfig 正文或 shell 替换。
 
-`infradexctl release validate -f <spec>` 只做上述文件校验。它不打开 SSH，也不写发布记录。
+`devopspadctl release validate -f <spec>` 只做上述文件校验。它不打开 SSH，也不写发布记录。
 
 ## 执行顺序
 
@@ -80,7 +80,7 @@ check:
 
 apply 默认串行、fail-fast。一台失败后，后续机器状态为 `not-started`。任一失败或未开始时退出码为 1。摘要逐台列出步骤。Nginx 文件恢复是唯一自动回滚，且只发生在当前这台机器的 `-t` 失败。
 
-发布记录写到 `os.UserConfigDir()/Infradex/releases/<id>.json`，权限 0600。字段包括时间、service、version、spec sha256、imagePolicy、每台机器的步骤、改镜像前的引用和错误。Secret、kubeconfig 和 Nginx 文件正文不入库。
+发布记录写到 `os.UserConfigDir()/DevOpsPad/releases/<id>.json`，权限 0600。字段包括时间、service、version、spec sha256、imagePolicy、每台机器的步骤、改镜像前的引用和错误。Secret、kubeconfig 和 Nginx 文件正文不入库。
 
 Git 中的规范文件是发版事实来源。漂移等于远端对象或文件哈希与规范文件不一致。
 
@@ -88,7 +88,7 @@ Git 中的规范文件是发版事实来源。漂移等于远端对象或文件�
 
 | 期 | 交付 | 状态 |
 | --- | --- | --- |
-| 1 | 发版规范校验、fleet 文件、`infradexctl release validate` 和 `fleet list` | 已实现 |
+| 1 | 发版规范校验、fleet 文件、`devopspadctl release validate` 和 `fleet list` | 已实现 |
 | 2 | 单机和机群的 plan/apply，覆盖镜像、重启、ConfigMap、迁移 Job、Nginx 测试与 reload | 未实现 |
 | 3 | 桌面机群状态、漂移、服务表、Nginx 只读 | 未实现 |
 | 4 | 桌面确认后调用同一个 Apply；手工 Nginx 编辑带 `-t` 恢复 | 未实现 |

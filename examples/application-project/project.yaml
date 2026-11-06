@@ -1,4 +1,4 @@
-apiVersion: infradex.project/v1
+apiVersion: devopspad.project/v1
 name: 本地应用空间
 environments:
   - name: pro

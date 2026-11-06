@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"devopspad/internal/ops"
+	"devopspad/internal/workspace"
 	"github.com/gotomicro/ego/core/elog"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"infradex/internal/ops"
-	"infradex/internal/workspace"
 )
 
 type App struct {
@@ -33,12 +33,12 @@ func (a *App) startup(ctx context.Context) {
 		a.initErr = e
 		return
 	}
-	a.store, a.initErr = workspace.NewStore(filepath.Join(dir, "Infradex"), workspace.Keychain{})
+	a.store, a.initErr = workspace.NewStore(filepath.Join(dir, "DevOpsPad"), workspace.Keychain{})
 	// A blocked Store remains available for health checks and explicit recovery.
 	if a.store != nil {
 		a.initErr = nil
 	}
-	elog.Info("Infradex desktop started")
+	elog.Info("DevOpsPad desktop started")
 }
 func (a *App) shutdown(ctx context.Context) {
 	a.mu.Lock()
@@ -196,7 +196,7 @@ func (a *App) ExportCSV(content string) (bool, error) {
 	if len(content) > 20<<20 {
 		return false, errors.New("Export exceeds 20 MB")
 	}
-	path, e := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{Title: "Export results", DefaultFilename: "infradex-results.csv", Filters: []runtime.FileFilter{{DisplayName: "CSV files", Pattern: "*.csv"}}})
+	path, e := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{Title: "Export results", DefaultFilename: "devopspad-results.csv", Filters: []runtime.FileFilter{{DisplayName: "CSV files", Pattern: "*.csv"}}})
 	if e != nil || path == "" {
 		return false, e
 	}

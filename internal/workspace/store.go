@@ -18,9 +18,9 @@ type Vault interface {
 }
 type Keychain struct{}
 
-func (Keychain) Set(k, v string) error        { return keyring.Set("infradex", k, v) }
-func (Keychain) Get(k string) (string, error) { return keyring.Get("infradex", k) }
-func (Keychain) Delete(k string) error        { return keyring.Delete("infradex", k) }
+func (Keychain) Set(k, v string) error        { return keyring.Set("devopspad", k, v) }
+func (Keychain) Get(k string) (string, error) { return keyring.Get("devopspad", k) }
+func (Keychain) Delete(k string) error        { return keyring.Delete("devopspad", k) }
 
 type diskState struct {
 	Version     int          `json:"version"`

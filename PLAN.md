@@ -1,4 +1,4 @@
-# Infradex 产品与实施计划
+# DevOpsPad 产品与实施计划
 
 更新日期：2026-10-02
 
@@ -134,7 +134,7 @@ P4 验收：发行产物经过目标系统测试；升级保留配置；复杂�
 
 目的：在本机查看并群控多台 OPC 机器的 k3s 服务和 Nginx，并用同一套规范发版。查询工作台保持只读。发版和 Nginx 写入只来自 `internal/release`。
 
-- [x] 发版规范校验、本机 fleet 文件、`infradexctl release validate` 和 `fleet list`。
+- [x] 发版规范校验、本机 fleet 文件、`devopspadctl release validate` 和 `fleet list`。
 - [ ] 单机和机群 plan/apply：镜像、重启、ConfigMap、迁移 Job、Nginx `-t` 与 reload。
 - [ ] 桌面机群状态、漂移、服务表和 Nginx 只读。
 - [ ] 桌面确认后调用同一个 Apply；手工 Nginx 编辑在 `-t` 失败时恢复原文件。
@@ -252,6 +252,6 @@ P4 验收：发行产物经过目标系统测试；升级保留配置；复杂�
 
 - `make test` 通过：TypeScript/Vite 生产构建、Go race、go vet、30 项 Playwright 回归。
 - 全套本地隔离服务集成通过：MySQL、Redis、MongoDB、Kafka、ClickHouse、Kubernetes/K3s 配置的直连与 SSH。新增真实 MySQL 的 500/501 行和编码体积边界验收。专用容器与临时 kubeconfig 已清理。
-- `wails build -clean` 通过，产物为 `build/bin/infradex.app`，目标 darwin/arm64；Wails 本地自签名不等于 Developer ID 签名和公证。
+- `wails build -clean` 通过，产物为 `build/bin/devopspad.app`，目标 darwin/arm64；Wails 本地自签名不等于 Developer ID 签名和公证。
 - 本轮没有重复真实钥匙串交互验收；尚未运行 GitHub 托管 CI，也未验收 Windows/Linux。
 - 设置窗口在 1000×680 下可操作；截图为 `artifacts/workspace-recovery-settings.png`。

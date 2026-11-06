@@ -202,11 +202,11 @@ function Refresher({ busy, onClick }: { busy: boolean; onClick: () => void }) {
 }
 export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
   const [theme, setTheme] = useState(() =>
-    localStorage.getItem("infradex-ops-theme") === "light" ? "light" : "dark",
+    localStorage.getItem("devopspad-ops-theme") === "light" ? "light" : "dark",
   );
   const [snapshot, setSnapshot] = useState<OpsSnapshot>();
   const [connections, setConnections] = useState<Connection[]>([]);
-  const scopeKey = "infradex-ops-navigation-local";
+  const scopeKey = "devopspad-ops-navigation-local";
   const [navigation] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(scopeKey) || "{}");
@@ -358,7 +358,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
             onClick={() => {
               const next = theme === "dark" ? "light" : "dark";
               setTheme(next);
-              localStorage.setItem("infradex-ops-theme", next);
+              localStorage.setItem("devopspad-ops-theme", next);
             }}
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
@@ -457,7 +457,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
               <h1>Infra</h1>
             </div>
             <Empty title="连接你的基础设施">
-              <span>请打开 Infradex 桌面应用，添加集群连接并接入应用。</span>
+              <span>请打开 DevOpsPad 桌面应用，添加集群连接并接入应用。</span>
             </Empty>
           </section>
         ) : loading && !snapshot ? (

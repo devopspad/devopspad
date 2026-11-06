@@ -66,7 +66,7 @@ README 和 OPC 规范都写着：查询工作台只读，发版和 Nginx 写入�
 
 - 环境标签只是提示，没有“生产环境需要二次确认 / 输入名称”之类的分级。
 - 发版记录、运行记录是本地 JSON，可被任意修改，文档也写明“不是防篡改审计账本”。小团队可以接受，但要明确对外承诺。
-- `runs record` 接受执行端自报的 `rollout`、`image-check` 证据，Infradex 不做独立验证。
+- `runs record` 接受执行端自报的 `rollout`、`image-check` 证据，DevOpsPad 不做独立验证。
 - Nginx 写入需要远端用户有配置与 reload 权限，实际往往意味着 sudo / root。
 
 ## 8. 商业化门槛仍全部未完成

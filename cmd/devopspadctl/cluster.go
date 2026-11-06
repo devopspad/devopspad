@@ -9,8 +9,8 @@ import (
 	"io"
 	"time"
 
-	"infradex/internal/ops"
-	"infradex/internal/workspace"
+	"devopspad/internal/ops"
+	"devopspad/internal/workspace"
 )
 
 func savedCluster(name string) (workspace.Connection, error) {
@@ -39,7 +39,7 @@ func savedCluster(name string) (workspace.Connection, error) {
 
 func cmdCluster(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 || (args[0] != "inspect" && args[0] != "attach") {
-		fmt.Fprintln(stderr, "usage: infradexctl cluster inspect --connection <name> --namespace <namespace>")
+		fmt.Fprintln(stderr, "usage: devopspadctl cluster inspect --connection <name> --namespace <namespace>")
 		return 2
 	}
 	fs := flag.NewFlagSet("cluster inspect", flag.ContinueOnError)

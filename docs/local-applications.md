@@ -32,7 +32,7 @@ ConfigMap 文本按文件显示行号及语法高亮，支持 YAML、JSON、TOML
 
 ## 共享项目目录
 
-默认目录是 `os.UserConfigDir()/Infradex/applications`，macOS 对应 `~/Library/Application Support/Infradex/applications`。可在“共享与同步”选择其他本地目录；最后选择的路径保存在 Infradex 配置目录的 `project-path` 文件。
+默认目录是 `os.UserConfigDir()/DevOpsPad/applications`，macOS 对应 `~/Library/Application Support/DevOpsPad/applications`。可在“共享与同步”选择其他本地目录；最后选择的路径保存在 DevOpsPad 配置目录的 `project-path` 文件。
 
 ```text
 project.yaml             # 项目名、环境、应用选择器
@@ -41,7 +41,7 @@ releases/<uuid>.json      # 每次桌面发布一份记录，执行时原子更�
 runs/<uuid>.json          # AI 构建/外部发布记录，包含步骤、源码及执行者
 ```
 
-配置写入先比较原文件的 SHA-256，防止覆盖外部编辑；进程间保存使用独占锁文件。每次写入先落临时文件再 rename，文件权限 0600。若进程在保存中异常退出留下 `.infradex-write.lock`，检查文件和运行进程后再手动删除锁文件。项目目录应当是本地磁盘上的独立副本，不能作为多机同时写入的网络共享数据库。
+配置写入先比较原文件的 SHA-256，防止覆盖外部编辑；进程间保存使用独占锁文件。每次写入先落临时文件再 rename，文件权限 0600。若进程在保存中异常退出留下 `.devopspad-write.lock`，检查文件和运行进程后再手动删除锁文件。项目目录应当是本地磁盘上的独立副本，不能作为多机同时写入的网络共享数据库。
 
 两三人协作时：
 
@@ -55,9 +55,9 @@ YAML 是第一版配置事实来源。CRDT 协同编辑、自动冲突解决和�
 
 ## AI 执行端接入
 
-通过 `infradexctl runs record --project <目录> -f <事件.json>` 上报 start / step / finish。成功构建派生制品索引，可直接在桌面发布；外部发布关联成功的 buildId。桌面“AI 执行记录”每 10 秒及窗口获得焦点时读取更新，正在编辑项目配置时不覆盖草稿。协议、JSON Schema、重试约定及 AI 指令模板见 [AI 构建与发布接入规范](ai-execution.md)。
+通过 `devopspadctl runs record --project <目录> -f <事件.json>` 上报 start / step / finish。成功构建派生制品索引，可直接在桌面发布；外部发布关联成功的 buildId。桌面“AI 执行记录”每 10 秒及窗口获得焦点时读取更新，正在编辑项目配置时不覆盖草稿。协议、JSON Schema、重试约定及 AI 指令模板见 [AI 构建与发布接入规范](ai-execution.md)。
 
-也可用 `infradexctl cluster inspect --connection <本机连接名称> --namespace <命名空间>` 进行只读验证，用 `cluster attach --connection <名称> --namespace <命名空间> --environment <环境名>` 把此命名空间中发现的负载登记到本地项目。K3s 通过已有 kubeconfig 和可选 SSH 接入；[K3s 官方集群访问说明](https://docs.k3s.io/cluster-access) 说明了本机 kubeconfig 路径及远程访问方式。
+也可用 `devopspadctl cluster inspect --connection <本机连接名称> --namespace <命名空间>` 进行只读验证，用 `cluster attach --connection <名称> --namespace <命名空间> --environment <环境名>` 把此命名空间中发现的负载登记到本地项目。K3s 通过已有 kubeconfig 和可选 SSH 接入；[K3s 官方集群访问说明](https://docs.k3s.io/cluster-access) 说明了本机 kubeconfig 路径及远程访问方式。
 
 首次部署尚不存在的应用时，在 `cluster attach` 后同时添加 `--application <应用名> --selector <Pod 标签选择器>`，即可在已有项目中登记本地映射并开始上报构建记录；此模式不访问或修改集群。相同映射可重复登记，冲突映射会拒绝覆盖。
 
@@ -67,12 +67,12 @@ YAML 是第一版配置事实来源。CRDT 协同编辑、自动冲突解决和�
 
 - 计划绑定应用标签、命名空间、Deployment UID、resourceVersion、容器、镜像摘要及读取时的集群端点。计划仅在当前进程内保存，10 分钟失效，并且只能执行一次。
 - 生成计划会执行 Kubernetes server-side dry-run。确认后先在目标命名空间取得 `coordination.k8s.io/v1` Lease，然后再次核对 UID/resourceVersion。
-- 同一个 Deployment 的 Infradex 客户端使用同一个 Lease 名称；执行期限 180 秒，Lease 有效期 300 秒，无续约。客户端需要时钟同步。异常退出后锁到期才能重试；其他运维工具不会自动遵循此锁，更新仍依赖资源版本校验。
+- 同一个 Deployment 的 DevOpsPad 客户端使用同一个 Lease 名称；执行期限 180 秒，Lease 有效期 300 秒，无续约。客户端需要时钟同步。异常退出后锁到期才能重试；其他运维工具不会自动遵循此锁，更新仍依赖资源版本校验。
 - 每一步写入本地发布记录。新增记录的 `action` 区分 release、rollback、scale、restart；副本操作另记 `beforeReplicas` 与 `replicas`，旧记录缺少 action 时按镜像发布显示。写入记录失败时停止继续执行；已经提交到集群的更新无法因此撤销。
-- 镜像更新和重启添加 `infradex.io/release` Pod 模板注解；扩缩容保持 Pod 模板不变。成功要求控制器观察到新 generation，且 updated、available、total replicas 与期望值一致。
+- 镜像更新和重启添加 `devopspad.io/release` Pod 模板注解；扩缩容保持 Pod 模板不变。成功要求控制器观察到新 generation，且 updated、available、total replicas 与期望值一致。
 - 超时、连接中断或 Deployment 被其他操作修改会记为未完成，提示核对实际状态，不自动重试或回滚。进程崩溃留下的 running 记录显示“执行中 / 待核实”。
 
-原 `infradexctl release validate` 继续只校验完整 release spec。桌面这条发布路径尚未覆盖该规范的 ConfigMap、迁移 Job、Nginx、机群串行发布和健康检查步骤。
+原 `devopspadctl release validate` 继续只校验完整 release spec。桌面这条发布路径尚未覆盖该规范的 ConfigMap、迁移 Job、Nginx、机群串行发布和健康检查步骤。
 
 ## 集群权限和可观测
 

@@ -1,4 +1,4 @@
-module infradex
+module devopspad
 
 go 1.25.0
 

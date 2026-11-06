@@ -23,7 +23,7 @@ func TestValidate(t *testing.T) {
 
 	dir := t.TempDir()
 	latest := filepath.Join(dir, "latest.release.yaml")
-	body := "apiVersion: infradex.release/v1\nservice: heartie-admin\nversion: 1.4.2\nfleet: hk\nimages:\n  - {workload: app, kind: Deployment, namespace: default, container: app, image: app:latest}\n"
+	body := "apiVersion: devopspad.release/v1\nservice: heartie-admin\nversion: 1.4.2\nfleet: hk\nimages:\n  - {workload: app, kind: Deployment, namespace: default, container: app, image: app:latest}\n"
 	if err := os.WriteFile(latest, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestValidate(t *testing.T) {
 }
 
 func TestFleetList(t *testing.T) {
-	t.Setenv("INFRADEX_CONFIG_DIR", t.TempDir())
+	t.Setenv("DEVOPSPAD_CONFIG_DIR", t.TempDir())
 	code, out, errOut := run([]string{"fleet", "list"})
 	if code != 0 || !strings.Contains(out, "fleets: 0") {
 		t.Fatalf("code=%d stdout=%q stderr=%s", code, out, errOut)

@@ -28,9 +28,9 @@ test("K3s onboarding reuses the saved connection and AI records refresh into art
     let snapshot: any = {
       root: "/local/team",
       revision: "r1",
-      yaml: "apiVersion: infradex.project/v1\nname: Team\nenvironments: []\napplications: []\n",
+      yaml: "apiVersion: devopspad.project/v1\nname: Team\nenvironments: []\napplications: []\n",
       project: {
-        apiVersion: "infradex.project/v1",
+        apiVersion: "devopspad.project/v1",
         name: "Team",
         environments: [],
         applications: [],
@@ -49,7 +49,7 @@ test("K3s onboarding reuses the saved connection and AI records refresh into art
         ...snapshot,
         runs: [
           {
-            apiVersion: "infradex.run/v1",
+            apiVersion: "devopspad.run/v1",
             id,
             kind: "build",
             application: "svc-api",

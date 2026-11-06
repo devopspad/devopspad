@@ -10,13 +10,13 @@
 代码 → CI 构建 / 测试 → 制品 → 发版计划 → 群控机器执行 → 验证 → 记录 / 回退
 ```
 
-人负责设定边界和审批，AI 负责编排和执行，Infradex 负责**能力、策略、执行和记录**。
+人负责设定边界和审批，AI 负责编排和执行，DevOpsPad 负责**能力、策略、执行和记录**。
 
 ## 和现状的关键区别
 
 | | 现状 | 目标 |
 | --- | --- | --- |
-| AI 的角色 | 外部执行者，自己调 docker / kubectl，再向 Infradex **自报**记录 | 通过 Infradex 的工具执行，记录由 Infradex **自动生成**，可信 |
+| AI 的角色 | 外部执行者，自己调 docker / kubectl，再向 DevOpsPad **自报**记录 | 通过 DevOpsPad 的工具执行，记录由 DevOpsPad **自动生成**，可信 |
 | CI | 不涉及，只接收构建结果 | 触发、观察、取消、读取日志，产物自动入制品库 |
 | 机器 | 只通过 K3s 连接间接访问；Nginx 单文件读写 | 机器是一等对象，可分组、批量执行结构化动作 |
 | 写操作 | 三条分散的写路径 | 统一的 Action 引擎：计划 → 策略 → 审批 → 执行 → 记录 |
@@ -25,7 +25,7 @@
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│ 入口: 桌面 UI │ infradexctl CLI │ MCP Server（给 AI） │ 桌面内置 AI │
+│ 入口: 桌面 UI │ devopspadctl CLI │ MCP Server（给 AI） │ 桌面内置 AI │
 ├──────────────────────────────────────────────────────────┤
 │ 策略与审批 Policy: 风险分级、环境规则、审批、预算/频率限制      │
 ├──────────────────────────────────────────────────────────┤
@@ -79,17 +79,17 @@ Action {
 
 ## 3. CI 控制
 
-现有 run 协议的思路是“AI 自己构建，然后上报”。CI 控制把构建交给 CI 系统，由 Infradex 编排：
+现有 run 协议的思路是“AI 自己构建，然后上报”。CI 控制把构建交给 CI 系统，由 DevOpsPad 编排：
 
 - **适配器接口**：`ListPipelines / Trigger(ref, inputs) / Status / Logs / Cancel / Artifacts`。
 - **第一个适配器**：取决于你用的 CI（见 05-Q10）。GitHub Actions（`workflow_dispatch` + runs API）最通用；Gitea / Woodpecker 适合完全自托管。
 - **触发后自动跟踪**：轮询状态（桌面和 CLI 都没有常驻服务，不依赖 webhook），完成后从 CI 输出中解析镜像摘要，自动生成制品，关联 commit SHA。
 - **可选的本地构建器**：没有 CI 的场景，在指定 Host 上用 `docker buildx` / BuildKit 构建（作为一种特殊的 CI 适配器）。
-- 原 `runs record` 协议保留，用于不经过 Infradex 的外部构建。
+- 原 `runs record` 协议保留，用于不经过 DevOpsPad 的外部构建。
 
 ## 4. 给 AI 的接口：MCP Server
 
-`infradexctl mcp`（stdio）把能力暴露为 MCP 工具，Claude Code 等代理可直接接入，不需要任何服务端：
+`devopspadctl mcp`（stdio）把能力暴露为 MCP 工具，Claude Code 等代理可直接接入，不需要任何服务端：
 
 | 工具组 | 示例 | 风险 |
 | --- | --- | --- |
@@ -122,7 +122,7 @@ limits:
   aiActionsPerHour: 30
 ```
 
-- 审批入口：桌面通知 + 审批面板（展示 diff 和风险），也可以用 CLI `infradexctl approve <planId>`。
+- 审批入口：桌面通知 + 审批面板（展示 diff 和风险），也可以用 CLI `devopspadctl approve <planId>`。
 - 每条记录区分 actor（人 / AI 名称 + 会话）和 approver。
 - 记录仍是本地 JSON + Git 共享，不承诺防篡改；如果以后需要，可以加哈希链。
 
@@ -131,6 +131,6 @@ limits:
 | 形态 | 用途 | 何时做 |
 | --- | --- | --- |
 | 桌面 + CLI + MCP（stdio） | 人和本机 AI 代理 | 现在 |
-| `infradexd` 可选常驻进程（跑在一台运维机或机群中的一台） | 定时任务、CI webhook、长时间发版、远程 AI / 手机审批 | 确实需要时再做 |
+| `devopspadd` 可选常驻进程（跑在一台运维机或机群中的一台） | 定时任务、CI webhook、长时间发版、远程 AI / 手机审批 | 确实需要时再做 |
 
 先坚持本地优先：长时间的机群发版由 CLI 进程持有，中断后可从记录恢复或核实。

@@ -5,14 +5,14 @@ test("first launch has no seeded connections or demo entry, including old stored
 }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
-      "infradex-ops-demo-v1",
+      "devopspad-ops-demo-v1",
       JSON.stringify({
         project: { name: "Old fake project" },
         artifacts: [{ version: "fake-version" }],
       }),
     );
     localStorage.setItem(
-      "infradex-workspace-v1",
+      "devopspad-workspace-v1",
       JSON.stringify({
         version: 1,
         demo: true,

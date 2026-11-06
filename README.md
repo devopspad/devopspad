@@ -1,4 +1,4 @@
-# Infradex
+# DevOpsPad
 
 A desktop workspace for databases, caches, event streams, and Kubernetes. Built with **Wails v2, Go, React, Vite, Tailwind CSS, and CodeMirror**, with **gotomicro/ego**, **ego-component/egorm**, and **ego-component/eredis** on the backend.
 
@@ -8,7 +8,7 @@ Product scope, milestones, and acceptance criteria: [implementation plan](PLAN.m
 
 The workspace uses a narrow navigation rail, a collapsible left AI task panel, an Explorer tree, and top-level query tabs above the editor and results. The dark chrome follows the local Orca workspace: Geist, a near-black canvas, and a slightly lighter sidebar.
 
-![Infradex workbench](artifacts/desktop-reference-1480.png)
+![DevOpsPad workbench](artifacts/desktop-reference-1480.png)
 
 ## Run
 
@@ -23,7 +23,7 @@ Desktop build:
 
 ```sh
 wails build
-open build/bin/infradex.app # macOS
+open build/bin/devopspad.app # macOS
 ```
 
 Browser-only UI preview:
@@ -131,7 +131,7 @@ Each request includes the prompt and engine name. **Include resource names** is 
 
 AI requests use the configured provider, and queries use the selected connection. The application contains no sample response fallback or embedded demonstration database.
 
-Profiles live under `os.UserConfigDir()/Infradex/workspace.json` (macOS: `~/Library/Application Support/Infradex/workspace.json`). Secrets use the `infradex` service in the OS credential store. Saving secrets requires a working keychain and never falls back to plaintext. Saved queries are local text; history is in memory and clears when switching workspaces or closing the app. AI provider settings and their API key are read as one snapshot, so concurrent provider changes cannot pair a URL with another provider’s key.
+Profiles live under `os.UserConfigDir()/DevOpsPad/workspace.json` (macOS: `~/Library/Application Support/DevOpsPad/workspace.json`). Secrets use the `devopspad` service in the OS credential store. Saving secrets requires a working keychain and never falls back to plaintext. Saved queries are local text; history is in memory and clears when switching workspaces or closing the app. AI provider settings and their API key are read as one snapshot, so concurrent provider changes cannot pair a URL with another provider’s key.
 
 ## Architecture
 
@@ -156,17 +156,17 @@ The **Infra** rail entry opens the application console with environments, cluste
 
 Deployment rows also support scaling and restart, and successful image release records can prepare a rollback to that version. All three actions reuse dry-run, version checks, deployment leases, rollout verification, and local operation records.
 
-AI executors can report versioned, idempotent start/step/finish events through `infradexctl runs record`. Successful builds appear in the artifact library; external release reports retain build/source/actor linkage. See [AI integration contract](docs/ai-execution.md) and its JSON Schema. The **接入 K3s** action discovers workloads using saved local connections and adds their selectors to the project.
+AI executors can report versioned, idempotent start/step/finish events through `devopspadctl runs record`. Successful builds appear in the artifact library; external release reports retain build/source/actor linkage. See [AI integration contract](docs/ai-execution.md) and its JSON Schema. The **接入 K3s** action discovers workloads using saved local connections and adds their selectors to the project.
 
 Setup, project example, permissions, synchronization behavior, and current limits: [本地应用服务](docs/local-applications.md). This adds an explicit write path in `internal/release`; the database/query workspace remains read-only. CRDT editing, image builds/uploads, historical monitoring, streaming logs, and full fleet release execution are not included in this version.
 
 ## OPC release checks
 
-`infradexctl` validates a service release spec locally. It does not open SSH, write a release record, or change the read-only query workbench.
+`devopspadctl` validates a service release spec locally. It does not open SSH, write a release record, or change the read-only query workbench.
 
 ```sh
-go run ./cmd/infradexctl release validate -f service.release.yaml
-INFRADEX_CONFIG_DIR="$HOME/Library/Application Support/Infradex" go run ./cmd/infradexctl fleet list
+go run ./cmd/devopspadctl release validate -f service.release.yaml
+DEVOPSPAD_CONFIG_DIR="$HOME/Library/Application Support/DevOpsPad" go run ./cmd/devopspadctl fleet list
 ```
 
 Rules, fleet file format, and later apply order: [OPC release spec](docs/superpowers/specs/2026-10-21-opc-release-design.md).

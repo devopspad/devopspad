@@ -4,7 +4,7 @@
 
 ## 技术栈
 
-Wails v2 桌面应用。后端 Go（ego / egorm / eredis、client-go、x/crypto/ssh），前端 React + Vite + Tailwind + CodeMirror。另有命令行 `infradexctl`，与桌面共用 `internal/`。
+Wails v2 桌面应用。后端 Go（ego / egorm / eredis、client-go、x/crypto/ssh），前端 React + Vite + Tailwind + CodeMirror。另有命令行 `devopspadctl`，与桌面共用 `internal/`。
 
 ## 两大功能区
 
@@ -25,8 +25,8 @@ Wails v2 桌面应用。后端 Go（ego / egorm / eredis、client-go、x/crypto/
 - 桌面发版（`internal/release/desktop.go`）：已有 Deployment 的单容器镜像发布、回退、扩缩容、重启。server dry-run → 计划（10 分钟、单次）→ Lease 锁 → resourceVersion 校验 → rollout 验证 → 本地记录。
 - 应用配置：读取引用的 ConfigMap，可编辑并保存回集群（UID + resourceVersion 校验）。
 - 宿主机 Nginx：通过 SSH 读写 `/etc/nginx/conf.d/*.conf`，`nginx -t` 后 reload，失败恢复。
-- AI 执行记录：`infradexctl runs record` 上报 build / release 事件，成功构建自动成为制品。
-- `infradexctl`：`release validate`（OPC 发版规范校验）、`fleet list`、`runs`、`cluster inspect/attach`。
+- AI 执行记录：`devopspadctl runs record` 上报 build / release 事件，成功构建自动成为制品。
+- `devopspadctl`：`release validate`（OPC 发版规范校验）、`fleet list`、`runs`、`cluster inspect/attach`。
 
 ## 代码规模与结构
 

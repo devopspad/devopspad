@@ -10,7 +10,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
-PROJECT = "infradex-integration"
+PROJECT = "devopspad-integration"
 FIXTURE_DIR = ROOT / "tests" / "integration"
 
 
@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
     docker = shutil.which("docker") or "/Applications/Docker.app/Contents/Resources/bin/docker"
     contexts = subprocess.check_output([docker, "context", "ls", "--format", "{{.Name}}"], text=True).splitlines()
-    context = os.getenv("INFRADEX_DOCKER_CONTEXT", "desktop-linux" if "desktop-linux" in contexts else "default")
+    context = os.getenv("DEVOPSPAD_DOCKER_CONTEXT", "desktop-linux" if "desktop-linux" in contexts else "default")
     ctx = json.loads(subprocess.check_output([docker, "context", "inspect", context], text=True))[0]
     endpoint = ctx["Endpoints"]["docker"]["Host"]
     if not endpoint.startswith(("unix://", "npipe://")):
@@ -34,10 +34,10 @@ def main():
     runtime.mkdir(mode=0o700, exist_ok=True)
     kubeconfig = runtime / "kubeconfig"
     checks = {
-        "mysql": ["mysqladmin", "ping", "-h", "localhost", "-pinfradex-fixture-only"],
-        "redis": ["redis-cli", "-a", "infradex-fixture-only", "ping"],
+        "mysql": ["mysqladmin", "ping", "-h", "localhost", "-pdevopspad-fixture-only"],
+        "redis": ["redis-cli", "-a", "devopspad-fixture-only", "ping"],
         "mongo": ["mongosh", "--quiet", "--eval", "db.adminCommand({ping:1})"],
-        "clickhouse": ["clickhouse-client", "--password", "infradex-fixture-only", "--query", "SELECT 1"],
+        "clickhouse": ["clickhouse-client", "--password", "devopspad-fixture-only", "--query", "SELECT 1"],
         "kafka": ["/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "127.0.0.1:49092", "--list"],
         "k3s": ["kubectl", "get", "--raw=/readyz"],
     }
@@ -57,7 +57,7 @@ def main():
             else:
                 raise RuntimeError(f"{service} did not become ready within 120 seconds")
         env = dict(os.environ)
-        env["INFRADEX_TEST_ENGINES"] = "mysql,redis" if args.basic else "mysql,redis,mongo,clickhouse,kafka"
+        env["DEVOPSPAD_TEST_ENGINES"] = "mysql,redis" if args.basic else "mysql,redis,mongo,clickhouse,kafka"
         if not args.basic:
             data = subprocess.check_output(compose + ["exec", "-T", "k3s", "cat", "/etc/rancher/k3s/k3s.yaml"])
             data = data.replace(b"https://127.0.0.1:6443", b"https://127.0.0.1:49443")
@@ -65,9 +65,9 @@ def main():
             os.fchmod(descriptor, 0o600)
             with os.fdopen(descriptor, "wb") as output:
                 output.write(data)
-            env["INFRADEX_TEST_KUBECONFIG"] = str(kubeconfig)
+            env["DEVOPSPAD_TEST_KUBECONFIG"] = str(kubeconfig)
         if args.keychain:
-            env["INFRADEX_TEST_KEYCHAIN"] = "1"
+            env["DEVOPSPAD_TEST_KEYCHAIN"] = "1"
         result = subprocess.run(["go", "test", "-race", "-tags", "integration", "-run", "TestIntegration", "-v", "-count=1", "-timeout", "120s", "./internal/workspace"], cwd=ROOT, env=env)
         return result.returncode
     finally:

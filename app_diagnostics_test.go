@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"infradex/internal/workspace"
+	"devopspad/internal/workspace"
 )
 
 func TestDiagnosticsAllowlistExcludesConfigurationAndSecrets(t *testing.T) {

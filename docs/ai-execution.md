@@ -1,23 +1,23 @@
 # AI 构建与发布接入规范
 
-AI 是实际执行者；Infradex 接收执行记录、关联源码与镜像、展示构建和发布历史。无需创建流水线，也无需运行桌面窗口。`infradexctl` 与桌面读取同一个本地项目目录，可以在其他机器上对各自的 Git 副本上报后同步。
+AI 是实际执行者；DevOpsPad 接收执行记录、关联源码与镜像、展示构建和发布历史。无需创建流水线，也无需运行桌面窗口。`devopspadctl` 与桌面读取同一个本地项目目录，可以在其他机器上对各自的 Git 副本上报后同步。
 
 ## 调用入口
 
 ```sh
-go build -o build/bin/infradexctl ./cmd/infradexctl
-build/bin/infradexctl runs record --project /absolute/path/to/project -f event.json
-build/bin/infradexctl runs record --project /absolute/path/to/project -f - < event.json
-build/bin/infradexctl runs list --project /absolute/path/to/project
-build/bin/infradexctl runs get --project /absolute/path/to/project --id <run-id>
+go build -o build/bin/devopspadctl ./cmd/devopspadctl
+build/bin/devopspadctl runs record --project /absolute/path/to/project -f event.json
+build/bin/devopspadctl runs record --project /absolute/path/to/project -f - < event.json
+build/bin/devopspadctl runs list --project /absolute/path/to/project
+build/bin/devopspadctl runs get --project /absolute/path/to/project --id <run-id>
 ```
 
-不传 `--project` 时依次读取 `INFRADEX_PROJECT_DIR`、Infradex 配置目录下 `project-path`、默认 `applications` 目录。配置目录可通过 `INFRADEX_CONFIG_DIR` 指定。项目必须已存在，应用须先在桌面或 CLI 接入；传错目录不会悄悄建立一个空项目。
+不传 `--project` 时依次读取 `DEVOPSPAD_PROJECT_DIR`、DevOpsPad 配置目录下 `project-path`、默认 `applications` 目录。配置目录可通过 `DEVOPSPAD_CONFIG_DIR` 指定。项目必须已存在，应用须先在桌面或 CLI 接入；传错目录不会悄悄建立一个空项目。
 
 新应用首次构建前，可显式登记本地映射，无需先创建 Kubernetes 工作负载：
 
 ```sh
-build/bin/infradexctl cluster attach --connection heartie-pro --namespace default --environment heartie-pro --application thumbspark --selector app=thumbspark
+build/bin/devopspadctl cluster attach --connection heartie-pro --namespace default --environment heartie-pro --application thumbspark --selector app=thumbspark
 ```
 
 `--application` 和 `--selector` 必须同时提供，且只能用于 `attach`。此模式验证已保存的集群连接及本地项目配置，复用配置版本校验和写入锁，只登记映射，不连接集群、创建或修改工作负载。省略两个参数时仍从集群发现已有工作负载。
@@ -77,6 +77,6 @@ build/bin/infradexctl cluster attach --connection heartie-pro --namespace defaul
 
 `runs/<runId>.json` 存放规范版本、状态、来源、执行者、目标及事件历史。文件 0600，使用跨进程独占锁和原子替换；终态只接受已存在事件的完全相同重放。Git 同步包含 runs，构建派生制品随运行记录共享。两台电脑应创建不同的 runId；同一 run 不支持多机离线同时编辑，也不是 CRDT。
 
-原始日志保留在执行端；事件只保存有限摘要和可选 `logs/...` 相对路径。Infradex 不自动读取或同步 logs。调用方须先清除 token、密码、环境变量、认证 URL、私钥和 kubeconfig 正文；接口拒绝带用户名密码或查询参数的 URL 仓库地址，但自由文本不是自动脱敏工具。
+原始日志保留在执行端；事件只保存有限摘要和可选 `logs/...` 相对路径。DevOpsPad 不自动读取或同步 logs。调用方须先清除 token、密码、环境变量、认证 URL、私钥和 kubeconfig 正文；接口拒绝带用户名密码或查询参数的 URL 仓库地址，但自由文本不是自动脱敏工具。
 
 将 [AGENTS 接入片段](../examples/ai-integration/AGENTS.fragment.md) 合并到实际服务仓库的 AI 指令中，让后续 AI 构建/发布遵守本规范。仅安装 CLI 不会拦截其他工具，也不会自动捕获绕过此接口的操作。

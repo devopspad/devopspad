@@ -8,8 +8,8 @@ import (
 	goruntime "runtime"
 	"time"
 
+	"devopspad/internal/workspace"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"infradex/internal/workspace"
 )
 
 //go:embed wails.json
@@ -29,14 +29,14 @@ func productVersion() string {
 
 func (a *App) GetWorkspaceHealth() workspace.StoreHealth {
 	if a.store == nil {
-		return workspace.StoreHealth{Status: "unavailable", Message: "Workspace could not be initialized. Check access to the app configuration directory and restart Infradex."}
+		return workspace.StoreHealth{Status: "unavailable", Message: "Workspace could not be initialized. Check access to the app configuration directory and restart DevOpsPad."}
 	}
 	return a.store.Health()
 }
 
 func (a *App) RetryWorkspace() error {
 	if a.store == nil {
-		return errors.New("Restart Infradex after restoring access to the configuration directory")
+		return errors.New("Restart DevOpsPad after restoring access to the configuration directory")
 	}
 	return a.store.RetryLoad()
 }
@@ -75,7 +75,7 @@ func (a *App) GetDiagnostics() (string, error) {
 		Workspace           workspace.StoreHealth `json:"workspace"`
 		ConnectionsByEngine map[string]int        `json:"connectionsByEngine"`
 		ActiveQueries       int                   `json:"activeQueries"`
-	}{1, "Infradex", productVersion(), time.Now().UTC().Format(time.RFC3339), goruntime.GOOS, goruntime.GOARCH, goruntime.Version(), health, counts, activeQueries}
+	}{1, "DevOpsPad", productVersion(), time.Now().UTC().Format(time.RFC3339), goruntime.GOOS, goruntime.GOARCH, goruntime.Version(), health, counts, activeQueries}
 	encoded, err := json.MarshalIndent(report, "", "  ")
 	return string(encoded), err
 }
@@ -86,7 +86,7 @@ func (a *App) ExportDiagnostics() (bool, error) {
 		return false, err
 	}
 	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title: "Save diagnostics", DefaultFilename: "infradex-diagnostics.json",
+		Title: "Save diagnostics", DefaultFilename: "devopspad-diagnostics.json",
 		Filters: []runtime.FileFilter{{DisplayName: "JSON files", Pattern: "*.json"}},
 	})
 	if err != nil || path == "" {

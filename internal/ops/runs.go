@@ -18,7 +18,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const RunEventVersion = "infradex.run-event/v1"
+const RunEventVersion = "devopspad.run-event/v1"
 
 type RunActor struct {
 	Kind      string `json:"kind"`
@@ -123,7 +123,7 @@ func safeRepository(s string) bool {
 }
 func validateRunEvent(e RunEvent) error {
 	if e.APIVersion != RunEventVersion || !validUUID(e.ID) || !validUUID(e.RunID) {
-		return errors.New("apiVersion must be infradex.run-event/v1; id and runId must be canonical UUIDs")
+		return errors.New("apiVersion must be devopspad.run-event/v1; id and runId must be canonical UUIDs")
 	}
 	switch e.Type {
 	case "start":
@@ -175,7 +175,7 @@ func validateRunEvent(e RunEvent) error {
 }
 
 func (s *Store) projectLock() (func(), error) {
-	path := filepath.Join(s.Root, ".infradex-write.lock")
+	path := filepath.Join(s.Root, ".devopspad-write.lock")
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return nil, errors.New("project is being written; retry the same event ID after the other writer finishes")
@@ -238,7 +238,7 @@ func (s *Store) RecordRunEvent(e RunEvent) (Run, error) {
 		if !found {
 			return r, errors.New("application is not registered in project.yaml")
 		}
-		r = Run{APIVersion: "infradex.run/v1", ID: e.RunID, RunStart: *e.Start, Status: "running", StartedAt: at, Events: []SavedRunEvent{}}
+		r = Run{APIVersion: "devopspad.run/v1", ID: e.RunID, RunStart: *e.Start, Status: "running", StartedAt: at, Events: []SavedRunEvent{}}
 		if r.Kind == "release" {
 			target := r.Target
 			for _, env := range p.Project.Environments {
@@ -320,7 +320,7 @@ func (s *Store) readRun(id string) (Run, error) {
 	if err = strictJSON(b, &r); err != nil {
 		return r, err
 	}
-	if r.APIVersion != "infradex.run/v1" || r.ID != id || (r.Kind != "build" && r.Kind != "release") || !ValidName(r.Application) || (r.Status != "running" && r.Status != "succeeded" && r.Status != "failed" && r.Status != "cancelled") || (r.Status == "succeeded" && !ValidImage(r.Image)) {
+	if r.APIVersion != "devopspad.run/v1" || r.ID != id || (r.Kind != "build" && r.Kind != "release") || !ValidName(r.Application) || (r.Status != "running" && r.Status != "succeeded" && r.Status != "failed" && r.Status != "cancelled") || (r.Status == "succeeded" && !ValidImage(r.Image)) {
 		return r, errors.New("invalid run record")
 	}
 	if len(r.Events) == 0 || len(r.Events) > 256 || r.Events[0].Event.Type != "start" || r.Events[0].Event.Start == nil {

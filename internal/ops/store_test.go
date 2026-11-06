@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const validProject = `apiVersion: infradex.project/v1
+const validProject = `apiVersion: devopspad.project/v1
 name: Test
 environments:
   - name: pro
@@ -80,7 +80,7 @@ func TestProjectRejectsAmbiguityAndUnsafeFiles(t *testing.T) {
 func TestProjectSaveDetectsOtherWriter(t *testing.T) {
 	s, _ := New(t.TempDir())
 	snapshot, _ := s.Read()
-	if err := os.WriteFile(filepath.Join(s.Root, ".infradex-write.lock"), nil, 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(s.Root, ".devopspad-write.lock"), nil, 0600); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.Save(validProject, snapshot.Revision); err == nil {

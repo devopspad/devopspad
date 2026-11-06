@@ -17,7 +17,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "Infradex",
+		Title:  "DevOpsPad",
 		Width:  1480,
 		Height: 940,
 		AssetServer: &assetserver.Options{

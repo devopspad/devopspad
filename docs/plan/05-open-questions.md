@@ -5,7 +5,7 @@
 ## 已决定
 
 - **Q1 产品主线**：AI 驱动的 DevOps 控制面，覆盖 CI、群控机器和集群（2026-11-06）。见 [03](03-positioning.md)。
-- **Q8 AI 角色**：AI 通过 Infradex 的工具执行，Infradex 负责计划、策略和记录。见 [06](06-ai-devops-control-plane.md)。
+- **Q8 AI 角色**：AI 通过 DevOpsPad 的工具执行，DevOpsPad 负责计划、策略和记录。见 [06](06-ai-devops-control-plane.md)。
 
 ## 新增（与 CI / 群控 / AI 相关）
 
@@ -35,10 +35,10 @@ GitHub Actions / GitLab CI / Gitea Actions / Woodpecker / Jenkins / 目前没有
 
 ### Q14 AI 接入方式
 
-- MCP Server（`infradexctl mcp`，stdio）作为主接口，CLI JSON 作为备用（建议）。
+- MCP Server（`devopspadctl mcp`，stdio）作为主接口，CLI JSON 作为备用（建议）。
 - 主要用哪个 AI 代理：Claude Code、Codex、Cursor，还是桌面内置助手？
 
-### Q15 是否需要常驻服务 `infradexd`？
+### Q15 是否需要常驻服务 `devopspadd`？
 
 - 暂不需要，坚持本地优先（建议）。
 - 需要：例如要接 CI webhook、做定时巡检、用手机审批、让远程 AI 使用。

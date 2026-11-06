@@ -3,7 +3,7 @@
   "additionalProperties": false,
   "properties": {
     "apiVersion": {
-      "const": "infradex.run-event/v1"
+      "const": "devopspad.run-event/v1"
     },
     "id": {
       "type": "string",
@@ -249,7 +249,7 @@
     "type"
   ],
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Infradex AI execution event v1",
+  "title": "DevOpsPad AI execution event v1",
   "description": "The CLI additionally validates registered applications/environments, source build linkage, repository and log references, lifecycle, immutable digest and required successful steps.",
   "oneOf": [
     {

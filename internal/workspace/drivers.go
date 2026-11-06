@@ -69,7 +69,7 @@ func sqlClient(c Connection) (db *sql.DB, err error) {
 		cfg.TLSConfig = "true"
 	}
 	if c.tunnel != nil {
-		cfg.Net = "infradex-ssh"
+		cfg.Net = "devopspad-ssh"
 		connector, e := mysql.NewConnector(cfg)
 		if e != nil {
 			return nil, e
@@ -79,9 +79,9 @@ func sqlClient(c Connection) (db *sql.DB, err error) {
 		db.SetMaxIdleConns(1)
 		return db, nil
 	}
-	econf.Set("infradex.mysql", map[string]any{"dsn": cfg.FormatDSN(), "onFail": "error", "maxOpenConns": 2, "maxIdleConns": 1, "enableMetricInterceptor": false, "enableTraceInterceptor": false})
-	defer econf.Set("infradex.mysql", map[string]any{})
-	component := egorm.Load("infradex.mysql").Build()
+	econf.Set("devopspad.mysql", map[string]any{"dsn": cfg.FormatDSN(), "onFail": "error", "maxOpenConns": 2, "maxIdleConns": 1, "enableMetricInterceptor": false, "enableTraceInterceptor": false})
+	defer econf.Set("devopspad.mysql", map[string]any{})
+	component := egorm.Load("devopspad.mysql").Build()
 	if component == nil {
 		return nil, errors.New("Unable to open MySQL connection")
 	}
@@ -243,9 +243,9 @@ func redisCommand(ctx context.Context, c Connection, args []string) (value any, 
 				err = errors.New("Unable to initialize Redis connection")
 			}
 		}()
-		econf.Set("infradex.redis", map[string]any{"addr": address(c), "db": dbIndex, "password": c.Password, "onFail": "error", "maxRetries": -1, "minIdleConns": 0, "poolSize": 2, "dialTimeout": "5s", "readTimeout": "10s", "enableMetricInterceptor": false, "enableTraceInterceptor": false})
-		defer econf.Set("infradex.redis", map[string]any{})
-		cl = eredis.Load("infradex.redis").Build()
+		econf.Set("devopspad.redis", map[string]any{"addr": address(c), "db": dbIndex, "password": c.Password, "onFail": "error", "maxRetries": -1, "minIdleConns": 0, "poolSize": 2, "dialTimeout": "5s", "readTimeout": "10s", "enableMetricInterceptor": false, "enableTraceInterceptor": false})
+		defer econf.Set("devopspad.redis", map[string]any{})
+		cl = eredis.Load("devopspad.redis").Build()
 	}()
 	if err != nil {
 		return nil, err

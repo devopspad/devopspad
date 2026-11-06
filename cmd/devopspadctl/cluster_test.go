@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"infradex/internal/ops"
+	"devopspad/internal/ops"
 )
 
 func TestExplicitApplicationMappingBeforeFirstDeployment(t *testing.T) {

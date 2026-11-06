@@ -40,9 +40,9 @@ func (s *Store) Git(ctx context.Context, action string) (string, error) {
 	}
 	switch action {
 	case "status":
-		return run("status", "--short", "--branch", "--", ".", ":!.infradex-write.lock")
+		return run("status", "--short", "--branch", "--", ".", ":!.devopspad-write.lock")
 	case "pull":
-		status, err := run("status", "--porcelain", "--", ".", ":!.infradex-write.lock")
+		status, err := run("status", "--porcelain", "--", ".", ":!.devopspad-write.lock")
 		if err != nil {
 			return "", err
 		}
@@ -94,7 +94,7 @@ func (s *Store) Git(ctx context.Context, action string) (string, error) {
 		}
 		if changed != "" {
 			files := strings.Split(strings.TrimSuffix(changed, "\x00"), "\x00")
-			args := append([]string{"commit", "-m", "Update Infradex project", "--only", "--"}, files...)
+			args := append([]string{"commit", "-m", "Update DevOpsPad project", "--only", "--"}, files...)
 			if _, err = run(args...); err != nil {
 				return "", err
 			}

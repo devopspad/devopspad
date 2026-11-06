@@ -27,7 +27,7 @@ test("query execution, filtering, sorting, inspection, and CSV export", async ({
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export CSV" }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe("infradex-results.csv");
+  expect(download.suggestedFilename()).toBe("devopspad-results.csv");
   const stream = await download.createReadStream();
   let csv = "";
   for await (const chunk of stream!) csv += chunk;

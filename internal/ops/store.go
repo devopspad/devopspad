@@ -105,7 +105,7 @@ func New(root string) (*Store, error) {
 	// A project is a local checkout, not a shared network filesystem database.
 	s := &Store{Root: root}
 	if _, err = os.Stat(filepath.Join(root, "project.yaml")); errors.Is(err, os.ErrNotExist) {
-		p := Project{APIVersion: "infradex.project/v1", Name: filepath.Base(root), Environments: []Environment{}, Applications: []Application{}}
+		p := Project{APIVersion: "devopspad.project/v1", Name: filepath.Base(root), Environments: []Environment{}, Applications: []Application{}}
 		b, _ := yaml.Marshal(p)
 		if err = writeAtomic(filepath.Join(root, "project.yaml"), b); err != nil {
 			return nil, err
@@ -150,8 +150,8 @@ func Validate(text string) (Project, error) {
 	if err := decode([]byte(text), &p); err != nil {
 		return p, err
 	}
-	if p.APIVersion != "infradex.project/v1" || strings.TrimSpace(p.Name) == "" || len(p.Name) > 120 {
-		return p, errors.New("需要 apiVersion: infradex.project/v1 和项目名称")
+	if p.APIVersion != "devopspad.project/v1" || strings.TrimSpace(p.Name) == "" || len(p.Name) > 120 {
+		return p, errors.New("需要 apiVersion: devopspad.project/v1 和项目名称")
 	}
 	if len(p.Environments) > 32 || len(p.Applications) > 500 {
 		return p, errors.New("项目最多 32 个环境、500 个应用")
@@ -274,9 +274,9 @@ func (s *Store) Save(text, expected string) (Snapshot, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	lock, err := os.OpenFile(filepath.Join(s.Root, ".infradex-write.lock"), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	lock, err := os.OpenFile(filepath.Join(s.Root, ".devopspad-write.lock"), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
-		return Snapshot{}, errors.New("项目正在写入；若上次进程异常退出，请检查后移除 .infradex-write.lock")
+		return Snapshot{}, errors.New("项目正在写入；若上次进程异常退出，请检查后移除 .devopspad-write.lock")
 	}
 	lock.Close()
 	defer os.Remove(lock.Name())
@@ -353,7 +353,7 @@ func readBounded(path string) ([]byte, error) {
 	return b, err
 }
 func writeAtomic(path string, b []byte) error {
-	f, err := os.CreateTemp(filepath.Dir(path), ".infradex-*")
+	f, err := os.CreateTemp(filepath.Dir(path), ".devopspad-*")
 	if err != nil {
 		return err
 	}

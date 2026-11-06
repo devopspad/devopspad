@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"devopspad/internal/ops"
 	"github.com/google/uuid"
-	"infradex/internal/ops"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -118,7 +118,7 @@ func prepareDesktop(ctx context.Context, cl dynamic.Interface, namespace, worklo
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		annotations["infradex.io/release"] = p.ID
+		annotations["devopspad.io/release"] = p.ID
 		if err = unstructured.SetNestedStringMap(obj.Object, annotations, "spec", "template", "metadata", "annotations"); err != nil {
 			return p, err
 		}
@@ -207,7 +207,7 @@ func desktopRolloutReady(obj *unstructured.Unstructured) bool {
 }
 func acquireDesktopLease(ctx context.Context, cl dynamic.Interface, p DesktopPlan) (func(), error) {
 	h := sha256.Sum256([]byte(p.Workload))
-	name := "infradex-release-" + hex.EncodeToString(h[:12])
+	name := "devopspad-release-" + hex.EncodeToString(h[:12])
 	leases := cl.Resource(leaseGVR).Namespace(p.Namespace)
 	obj, err := leases.Get(ctx, name, metav1.GetOptions{})
 	missing := apierrors.IsNotFound(err)

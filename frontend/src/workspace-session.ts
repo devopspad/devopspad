@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Tab } from "./types";
 
-const storageKey = "infradex-workspace-v1";
+const storageKey = "devopspad-workspace-v1";
 const maxSize = 2 * 1024 * 1024;
 type Snapshot = { tabs: Tab[]; activeId: string; selected: string };
 type Session = { version: 2; enabled: boolean; workspace: Snapshot };

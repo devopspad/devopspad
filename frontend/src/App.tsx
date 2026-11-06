@@ -68,7 +68,7 @@ type Snippet = {
 function loadSnippets(): Snippet[] {
   try {
     const parsed = JSON.parse(
-      localStorage.getItem("infradex-snippets") || "[]",
+      localStorage.getItem("devopspad-snippets") || "[]",
     );
     return Array.isArray(parsed)
       ? parsed.filter(
@@ -105,10 +105,10 @@ export default function App({
     initialWorkspace.selected,
   );
   const [infraSelected, setInfraSelected] = useState(
-    () => localStorage.getItem("infradex-infra-connection") || "",
+    () => localStorage.getItem("devopspad-infra-connection") || "",
   );
   const [infraEnvironment, setInfraEnvironment] = useState(
-    () => localStorage.getItem("infradex-infra-environment") || "",
+    () => localStorage.getItem("devopspad-infra-environment") || "",
   );
   const sourceConnections = connections;
   const groupConnections = sourceConnections.filter(
@@ -129,8 +129,8 @@ export default function App({
     mode === "infra" ? setInfraSelected : setMiddlewareSelected;
   useEffect(() => {
     if (mode === "infra") {
-      localStorage.setItem("infradex-infra-connection", selected);
-      localStorage.setItem("infradex-infra-environment", infraEnvironment);
+      localStorage.setItem("devopspad-infra-connection", selected);
+      localStorage.setItem("devopspad-infra-environment", infraEnvironment);
     }
   }, [mode, selected, infraEnvironment]);
   useEffect(() => {
@@ -569,7 +569,7 @@ export default function App({
         );
         const link = document.createElement("a");
         link.href = url;
-        link.download = "infradex-results.csv";
+        link.download = "devopspad-results.csv";
         link.click();
         URL.revokeObjectURL(url);
         notify("Results exported to CSV");
@@ -1491,7 +1491,7 @@ export default function App({
                     <p>
                       {desktop
                         ? "添加连接后即可查询你的中间件或集群。"
-                        : "请打开 Infradex 桌面应用来连接你的中间件和集群。"}
+                        : "请打开 DevOpsPad 桌面应用来连接你的中间件和集群。"}
                     </p>
                     <button
                       className="button primary"
@@ -1699,7 +1699,7 @@ export default function App({
                               );
                               try {
                                 localStorage.setItem(
-                                  "infradex-snippets",
+                                  "devopspad-snippets",
                                   JSON.stringify(next),
                                 );
                                 setSnippets(next);
@@ -2040,7 +2040,7 @@ export default function App({
                 },
               ];
               try {
-                localStorage.setItem("infradex-snippets", JSON.stringify(next));
+                localStorage.setItem("devopspad-snippets", JSON.stringify(next));
                 setSnippets(next);
                 setSnippetTitle(null);
                 notify("Query saved");
@@ -2074,7 +2074,7 @@ export default function App({
       {help && (
         <Modal
           title="A workspace that stays out of your way."
-          subtitle="Infradex · early preview"
+          subtitle="DevOpsPad · early preview"
           onClose={() => setHelp(false)}
         >
           <div className="form-body help-content">

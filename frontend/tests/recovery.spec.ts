@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import { test, expect, openWorkbench } from "./fixtures/workspace";
 
-const key = "infradex-workspace-v1";
+const key = "devopspad-workspace-v1";
 async function enableRecovery(page: Page) {
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page

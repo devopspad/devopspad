@@ -21,7 +21,7 @@ func TestIntegrationSSHEngines(t *testing.T) {
 			cluster := kind == "k8s" || kind == "k3s"
 			if !cluster {
 				integrationEnabled(t, kind)
-			} else if os.Getenv("INFRADEX_TEST_KUBECONFIG") == "" {
+			} else if os.Getenv("DEVOPSPAD_TEST_KUBECONFIG") == "" {
 				t.Skip("No isolated cluster fixture")
 			}
 			f := newSSHFixture(t, func(addr string) (string, error) {
@@ -46,7 +46,7 @@ func TestIntegrationSSHEngines(t *testing.T) {
 				c.Username = ""
 				query = "PING"
 			case "mongo":
-				c.Database = "infradex_test"
+				c.Database = "devopspad_test"
 				query = `{"collection":"orders","filter":{},"limit":1}`
 			case "clickhouse":
 				c.Username = "default"
@@ -55,7 +55,7 @@ func TestIntegrationSSHEngines(t *testing.T) {
 				c.Password = ""
 				query = "topics"
 			case "k8s", "k3s":
-				cfg, e := clientcmd.LoadFromFile(os.Getenv("INFRADEX_TEST_KUBECONFIG"))
+				cfg, e := clientcmd.LoadFromFile(os.Getenv("DEVOPSPAD_TEST_KUBECONFIG"))
 				if e != nil {
 					t.Fatal(e)
 				}

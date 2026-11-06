@@ -27,16 +27,16 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-const fixturePassword = "infradex-fixture-only"
+const fixturePassword = "devopspad-fixture-only"
 
 func integrationEnabled(t *testing.T, kind string) {
 	t.Helper()
-	if !strings.Contains(","+os.Getenv("INFRADEX_TEST_ENGINES")+",", ","+kind+",") {
-		t.Skip("Enable this fixture with INFRADEX_TEST_ENGINES")
+	if !strings.Contains(","+os.Getenv("DEVOPSPAD_TEST_ENGINES")+",", ","+kind+",") {
+		t.Skip("Enable this fixture with DEVOPSPAD_TEST_ENGINES")
 	}
 }
 func fixture(kind string, port int) Connection {
-	return Connection{Name: "Integration " + kind, Kind: kind, Host: "127.0.0.1", Port: port, Username: "root", Password: fixturePassword, Database: "infradex_test"}
+	return Connection{Name: "Integration " + kind, Kind: kind, Host: "127.0.0.1", Port: port, Username: "root", Password: fixturePassword, Database: "devopspad_test"}
 }
 func TestIntegrationMySQL(t *testing.T) {
 	integrationEnabled(t, "mysql")
@@ -47,7 +47,7 @@ func TestIntegrationMySQL(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer db.Close()
-	_, e = db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS infradex_test; CREATE DATABASE IF NOT EXISTS infradex_other; CREATE TABLE IF NOT EXISTS infradex_test.orders (id BIGINT PRIMARY KEY, email VARCHAR(100) NOT NULL, total DECIMAL(10,2), INDEX idx_email(email)); DELETE FROM infradex_test.orders; INSERT INTO infradex_test.orders VALUES(9007199254740993,'fixture@example.test',49.90); CREATE TABLE IF NOT EXISTS infradex_other.orders (id INT PRIMARY KEY); DELETE FROM infradex_other.orders; INSERT INTO infradex_other.orders VALUES(2);")
+	_, e = db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS devopspad_test; CREATE DATABASE IF NOT EXISTS devopspad_other; CREATE TABLE IF NOT EXISTS devopspad_test.orders (id BIGINT PRIMARY KEY, email VARCHAR(100) NOT NULL, total DECIMAL(10,2), INDEX idx_email(email)); DELETE FROM devopspad_test.orders; INSERT INTO devopspad_test.orders VALUES(9007199254740993,'fixture@example.test',49.90); CREATE TABLE IF NOT EXISTS devopspad_other.orders (id INT PRIMARY KEY); DELETE FROM devopspad_other.orders; INSERT INTO devopspad_other.orders VALUES(2);")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -56,14 +56,14 @@ func TestIntegrationMySQL(t *testing.T) {
 		t.Fatal(e)
 	}
 	names, e := ListDatabases(ctx, c)
-	if e != nil || !contains(names, "infradex_other") {
+	if e != nil || !contains(names, "devopspad_other") {
 		t.Fatalf("databases: %v %v", names, e)
 	}
-	page, e := BrowsePage(ctx, c, BrowseRequest{Database: "infradex_other"})
+	page, e := BrowsePage(ctx, c, BrowseRequest{Database: "devopspad_other"})
 	if e != nil || len(page.Resources) != 1 {
 		t.Fatalf("browse: %+v %v", page, e)
 	}
-	details, e := InspectResource(ctx, c, "infradex_test", "orders")
+	details, e := InspectResource(ctx, c, "devopspad_test", "orders")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -75,7 +75,7 @@ func TestIntegrationMySQL(t *testing.T) {
 		t.Fatalf("read/precision: %+v %v", r, e)
 	}
 	other := c
-	other.Database = "infradex_other"
+	other.Database = "devopspad_other"
 	r, e = Execute(ctx, other, "SELECT id FROM orders")
 	if e != nil || fmt.Sprint(r.Rows[0][0]) != "2" {
 		t.Fatalf("wrong database: %+v %v", r, e)
@@ -109,16 +109,16 @@ func TestIntegrationMySQL(t *testing.T) {
 		t.Fatal("query cancellation exceeded 3 seconds")
 	}
 	// A table name containing SQL punctuation is always quoted as an identifier.
-	if _, e = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS infradex_test.`odd``name` (id INT)"); e != nil {
+	if _, e = db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS devopspad_test.`odd``name` (id INT)"); e != nil {
 		t.Fatal(e)
 	}
-	if _, e = InspectResource(ctx, c, "infradex_test", "odd`name"); e != nil {
+	if _, e = InspectResource(ctx, c, "devopspad_test", "odd`name"); e != nil {
 		t.Fatalf("quoted table: %v", e)
 	}
-	if _, e = db.ExecContext(ctx, "CREATE OR REPLACE VIEW infradex_test.order_emails AS SELECT id,email FROM infradex_test.orders"); e != nil {
+	if _, e = db.ExecContext(ctx, "CREATE OR REPLACE VIEW devopspad_test.order_emails AS SELECT id,email FROM devopspad_test.orders"); e != nil {
 		t.Fatal(e)
 	}
-	view, e := InspectResource(ctx, c, "infradex_test", "order_emails")
+	view, e := InspectResource(ctx, c, "devopspad_test", "order_emails")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -210,7 +210,7 @@ func TestIntegrationClickHouse(t *testing.T) {
 	integrationEnabled(t, "clickhouse")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	for _, q := range []string{"CREATE DATABASE IF NOT EXISTS infradex_test", "CREATE TABLE IF NOT EXISTS infradex_test.orders (id UInt64, total Decimal(10,2), INDEX idx_total total TYPE minmax GRANULARITY 1) ENGINE = MergeTree ORDER BY id", "TRUNCATE TABLE infradex_test.orders", "INSERT INTO infradex_test.orders VALUES (9007199254740993,49.90)"} {
+	for _, q := range []string{"CREATE DATABASE IF NOT EXISTS devopspad_test", "CREATE TABLE IF NOT EXISTS devopspad_test.orders (id UInt64, total Decimal(10,2), INDEX idx_total total TYPE minmax GRANULARITY 1) ENGINE = MergeTree ORDER BY id", "TRUNCATE TABLE devopspad_test.orders", "INSERT INTO devopspad_test.orders VALUES (9007199254740993,49.90)"} {
 		req, _ := http.NewRequestWithContext(ctx, "POST", "http://127.0.0.1:48123/", strings.NewReader(q))
 		req.SetBasicAuth("default", fixturePassword)
 		resp, e := http.DefaultClient.Do(req)
@@ -231,7 +231,7 @@ func TestIntegrationClickHouse(t *testing.T) {
 	if _, e := ListDatabases(ctx, c); e != nil {
 		t.Fatal(e)
 	}
-	d, e := InspectResource(ctx, c, "infradex_test", "orders")
+	d, e := InspectResource(ctx, c, "devopspad_test", "orders")
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -339,7 +339,7 @@ func TestIntegrationKafka(t *testing.T) {
 	c.Password = ""
 	cl := kafkaClient(c)
 	defer cl.Transport.(*kafka.Transport).CloseIdleConnections()
-	r, e := cl.CreateTopics(ctx, &kafka.CreateTopicsRequest{Topics: []kafka.TopicConfig{{Topic: "infradex-fixture", NumPartitions: 2, ReplicationFactor: 1}}})
+	r, e := cl.CreateTopics(ctx, &kafka.CreateTopicsRequest{Topics: []kafka.TopicConfig{{Topic: "devopspad-fixture", NumPartitions: 2, ReplicationFactor: 1}}})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -347,16 +347,16 @@ func TestIntegrationKafka(t *testing.T) {
 	if e = Test(ctx, c); e != nil {
 		t.Fatal(e)
 	}
-	result, e := Execute(ctx, c, "infradex-fixture")
+	result, e := Execute(ctx, c, "devopspad-fixture")
 	if e != nil || len(result.Rows) != 2 {
 		t.Fatalf("metadata: %+v %v", result, e)
 	}
 	t.Log("Kafka topic discovery and partition metadata verified")
 }
 func TestIntegrationClusters(t *testing.T) {
-	path := os.Getenv("INFRADEX_TEST_KUBECONFIG")
+	path := os.Getenv("DEVOPSPAD_TEST_KUBECONFIG")
 	if path == "" {
-		t.Skip("Set INFRADEX_TEST_KUBECONFIG to the isolated fixture kubeconfig")
+		t.Skip("Set DEVOPSPAD_TEST_KUBECONFIG to the isolated fixture kubeconfig")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -399,7 +399,7 @@ func TestIntegrationClusters(t *testing.T) {
 	}
 	maps := schema.GroupVersionResource{Version: "v1", Resource: "configmaps"}
 	for _, ns := range []string{"default", "kube-system"} {
-		obj := &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "ConfigMap", "metadata": map[string]any{"name": "infradex-" + ns, "namespace": ns}, "data": map[string]any{"fixture": "true"}}}
+		obj := &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "ConfigMap", "metadata": map[string]any{"name": "devopspad-" + ns, "namespace": ns}, "data": map[string]any{"fixture": "true"}}}
 		if _, e = cl.Resource(maps).Namespace(ns).Create(ctx, obj, metav1.CreateOptions{}); e != nil {
 			t.Fatal(e)
 		}
@@ -425,7 +425,7 @@ func TestIntegrationClusters(t *testing.T) {
 		}
 	}
 	pods := schema.GroupVersionResource{Version: "v1", Resource: "pods"}
-	pod := &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Pod", "metadata": map[string]any{"name": "infradex-inspector", "namespace": "default", "labels": map[string]any{"app": "infradex-fixture"}}, "spec": map[string]any{"automountServiceAccountToken": false, "containers": []any{map[string]any{"name": "app", "image": "registry.k8s.io/pause:3.10"}}}}}
+	pod := &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Pod", "metadata": map[string]any{"name": "devopspad-inspector", "namespace": "default", "labels": map[string]any{"app": "devopspad-fixture"}}, "spec": map[string]any{"automountServiceAccountToken": false, "containers": []any{map[string]any{"name": "app", "image": "registry.k8s.io/pause:3.10"}}}}}
 	created, e := cl.Resource(pods).Namespace("default").Create(ctx, pod, metav1.CreateOptions{})
 	if e != nil {
 		t.Fatal(e)
@@ -438,14 +438,14 @@ func TestIntegrationClusters(t *testing.T) {
 	}
 	eventResource := schema.GroupVersionResource{Version: "v1", Resource: "events"}
 	for i, uid := range []string{ref.UID, "previous-instance"} {
-		event := &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Event", "metadata": map[string]any{"name": fmt.Sprintf("infradex-event-%d", i), "namespace": "default"}, "involvedObject": map[string]any{"apiVersion": "v1", "kind": "Pod", "name": ref.Name, "namespace": "default", "uid": uid}, "reason": "InfradexFixture", "message": "Inspector fixture", "type": "Normal", "count": int64(1)}}
+		event := &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Event", "metadata": map[string]any{"name": fmt.Sprintf("devopspad-event-%d", i), "namespace": "default"}, "involvedObject": map[string]any{"apiVersion": "v1", "kind": "Pod", "name": ref.Name, "namespace": "default", "uid": uid}, "reason": "DevOpsPadFixture", "message": "Inspector fixture", "type": "Normal", "count": int64(1)}}
 		if _, e = cl.Resource(eventResource).Namespace("default").Create(ctx, event, metav1.CreateOptions{}); e != nil {
 			t.Fatal(e)
 		}
 		defer cl.Resource(eventResource).Namespace("default").Delete(context.Background(), event.GetName(), metav1.DeleteOptions{})
 	}
 	events, e := ClusterEvents(ctx, c, ref)
-	if e != nil || len(events.Rows) != 1 || events.Rows[0][2] != "InfradexFixture" {
+	if e != nil || len(events.Rows) != 1 || events.Rows[0][2] != "DevOpsPadFixture" {
 		t.Fatalf("UID event filter %+v %v", events, e)
 	}
 	// K3s can return HTTP 200 with an empty stream before a Pod is scheduled.
@@ -460,8 +460,8 @@ func TestIntegrationClusters(t *testing.T) {
 		gvr schema.GroupVersionResource
 		raw string
 	}{
-		{roleResource, `{"apiVersion":"rbac.authorization.k8s.io/v1","kind":"Role","metadata":{"name":"infradex-reader","namespace":"default"},"rules":[{"apiGroups":[""],"resources":["pods","configmaps"],"verbs":["get","list"]}]}`},
-		{bindingResource, `{"apiVersion":"rbac.authorization.k8s.io/v1","kind":"RoleBinding","metadata":{"name":"infradex-reader","namespace":"default"},"subjects":[{"kind":"User","name":"infradex-fixture-reader","apiGroup":"rbac.authorization.k8s.io"}],"roleRef":{"kind":"Role","name":"infradex-reader","apiGroup":"rbac.authorization.k8s.io"}}`},
+		{roleResource, `{"apiVersion":"rbac.authorization.k8s.io/v1","kind":"Role","metadata":{"name":"devopspad-reader","namespace":"default"},"rules":[{"apiGroups":[""],"resources":["pods","configmaps"],"verbs":["get","list"]}]}`},
+		{bindingResource, `{"apiVersion":"rbac.authorization.k8s.io/v1","kind":"RoleBinding","metadata":{"name":"devopspad-reader","namespace":"default"},"subjects":[{"kind":"User","name":"devopspad-fixture-reader","apiGroup":"rbac.authorization.k8s.io"}],"roleRef":{"kind":"Role","name":"devopspad-reader","apiGroup":"rbac.authorization.k8s.io"}}`},
 	} {
 		obj := &unstructured.Unstructured{}
 		if e = json.Unmarshal([]byte(fixture.raw), &obj.Object); e != nil {
@@ -470,10 +470,10 @@ func TestIntegrationClusters(t *testing.T) {
 		if _, e = cl.Resource(fixture.gvr).Namespace("default").Create(ctx, obj, metav1.CreateOptions{}); e != nil {
 			t.Fatal(e)
 		}
-		defer cl.Resource(fixture.gvr).Namespace("default").Delete(context.Background(), "infradex-reader", metav1.DeleteOptions{})
+		defer cl.Resource(fixture.gvr).Namespace("default").Delete(context.Background(), "devopspad-reader", metav1.DeleteOptions{})
 	}
 	readerAuth := cfg.AuthInfos[base.AuthInfo].DeepCopy()
-	readerAuth.Impersonate = "infradex-fixture-reader"
+	readerAuth.Impersonate = "devopspad-fixture-reader"
 	readerAuth.ImpersonateGroups = nil
 	cfg.AuthInfos["reader"] = readerAuth
 	cfg.Contexts["reader"] = &clientcmdapi.Context{Cluster: base.Cluster, AuthInfo: "reader", Namespace: "default"}
@@ -506,8 +506,8 @@ func TestIntegrationClusters(t *testing.T) {
 	t.Log("Kubernetes/K3s contexts, namespace isolation, resource inspection, UID events and log RBAC verified; fixture has no running kubelet for positive log output")
 }
 func TestIntegrationKeychain(t *testing.T) {
-	if os.Getenv("INFRADEX_TEST_KEYCHAIN") != "1" {
-		t.Skip("Set INFRADEX_TEST_KEYCHAIN=1")
+	if os.Getenv("DEVOPSPAD_TEST_KEYCHAIN") != "1" {
+		t.Skip("Set DEVOPSPAD_TEST_KEYCHAIN=1")
 	}
 	vault := Keychain{}
 	key := "integration-" + uuid.NewString()

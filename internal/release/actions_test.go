@@ -61,7 +61,7 @@ func TestDesktopActionsDryRunAndApply(t *testing.T) {
 					} else {
 						spec, _, _ := unstructured.NestedMap(candidate.Object, "spec", "template", "spec")
 						before, _, _ := unstructured.NestedMap(original.Object, "spec", "template", "spec")
-						annotation, _, _ := unstructured.NestedString(candidate.Object, "spec", "template", "metadata", "annotations", "infradex.io/release")
+						annotation, _, _ := unstructured.NestedString(candidate.Object, "spec", "template", "metadata", "annotations", "devopspad.io/release")
 						if !reflect.DeepEqual(spec, before) || replicas != 2 || annotation == "" {
 							t.Error("restart changed containers/replicas or omitted annotation")
 						}

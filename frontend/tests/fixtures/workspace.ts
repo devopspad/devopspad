@@ -100,7 +100,7 @@ export async function installWorkspace(page: Page) {
                   );
                   const a = document.createElement("a");
                   a.href = url;
-                  a.download = "infradex-results.csv";
+                  a.download = "devopspad-results.csv";
                   a.click();
                   return true;
                 };

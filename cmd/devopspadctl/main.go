@@ -9,9 +9,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"infradex/internal/fleet"
-	"infradex/internal/release"
-	"infradex/internal/workspace"
+	"devopspad/internal/fleet"
+	"devopspad/internal/release"
+	"devopspad/internal/workspace"
 )
 
 func main() {
@@ -62,7 +62,7 @@ func cmdRelease(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if *file == "" || fs.NArg() != 0 {
-		fmt.Fprintln(stderr, "usage: infradexctl release validate -f <spec.yaml>")
+		fmt.Fprintln(stderr, "usage: devopspadctl release validate -f <spec.yaml>")
 		return 2
 	}
 	spec, err := release.ParseSpec(*file)
@@ -97,14 +97,14 @@ func cmdFleet(args []string, stdout, stderr io.Writer) int {
 }
 
 func configDir() (string, error) {
-	if dir := os.Getenv("INFRADEX_CONFIG_DIR"); dir != "" {
+	if dir := os.Getenv("DEVOPSPAD_CONFIG_DIR"); dir != "" {
 		return dir, nil
 	}
 	base, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, "Infradex"), nil
+	return filepath.Join(base, "DevOpsPad"), nil
 }
 
 func connectionExists(dir string) func(string) bool {
@@ -130,21 +130,21 @@ func (stubVault) Set(string, string) error   { return nil }
 func (stubVault) Get(string) (string, error) { return "", errors.New("not used") }
 func (stubVault) Delete(string) error        { return nil }
 
-const usage = `infradexctl — local cluster access and AI execution records
+const usage = `devopspadctl — local cluster access and AI execution records
 
 Usage:
-  infradexctl release validate -f <spec.yaml>
-  infradexctl runs record --project <dir> -f <event.json|->
-  infradexctl runs list --project <dir>
-  infradexctl runs get --project <dir> --id <run-id>
-  infradexctl fleet list
-  infradexctl cluster inspect --connection <name> --namespace <namespace>
-  infradexctl cluster attach --connection <name> --namespace <namespace> --environment <name> [--project <dir>]
-  infradexctl cluster attach --connection <name> --namespace <namespace> --environment <name> --application <name> --selector <labels> [--project <dir>]
+  devopspadctl release validate -f <spec.yaml>
+  devopspadctl runs record --project <dir> -f <event.json|->
+  devopspadctl runs list --project <dir>
+  devopspadctl runs get --project <dir> --id <run-id>
+  devopspadctl fleet list
+  devopspadctl cluster inspect --connection <name> --namespace <namespace>
+  devopspadctl cluster attach --connection <name> --namespace <namespace> --environment <name> [--project <dir>]
+  devopspadctl cluster attach --connection <name> --namespace <namespace> --environment <name> --application <name> --selector <labels> [--project <dir>]
 
 Config:
-  INFRADEX_CONFIG_DIR  directory containing fleet.json
-                       (default: the Infradex OS config directory)
+  DEVOPSPAD_CONFIG_DIR  directory containing fleet.json
+                       (default: the DevOpsPad OS config directory)
 
 validate reads only the spec file. It does not open SSH or write a release record.
 `

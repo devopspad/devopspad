@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"devopspad/internal/ops"
+	"devopspad/internal/release"
+	"devopspad/internal/workspace"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"infradex/internal/ops"
-	"infradex/internal/release"
-	"infradex/internal/workspace"
 )
 
 type pendingOpsRelease struct {
@@ -31,8 +31,8 @@ func (a *App) opsStore() (*ops.Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	root := filepath.Join(dir, "Infradex", "applications")
-	if path, err := os.ReadFile(filepath.Join(dir, "Infradex", "project-path")); err == nil && len(path) > 0 {
+	root := filepath.Join(dir, "DevOpsPad", "applications")
+	if path, err := os.ReadFile(filepath.Join(dir, "DevOpsPad", "project-path")); err == nil && len(path) > 0 {
 		root = string(path)
 	}
 	a.ops, err = ops.New(root)
@@ -68,10 +68,10 @@ func (a *App) SelectOpsProject() (ops.Snapshot, error) {
 	if err != nil {
 		return ops.Snapshot{}, err
 	}
-	if err = os.MkdirAll(filepath.Join(dir, "Infradex"), 0700); err != nil {
+	if err = os.MkdirAll(filepath.Join(dir, "DevOpsPad"), 0700); err != nil {
 		return ops.Snapshot{}, err
 	}
-	if err = os.WriteFile(filepath.Join(dir, "Infradex", "project-path"), []byte(root), 0600); err != nil {
+	if err = os.WriteFile(filepath.Join(dir, "DevOpsPad", "project-path"), []byte(root), 0600); err != nil {
 		return ops.Snapshot{}, err
 	}
 	a.opsMu.Lock()

@@ -8,9 +8,9 @@ test("desktop application bridge requires a reviewed plan and reports rollout fa
     const snap: any = {
       root: "/local/project",
       revision: "r1",
-      yaml: "apiVersion: infradex.project/v1\nname: Team\nenvironments: []\napplications: []\n",
+      yaml: "apiVersion: devopspad.project/v1\nname: Team\nenvironments: []\napplications: []\n",
       project: {
-        apiVersion: "infradex.project/v1",
+        apiVersion: "devopspad.project/v1",
         name: "Team",
         environments: [
           { name: "pro", connection: "local-k3s", namespace: "default" },

@@ -133,7 +133,7 @@ export function OpsRuns({
             <Terminal size={28} />
             <strong>暂无执行记录</strong>
             <p>
-              让 AI 在执行前调用 infradexctl runs record
+              让 AI 在执行前调用 devopspadctl runs record
               上报开始，再记录步骤和结果。
             </p>
           </div>

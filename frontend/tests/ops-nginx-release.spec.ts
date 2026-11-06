@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as any;
     localStorage.setItem(
-      "infradex-ops-navigation-local",
+      "devopspad-ops-navigation-local",
       JSON.stringify({
         environment: "pro",
         application: "portal",

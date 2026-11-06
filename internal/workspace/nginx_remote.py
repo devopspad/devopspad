@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 CONFIG_ROOT = "/etc/nginx/conf.d"
-LOCK_PATH = "/run/lock/infradex-nginx.lock"
+LOCK_PATH = "/run/lock/devopspad-nginx.lock"
 
 
 def digest(data):
@@ -18,7 +18,7 @@ def digest(data):
 
 
 def install(path, data, metadata):
-    fd, temp = tempfile.mkstemp(prefix=".infradex-nginx-", dir=os.path.dirname(path))
+    fd, temp = tempfile.mkstemp(prefix=".devopspad-nginx-", dir=os.path.dirname(path))
     try:
         with os.fdopen(fd, "wb") as stream:
             os.fchmod(stream.fileno(), stat.S_IMODE(metadata.st_mode))
@@ -57,7 +57,7 @@ def operation(request):
     new = update["text"].encode("utf-8")
     if len(new) > 1 << 20 or b"\0" in new:
         raise ValueError("Nginx 配置内容无效")
-    # Serialize all Infradex Nginx writers because nginx -t covers the whole host.
+    # Serialize all DevOpsPad Nginx writers because nginx -t covers the whole host.
     with open(LOCK_PATH, "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         with open(path, "rb") as stream:

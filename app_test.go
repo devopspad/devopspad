@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"infradex/internal/workspace"
+	"devopspad/internal/workspace"
 )
 
 type testVault map[string]string

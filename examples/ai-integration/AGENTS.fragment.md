@@ -1,16 +1,16 @@
-# Infradex AI 构建与发布记录约定
+# DevOpsPad AI 构建与发布记录约定
 
 将本段合并到实际应用仓库的 AGENTS.md，并填写本机配置；不要存储凭据：
 
-- CLI：填写 infradexctl 的绝对路径。
-- 项目：填写本地 Infradex 项目目录，或设置 INFRADEX_PROJECT_DIR。
+- CLI：填写 devopspadctl 的绝对路径。
+- 项目：填写本地 DevOpsPad 项目目录，或设置 DEVOPSPAD_PROJECT_DIR。
 - 应用：填写 project.yaml 中的应用名称。
-- 规范：阅读 Infradex 的 docs/ai-execution.md 与 docs/integration/run-event.schema.json。
+- 规范：阅读 DevOpsPad 的 docs/ai-execution.md 与 docs/integration/run-event.schema.json。
 
 进行实际镜像构建或部署时：
 
 1. 从当前仓库读取真实 repository、完整 commit SHA、branch、dirty 状态。记录当前 AI 名称与任务/会话 ID，不编造版本、摘要或测试结果。
-2. 为每次执行生成 runId，为每次上报生成事件 id。先把事件 JSON 保存到执行端，再用 `infradexctl runs record --project <dir> -f <file>` 上报。
+2. 为每次执行生成 runId，为每次上报生成事件 id。先把事件 JSON 保存到执行端，再用 `devopspadctl runs record --project <dir> -f <file>` 上报。
 3. start 记录成功后才执行构建或调用已授权的发布工具。记录失败时停止后续副作用，并报告原因。
 4. 实际构建/推送后上报 build、push 步骤；成功必须取得真实完整 sha256 镜像摘要。任一步失败都记录 failed，最终补报 failed/cancelled。
 5. AI 直接发布时关联成功 buildId，沿用仓库现有部署权限与操作规程；上报不会替代部署授权。实际核验 rollout、运行镜像后，记录 rollout、image-check，再结束。

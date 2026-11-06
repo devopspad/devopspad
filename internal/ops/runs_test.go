@@ -144,13 +144,13 @@ func TestRunsFailuresLocksAndValidation(t *testing.T) {
 	if _, err := DecodeRunEvent([]byte(`{} {}`)); err == nil {
 		t.Fatal("multiple documents accepted")
 	}
-	if err := os.WriteFile(filepath.Join(s.Root, ".infradex-write.lock"), nil, 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(s.Root, ".devopspad-write.lock"), nil, 0600); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.RecordRunEvent(startEvent("build")); err == nil {
 		t.Fatal("cross-process lock ignored")
 	}
-	_ = os.Remove(filepath.Join(s.Root, ".infradex-write.lock"))
+	_ = os.Remove(filepath.Join(s.Root, ".devopspad-write.lock"))
 	e = startEvent("build")
 	recordEvent(t, s, e)
 	step := stepEvent(e.RunID, "build", "failed")

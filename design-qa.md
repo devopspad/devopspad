@@ -2,7 +2,7 @@
 
 Source: artifacts/reference-desktop-style.png (1920 × 1195, 1×).
 Implementation: artifacts/desktop-reference-workbench-iteration-1.png (1920 × 1195 CSS pixels, deviceScaleFactor 1).
-Scope: adapt the supplied OfficeDex desktop visual language to Infradex, retaining its database and cluster workflows. Slides, hardware photos, Office ribbon commands, fake OS controls and the reference brand are not part of the requested product.
+Scope: adapt the supplied OfficeDex desktop visual language to DevOpsPad, retaining its database and cluster workflows. Slides, hardware photos, Office ribbon commands, fake OS controls and the reference brand are not part of the requested product.
 
 ## Iteration 1
 Paired source and rendered screenshot opened together in the comparison tool input. Browser rendering verified through the project's existing Chrome/Playwright workflow; no in-app Browser capability was exposed in the session tools.
@@ -27,7 +27,7 @@ Source and final rendered screenshots were opened together for visual comparison
 | Layout | [Workbench](artifacts/desktop-reference-workbench.png): narrow rail, 420px left assistant, Explorer and right workspace reproduce the reference's panel hierarchy. Query tabs sit at the top. |
 | Typography | [Assistant](artifacts/desktop-reference-assistant.png): system sans-serif, larger task heading and readable prompt/body spacing; compact labels retained in the data workspace. |
 | Color and surfaces | Neutral gray task panel, white editor, thin borders and charcoal primary actions; semantic status colors retained. [Connection dialog](artifacts/desktop-reference-dialog.png) now uses matching neutral controls. |
-| Icons and assets | Consistent thin outline icons; Infradex identity retained. No decorative bitmap assets are needed for this infrastructure workspace. |
+| Icons and assets | Consistent thin outline icons; DevOpsPad identity retained. No decorative bitmap assets are needed for this infrastructure workspace. |
 | Density and detail | [Editor and results](artifacts/desktop-reference-editor.png): flat document tabs, compact toolbars, aligned table cells and persistent status bars. Office slide imagery is intentionally replaced by working query/data views. |
 
 Responsive evidence: [1480 × 940](artifacts/desktop-reference-1480.png), [1000 × 680](artifacts/desktop-reference-1000.png), and [Connections](artifacts/desktop-reference-connections.png). The composer, Run query, Settings and status bar remain within the viewport. Assistant content scrolls independently; narrow tables scroll horizontally inside the results region. Long Explorer labels ellipsize.
@@ -70,7 +70,7 @@ final result: passed
 - 字体：沿用已安装的 Geist 与系统中文字体，标题 18px、导航 14px、表格 12–13px；代码和摘要使用等宽字体。长镜像在弹窗内换行，列表中截断并可查看完整标题。
 - 间距：208–216px 侧栏，54px 顶栏，内容区 10px 外边距；保留参考图的白色主面板、紧凑筛选栏、展开分组和大量留白。1000px 窗口可操作主按钮；宽 Pod 表格在自身容器横向滚动。
 - 配色：浅灰页面、白面板、细灰分隔线、蓝紫导航与主要操作、绿色健康状态。已隔离旧工作台暗色/绿色样式。
-- 图像和图标：此界面沿用 Infradex 文字品牌，使用现有 Lucide 图标。未复制参考产品的人员头像或品牌；本地版无人员账号体系，不使用虚构头像占位。
+- 图像和图标：此界面沿用 DevOpsPad 文字品牌，使用现有 Lucide 图标。未复制参考产品的人员头像或品牌；本地版无人员账号体系，不使用虚构头像占位。
 - 内容：菜单按用户要求实现制品、发布、Deployment、Pod、监控、日志、事件、配置与共享。演示模式标识明确；未添加无法执行的构建、终端或删除按钮。发布确认会显示完整目标和当前镜像；失败与成功有独立状态。
 
 **Interactions verified**
