@@ -104,9 +104,11 @@ jobs:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
         run: |
           notarize() { xcrun notarytool submit "$1" --key "$APPLE_API_KEY_PATH" --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" --wait; }
+          # The ticket lookup through CloudKit sometimes drops the connection; retry stapling.
+          staple() { for i in 1 2 3 4 5; do xcrun stapler staple "$1" && return; sleep 15; done; return 1; }
           ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/app.zip"
           notarize "$RUNNER_TEMP/app.zip"
-          xcrun stapler staple "$APP"
+          staple "$APP"
           # A bare Mach-O cannot be stapled; Gatekeeper finds its ticket online.
           ditto -c -k --keepParent build/cli/devopspadctl "$RUNNER_TEMP/cli.zip"
           notarize "$RUNNER_TEMP/cli.zip"
@@ -129,10 +131,11 @@ jobs:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
         run: |
+          staple() { for i in 1 2 3 4 5; do xcrun stapler staple "$1" && return; sleep 15; done; return 1; }
           for dmg in dist/*.dmg; do
             codesign --force --timestamp --sign "$MACOS_SIGNING_IDENTITY" "$dmg"
             xcrun notarytool submit "$dmg" --key "$APPLE_API_KEY_PATH" --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" --wait
-            xcrun stapler staple "$dmg"
+            staple "$dmg"
           done
 
       - name: Verify
