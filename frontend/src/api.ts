@@ -1,3 +1,4 @@
+import type { OpsBridge } from "./ops-api";
 import type {
   Connection,
   ClusterRef,
@@ -7,12 +8,14 @@ import type {
   KubeconfigInfo,
   Resource,
   QueryResult,
+  Workload,
   AISettings,
   ResourcePage,
   ResourceDetails,
   BrowseRequest,
 } from "./types";
-type Bridge = {
+type Bridge = OpsBridge & {
+  SaveConfigMap(id: string, request: { ref: ClusterRef; resourceVersion: string; data: Record<string, string> }): Promise<string>;
   InspectClusterResource(id: string, ref: ClusterRef): Promise<ClusterDetails>;
   ClusterEvents(id: string, ref: ClusterRef): Promise<QueryResult>;
   ReadPodLogs(id: string, request: PodLogRequest): Promise<PodLogs>;
@@ -23,6 +26,7 @@ type Bridge = {
   Browse(id: string): Promise<Resource[]>;
   BrowseResources(id: string, request: BrowseRequest): Promise<ResourcePage>;
   ListDatabases(id: string): Promise<string[]>;
+  ListWorkloads(id: string, namespace: string): Promise<Workload[]>;
   InspectResource(
     id: string,
     database: string,
@@ -68,7 +72,9 @@ export const api = new Proxy({} as Bridge, {
             "Open the Wails desktop app to use live connections and AI settings.",
           ),
         );
-      return (bridge[key] as (...args: unknown[]) => unknown)(...args);
+      if (typeof bridge[key] !== "function")
+        return Promise.reject(new Error(`Desktop operation ${String(key)} is unavailable. Rebuild or update the desktop app.`));
+      return Promise.resolve().then(() => (bridge[key] as (...args: unknown[]) => unknown)(...args));
     },
 });
 export function errorText(e: unknown) {

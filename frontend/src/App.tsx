@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  PanelLeft,
-  CircleUserRound,
+  PanelRight,
   ArrowDownToLine,
   ArrowRight,
   ArrowUpDown,
@@ -35,13 +34,6 @@ import {
 } from "lucide-react";
 import { api, desktop, display, errorText, toCSV } from "./api";
 import {
-  demoConnections,
-  demoExecute,
-  demoResources,
-  demoDatabases,
-  initialQuery,
-} from "./demo";
-import {
   defaultQuery,
   engines,
   type Connection,
@@ -60,21 +52,19 @@ import { engineCapabilities } from "./capabilities";
 import { ResourceInspector } from "./ResourceInspector";
 import { ConnectionCapabilities } from "./ConnectionCapabilities";
 import { ClusterInspector } from "./ClusterInspector";
+import { InfraCluster } from "./InfraCluster";
+import { WorkspaceNavigation } from "./WorkspaceNavigation";
 import { Modal } from "./Modal";
 import "./style.css";
 import "./desktop.css";
 import "./orca.css";
-
-const firstTab: Tab = {
-  id: "welcome-orders",
-  connectionId: "demo-mysql",
-  title: "orders",
-  query: initialQuery,
-  database: "commerce",
-  resource: { name: "orders", kind: "table", query: initialQuery },
-};
 type View = "workbench" | "connections" | "history" | "saved";
-type Snippet = { id: string; title: string; query: string; kind: string };
+type Snippet = {
+  id: string;
+  title: string;
+  query: string;
+  kind: string;
+};
 function loadSnippets(): Snippet[] {
   try {
     const parsed = JSON.parse(
@@ -94,26 +84,62 @@ function loadSnippets(): Snippet[] {
     return [];
   }
 }
-export default function App() {
-  const [initialSession] = useState(() => loadSession(firstTab));
-  const initialWorkspace =
-    initialSession.session.workspaces[
-      initialSession.session.demo ? "demo" : "personal"
-    ];
-  const [demo, setDemo] = useState(initialSession.session.demo);
-  const workspaceMode = useRef(demo);
-  workspaceMode.current = demo;
-  const [connectionsReady, setConnectionsReady] = useState(!desktop);
+export default function App({
+  mode = "workbench",
+}: {
+  mode?: "workbench" | "infra";
+}) {
+  const [initialSession] = useState(() => loadSession());
+  const initialWorkspace = initialSession.session.workspace;
   const [connections, setConnections] = useState<Connection[]>([]);
   const [view, setView] = useState<View>("workbench");
   const [tabs, setTabs] = useState<Tab[]>(initialWorkspace.tabs);
-  const [activeId, setActiveId] = useState(initialWorkspace.activeId);
-  const [selected, setSelected] = useState(initialWorkspace.selected);
+  const [middlewareActiveId, setMiddlewareActiveId] = useState(
+    initialWorkspace.activeId,
+  );
+  const [infraActiveId, setInfraActiveId] = useState(initialWorkspace.activeId);
+  const activeId = mode === "infra" ? infraActiveId : middlewareActiveId;
+  const setActiveId =
+    mode === "infra" ? setInfraActiveId : setMiddlewareActiveId;
+  const [middlewareSelected, setMiddlewareSelected] = useState(
+    initialWorkspace.selected,
+  );
+  const [infraSelected, setInfraSelected] = useState(
+    () => localStorage.getItem("infradex-infra-connection") || "",
+  );
+  const [infraEnvironment, setInfraEnvironment] = useState(
+    () => localStorage.getItem("infradex-infra-environment") || "",
+  );
+  const sourceConnections = connections;
+  const groupConnections = sourceConnections.filter(
+    (c) => (c.kind === "k8s" || c.kind === "k3s") === (mode === "infra"),
+  );
+  const allConnections = groupConnections.filter(
+    (c) =>
+      mode !== "infra" ||
+      !infraEnvironment ||
+      (c.environment || "未分组") === infraEnvironment,
+  );
+  const selectedID = mode === "infra" ? infraSelected : middlewareSelected;
+  const selected =
+    mode === "infra" && !allConnections.some((c) => c.id === selectedID)
+      ? allConnections[0]?.id || ""
+      : selectedID;
+  const setSelected =
+    mode === "infra" ? setInfraSelected : setMiddlewareSelected;
+  useEffect(() => {
+    if (mode === "infra") {
+      localStorage.setItem("infradex-infra-connection", selected);
+      localStorage.setItem("infradex-infra-environment", infraEnvironment);
+    }
+  }, [mode, selected, infraEnvironment]);
+  useEffect(() => {
+    setView("workbench");
+  }, [mode]);
   const recovery = useWorkspaceSession(initialSession, {
-    demo,
     tabs,
-    activeId,
-    selected,
+    activeId: middlewareActiveId,
+    selected: middlewareSelected,
   });
   const [resources, setResources] = useState<Record<string, Resource[]>>({});
   const [databaseScopes, setDatabaseScopes] = useState<Record<string, string>>(
@@ -138,7 +164,13 @@ export default function App() {
   patternsRef.current = keyPatterns;
   const browseVersions = useRef<Record<string, number>>({});
   const [connectionChecks, setConnectionChecks] = useState<
-    Record<string, { state: "checking" | "ready" | "error"; at?: string }>
+    Record<
+      string,
+      {
+        state: "checking" | "ready" | "error";
+        at?: string;
+      }
+    >
   >({});
   const [objectInspector, setObjectInspector] = useState<{
     connection: Connection;
@@ -154,7 +186,10 @@ export default function App() {
     Connection | "new" | null
   >(null);
   const [settings, setSettings] = useState(false);
-  const [aiOpen, setAiOpen] = useState(true);
+  const [middlewareAI, setMiddlewareAI] = useState(true);
+  const [infraAI, setInfraAI] = useState(false);
+  const aiOpen = mode === "infra" ? infraAI : middlewareAI;
+  const setAiOpen = mode === "infra" ? setInfraAI : setMiddlewareAI;
   const [help, setHelp] = useState(false);
   const [search, setSearch] = useState("");
   const [tableFilter, setTableFilter] = useState("");
@@ -181,8 +216,10 @@ export default function App() {
   const [paletteQuery, setPaletteQuery] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Connection | null>(null);
   const [snippetTitle, setSnippetTitle] = useState<string | null>(null);
-  const allConnections = demo ? demoConnections : connections;
-  const active = tabs.find((t) => t.id === activeId);
+  const visibleTabs = tabs.filter((t) =>
+    allConnections.some((c) => c.id === t.connectionId),
+  );
+  const active = visibleTabs.find((t) => t.id === activeId);
   const connection = allConnections.find(
     (c) => c.id === (active?.connectionId || selected),
   );
@@ -194,26 +231,26 @@ export default function App() {
         .ListConnections()
         .then((cs) => {
           setConnections(cs);
-          setConnectionsReady(true);
-          const restored = recovery.workspace(
-            false,
-            cs.map((c) => c.id),
-          );
-          if (!workspaceMode.current) {
-            setTabs(restored.tabs);
-            setActiveId(restored.activeId);
-            setSelected(restored.selected);
-          }
+          const restored = recovery.workspace(cs.map((c) => c.id));
+          setTabs(restored.tabs);
+          setMiddlewareActiveId(restored.activeId);
+          setInfraActiveId(restored.activeId);
+          setMiddlewareSelected(restored.selected);
         })
         .catch((e) => notify(errorText(e)));
-    if (!initialSession.session.enabled)
-      demoExecute("mysql", initialQuery)
-        .then((result) =>
-          setTabs((ts) =>
-            ts.map((t) => (t.id === firstTab.id ? { ...t, result } : t)),
-          ),
-        )
+  }, []);
+  useEffect(() => {
+    if (!desktop) return;
+    const refresh = () => {
+      api
+        .ListConnections()
+        .then((cs) => {
+          setConnections(cs);
+        })
         .catch((e) => notify(errorText(e)));
+    };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
   }, []);
   useEffect(() => {
     if (!toast) return;
@@ -251,34 +288,11 @@ export default function App() {
       }
       try {
         let result: ResourcePage;
-        if (c.id.startsWith("demo-")) {
-          let items = demoResources(c.kind, scope);
-          const pattern = appliedPattern;
-          if (c.kind === "redis") {
-            const escaped = pattern
-              .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-              .replaceAll("*", ".*")
-              .replaceAll("?", ".");
-            items = items.filter((r) =>
-              new RegExp("^" + escaped + "$").test(r.name),
-            );
-          }
-          const offset = append
-            ? Number(pagesRef.current[c.id]?.nextCursor || 0)
-            : 0;
-          const limit = c.kind === "redis" ? 2 : items.length;
-          result = {
-            resources: items.slice(offset, offset + limit),
-            hasMore: offset + limit < items.length,
-            nextCursor: String(offset + limit),
-            message: "",
-          };
-        } else
-          result = await api.BrowseResources(c.id, {
-            database: scope,
-            cursor: append ? pagesRef.current[c.id]?.nextCursor || "0" : "0",
-            filter: appliedPattern,
-          });
+        result = await api.BrowseResources(c.id, {
+          database: scope,
+          cursor: append ? pagesRef.current[c.id]?.nextCursor || "0" : "0",
+          filter: appliedPattern,
+        });
         if (browseVersions.current[c.id] !== version) return;
         setResources((rs) => {
           const merged = append
@@ -314,9 +328,7 @@ export default function App() {
     databaseVersions.current[c.id] = version;
     setDatabaseErrors((es) => ({ ...es, [c.id]: "" }));
     try {
-      const names = c.id.startsWith("demo-")
-        ? demoDatabases(c.kind)
-        : await api.ListDatabases(c.id);
+      const names = await api.ListDatabases(c.id);
       if (databaseVersions.current[c.id] !== version) return;
       setDatabaseLists((ls) => ({ ...ls, [c.id]: names }));
     } catch (e) {
@@ -330,7 +342,7 @@ export default function App() {
     if (!resources[c.id]) void browse(c);
     if (engineCapabilities(c.kind).canSelectDatabase && !databaseLists[c.id])
       void loadDatabases(c);
-  }, [selected, demo, connections, browse, loadDatabases]);
+  }, [selected, mode, connections, browse, loadDatabases]);
   function selectScope(c: Connection, database: string) {
     setDatabaseScopes((ss) => ({ ...ss, [c.id]: database }));
     scopeRef.current = { ...scopeRef.current, [c.id]: database };
@@ -407,7 +419,12 @@ export default function App() {
       result.resourceType
     ) {
       const obj = row[result.columns.indexOf("resource")] as
-        { metadata?: { uid?: string } } | undefined;
+        | {
+            metadata?: {
+              uid?: string;
+            };
+          }
+        | undefined;
       setClusterInspector({
         connection: {
           ...connection,
@@ -434,9 +451,8 @@ export default function App() {
     setTableFilter("");
     setPage(0);
     try {
-      const result = demo
-        ? await demoExecute(c.kind, tab.query, tab.database ?? c.database)
-        : c.kind === "k8s" || c.kind === "k3s"
+      const result =
+        c.kind === "k8s" || c.kind === "k3s"
           ? await api.ExecuteInContext(
               c.id,
               tab.database ?? c.database,
@@ -506,7 +522,7 @@ export default function App() {
     if (!request) return;
     cancelled.current.add(request);
     try {
-      if (!demo) await api.CancelQuery(request);
+      await api.CancelQuery(request);
       patchTab(tabID, { error: "Query cancelled." });
     } catch (e) {
       notify(errorText(e));
@@ -516,6 +532,11 @@ export default function App() {
   runRef.current = runQuery;
   useEffect(() => {
     function key(e: KeyboardEvent) {
+      if (
+        !window.location.hash.startsWith("#workbench") &&
+        !window.location.hash.startsWith("#infra/resources")
+      )
+        return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPalette((p) => !p);
@@ -536,28 +557,6 @@ export default function App() {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
-  function switchWorkspace(next: boolean) {
-    if (!next && !connectionsReady) {
-      notify(
-        "Connections are still loading. Retry after the workspace is available.",
-      );
-      return;
-    }
-    if (Object.keys(runningRef.current).length) {
-      notify("Wait for running queries to finish before switching workspaces.");
-      return;
-    }
-    const restored = recovery.workspace(
-      next,
-      (next ? demoConnections : connections).map((c) => c.id),
-    );
-    setDemo(next);
-    setTabs(restored.tabs);
-    setActiveId(restored.activeId);
-    setSelected(restored.selected);
-    setHistory([]);
-    setView("workbench");
-  }
   async function exportResults() {
     if (!active?.result) return;
     const csv = toCSV(active.result);
@@ -611,14 +610,7 @@ export default function App() {
       className={`app-shell ${aiOpen ? "with-assistant" : "without-assistant"}`}
     >
       <nav className="app-rail" aria-label="Main navigation">
-        <button
-          className="rail-brand"
-          aria-label="Infradex workbench"
-          title="Infradex"
-          onClick={() => setView("workbench")}
-        >
-          <Layers3 size={23} />
-        </button>
+        <WorkspaceNavigation active={mode} />
         {(
           [
             { id: "workbench", icon: Terminal, title: "Workbench" },
@@ -653,7 +645,7 @@ export default function App() {
           aria-pressed={aiOpen}
           onClick={() => setAiOpen((open) => !open)}
         >
-          <PanelLeft size={20} strokeWidth={1.6} />
+          <PanelRight size={20} strokeWidth={1.6} />
         </button>
         <button
           className="rail-button"
@@ -665,14 +657,6 @@ export default function App() {
         </button>
         <button
           className="rail-button"
-          title="Switch workspace"
-          aria-label="Switch workspace"
-          onClick={() => switchWorkspace(!demo)}
-        >
-          <CircleUserRound size={23} strokeWidth={1.6} />
-        </button>
-        <button
-          className="rail-button"
           title="Settings"
           aria-label="Settings"
           onClick={() => setSettings(true)}
@@ -680,45 +664,9 @@ export default function App() {
           <Settings2 size={21} strokeWidth={1.6} />
         </button>
       </nav>
-      {aiOpen && (
-        <Assistant
-          key={`${demo}-${connection?.id || selected}`}
-          kind={connection?.kind || selectedConnection?.kind || "mysql"}
-          demo={demo}
-          connectionName={
-            connection?.name ||
-            selectedConnection?.name ||
-            "No connection selected"
-          }
-          activeTitle={active?.title}
-          onFocusQuery={() => setView("workbench")}
-          names={((active?.context ?? connection?.context) ===
-            connection?.context &&
-          (active?.database ?? connection?.database) ===
-            (databaseScopes[connection?.id || selected] ?? connection?.database)
-            ? resources[connection?.id || selected] || []
-            : []
-          ).map((r) => r.name)}
-          onClose={() => setAiOpen(false)}
-          onSettings={() => setSettings(true)}
-          onInsert={(query) => {
-            if (active) {
-              patchTab(active.id, { query });
-              setView("workbench");
-              notify("Suggestion inserted. Review it before running.");
-            } else if (selectedConnection)
-              openQuery(selectedConnection, {
-                name: "AI suggestion",
-                kind: "query",
-                query,
-              });
-            else notify("Open a connection first.");
-          }}
-        />
-      )}
       <aside className="sidebar">
         <div className="explorer-heading">
-          <span>Explorer</span>
+          <span>{mode === "infra" ? "Infra · 集群与节点" : "中间件"}</span>
           <button
             className="icon-button"
             aria-label="Search workspace"
@@ -731,19 +679,13 @@ export default function App() {
             <Search size={16} />
           </button>
         </div>
-        <button
-          className="workspace-switch"
-          onClick={() => switchWorkspace(!demo)}
-        >
-          <Database className="workspace-symbol" size={18} strokeWidth={1.6} />
+        <div className="workspace-switch">
+          <Database className="workspace-symbol" size={18} />
           <span>
-            <strong>{demo ? "Demo workspace" : "Personal workspace"}</strong>
-            <small>
-              {demo ? "Sample connections" : "Your local connections"}
-            </small>
+            <strong>本地工作区</strong>
+            <small>你的连接与查询</small>
           </span>
-          <ChevronDown size={14} />
-        </button>
+        </div>
         <div className="section-label">
           <span>CONNECTIONS</span>
           <div>
@@ -765,6 +707,31 @@ export default function App() {
             </button>
           </div>
         </div>
+        {mode === "infra" && (
+          <label className="infra-environment-filter">
+            环境
+            <select
+              aria-label="Infra 环境"
+              value={infraEnvironment}
+              onChange={(e) => {
+                setInfraEnvironment(e.target.value);
+                setInfraActiveId("");
+              }}
+            >
+              <option value="">全部环境</option>
+              {[
+                ...new Set([
+                  ...groupConnections.map((c) => c.environment || "未分组"),
+                  ...(infraEnvironment ? [infraEnvironment] : []),
+                ]),
+              ]
+                .sort()
+                .map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+            </select>
+          </label>
+        )}
         <div className="sidebar-search">
           <Search size={14} />
           <input
@@ -775,12 +742,30 @@ export default function App() {
           />
         </div>
         <div className="connection-tree">
+          {mode === "infra" && !visibleConnections.length && (
+            <p className="tree-message">
+              当前环境没有集群连接，可切换环境或新建 K3s / Kubernetes 连接。
+            </p>
+          )}
           {visibleConnections.map((c) => (
             <div className="connection-group" key={c.id}>
               <button
                 className={`tree-connection ${selected === c.id ? "selected" : ""}`}
                 onClick={() => {
-                  setSelected(selected === c.id ? "" : c.id);
+                  if (selected === c.id) {
+                    if (c.kind === "k8s" || c.kind === "k3s") {
+                      setView("workbench");
+                      setActiveId("");
+                      return;
+                    }
+                    setSelected("");
+                    return;
+                  }
+                  setSelected(c.id);
+                  if (c.kind === "k8s" || c.kind === "k3s") {
+                    setView("workbench");
+                    setActiveId("");
+                  }
                 }}
               >
                 <ChevronRight
@@ -790,15 +775,13 @@ export default function App() {
                 <EngineIcon kind={c.kind} small />
                 <span>{c.name}</span>
                 <span
-                  className={`connection-dot ${demo || connectionChecks[c.id]?.state === "ready" ? "ready" : connectionChecks[c.id]?.state === "error" ? "failed" : ""}`}
+                  className={`connection-dot ${connectionChecks[c.id]?.state === "ready" ? "ready" : connectionChecks[c.id]?.state === "error" ? "failed" : ""}`}
                   title={
-                    demo
-                      ? "Sample connection"
-                      : connectionChecks[c.id]?.state === "ready"
-                        ? `Last successful request at ${connectionChecks[c.id]?.at}`
-                        : connectionChecks[c.id]?.state === "error"
-                          ? "Last request failed"
-                          : "Not checked"
+                    connectionChecks[c.id]?.state === "ready"
+                      ? `Last successful request at ${connectionChecks[c.id]?.at}`
+                      : connectionChecks[c.id]?.state === "error"
+                        ? "Last request failed"
+                        : "Not checked"
                   }
                 />
               </button>
@@ -970,10 +953,10 @@ export default function App() {
       </aside>
       <div className="main-shell">
         <header className="topbar">
-          {view === "workbench" && active && connection ? (
+          {view === "workbench" && tabs.length > 0 && connection ? (
             <div className="query-tabs">
               <div className="tabs-scroll">
-                {tabs.map((t) => (
+                {visibleTabs.map((t) => (
                   <div
                     role="tab"
                     aria-selected={t.id === activeId}
@@ -1062,7 +1045,48 @@ export default function App() {
           <main className="main-content">
             {view === "workbench" ? (
               <>
-                {active && connection ? (
+                {selectedConnection &&
+                (selectedConnection.kind === "k8s" ||
+                  selectedConnection.kind === "k3s") &&
+                !active ? (
+                  <InfraCluster
+                    onNode={(resource) =>
+                      setClusterInspector({
+                        connection: selectedConnection,
+                        resource,
+                      })
+                    }
+                    key={`${selectedConnection.id}:${selectedConnection.context}`}
+                    connection={selectedConnection}
+                    namespace={
+                      databaseScopes[selectedConnection.id] ??
+                      selectedConnection.database ??
+                      "default"
+                    }
+                    namespaces={
+                      databaseLists[selectedConnection.id] || [
+                        databaseScopes[selectedConnection.id] ??
+                          selectedConnection.database ??
+                          "default",
+                      ]
+                    }
+                    onNamespace={(namespace) =>
+                      selectScope(selectedConnection, namespace)
+                    }
+                    onOpen={(item) =>
+                      setClusterInspector({
+                        connection: selectedConnection,
+                        resource: {
+                          context: selectedConnection.context,
+                          namespace: item.namespace,
+                          name: item.name,
+                          resource: item.resource,
+                          uid: item.uid,
+                        },
+                      })
+                    }
+                  />
+                ) : active && connection ? (
                   <>
                     <div className="workspace-heading">
                       <div>
@@ -1077,14 +1101,11 @@ export default function App() {
                         </div>
                         <p>
                           <span className="status-dot" />
-                          {demo
-                            ? "Sample connection"
-                            : connectionChecks[connection.id]?.state === "ready"
-                              ? `Last response at ${connectionChecks[connection.id]?.at}`
-                              : connectionChecks[connection.id]?.state ===
-                                  "error"
-                                ? "Last request failed"
-                                : "Not yet verified"}
+                          {connectionChecks[connection.id]?.state === "ready"
+                            ? `Last response at ${connectionChecks[connection.id]?.at}`
+                            : connectionChecks[connection.id]?.state === "error"
+                              ? "Last request failed"
+                              : "Not yet verified"}
                           {connection.ssh?.enabled && (
                             <span
                               className="ssh-route"
@@ -1189,12 +1210,7 @@ export default function App() {
                     <div className="editor-bottom">
                       <span>
                         <span className="status-dot" />
-                        {demo
-                          ? connection.kind === "mysql" ||
-                            connection.kind === "clickhouse"
-                            ? "Local demo · SQLite syntax"
-                            : "Local demo · sample responses"
-                          : "Queries time out after 20 seconds"}
+                        {"Queries time out after 20 seconds"}
                       </span>
                       <span>
                         UTF-8<span className="separator">·</span>
@@ -1389,9 +1405,7 @@ export default function App() {
                             <span className="field-help">
                               {active.query !== active.resultQuery
                                 ? "Query changed. Run again to browse batches."
-                                : demo
-                                  ? "Sample data · local batches"
-                                  : "Concurrent writes can change batches."}
+                                : "Concurrent writes can change batches."}
                             </span>
                             <button
                               className="button"
@@ -1438,7 +1452,7 @@ export default function App() {
                           )}
                         </span>
                         <span className="result-source">
-                          {demo ? "Sample data" : "Up to 500 rows"}
+                          {"Up to 500 rows"}
                           <span className="separator">·</span>
                           <ShieldCheck size={12} />
                           Read-only
@@ -1473,23 +1487,17 @@ export default function App() {
                     <span className="eyebrow">
                       YOUR INFRASTRUCTURE, CONNECTED
                     </span>
-                    <h1>A home for all your data.</h1>
+                    <h1>还没有打开的连接</h1>
                     <p>
-                      Connect a database or cluster to start exploring.
-                      <br />
-                      One calm workspace. Seven powerful engines.
+                      {desktop
+                        ? "添加连接后即可查询你的中间件或集群。"
+                        : "请打开 Infradex 桌面应用来连接你的中间件和集群。"}
                     </p>
                     <button
                       className="button primary"
                       onClick={() => setConnectionDialog("new")}
                     >
                       <Plus size={16} /> New connection
-                    </button>
-                    <button
-                      className="text-button"
-                      onClick={() => switchWorkspace(true)}
-                    >
-                      Explore the demo workspace <ArrowRight size={14} />
                     </button>
                     {selectedConnection && (
                       <button
@@ -1518,17 +1526,7 @@ export default function App() {
                     New connection
                   </button>
                 </div>
-                {demo && (
-                  <div className="demo-notice">
-                    <Sparkles size={16} />
-                    <span>
-                      You’re exploring sample connections. Ready for your own?
-                    </span>
-                    <button onClick={() => switchWorkspace(false)}>
-                      Open my workspace <ArrowRight size={13} />
-                    </button>
-                  </div>
-                )}
+
                 <div className="connection-cards">
                   {allConnections.map((c) => (
                     <article className="connection-card" key={c.id}>
@@ -1557,11 +1555,17 @@ export default function App() {
                       <footer>
                         <button
                           className="text-button"
-                          onClick={() => openQuery(c)}
+                          onClick={() => {
+                            setSelected(c.id);
+                            setView("workbench");
+                            if (c.kind === "k8s" || c.kind === "k3s")
+                              setActiveId("");
+                            else openQuery(c);
+                          }}
                         >
                           Open workspace <ArrowUpDown size={13} />
                         </button>
-                        {!demo && (
+                        {
                           <div>
                             <button
                               className="icon-button"
@@ -1578,8 +1582,7 @@ export default function App() {
                               <Trash2 size={15} />
                             </button>
                           </div>
-                        )}
-                        {demo && <span className="tiny-badge">SAMPLE</span>}
+                        }
                       </footer>
                     </article>
                   ))}
@@ -1750,22 +1753,52 @@ export default function App() {
         <footer className="statusbar">
           <div>
             <span className="status-dot" />
-            <span>{demo ? "Demo workspace" : "Local workspace"}</span>
+            <span>{"Local workspace"}</span>
             <span className="separator">·</span>
             <span>{allConnections.length} connections</span>
           </div>
           <div>
-            {demo && (
-              <button onClick={() => switchWorkspace(false)}>
-                Connect your infrastructure <ArrowRight size={12} />
-              </button>
-            )}
             <span>{desktop ? "Wails desktop" : "Browser preview"}</span>
             <span className="separator">·</span>
             <span>v0.1.0</span>
           </div>
         </footer>
       </div>
+      {aiOpen && (
+        <Assistant
+          key={`${connection?.id || selected}`}
+          kind={connection?.kind || selectedConnection?.kind || "mysql"}
+          connectionName={
+            connection?.name ||
+            selectedConnection?.name ||
+            "No connection selected"
+          }
+          activeTitle={active?.title}
+          onFocusQuery={() => setView("workbench")}
+          names={((active?.context ?? connection?.context) ===
+            connection?.context &&
+          (active?.database ?? connection?.database) ===
+            (databaseScopes[connection?.id || selected] ?? connection?.database)
+            ? resources[connection?.id || selected] || []
+            : []
+          ).map((r) => r.name)}
+          onClose={() => setAiOpen(false)}
+          onSettings={() => setSettings(true)}
+          onInsert={(query) => {
+            if (active) {
+              patchTab(active.id, { query });
+              setView("workbench");
+              notify("Suggestion inserted. Review it before running.");
+            } else if (selectedConnection)
+              openQuery(selectedConnection, {
+                name: "AI suggestion",
+                kind: "query",
+                query,
+              });
+            else notify("Open a connection first.");
+          }}
+        />
+      )}
       {capabilityKind && (
         <ConnectionCapabilities
           kind={capabilityKind}
@@ -1795,6 +1828,7 @@ export default function App() {
       {connectionDialog && (
         <ConnectionDialog
           initial={connectionDialog === "new" ? undefined : connectionDialog}
+          defaultKind={mode === "infra" ? "k3s" : "mysql"}
           onClose={() => setConnectionDialog(null)}
           onSaved={(c) => {
             setConnections((cs) => [...cs.filter((x) => x.id !== c.id), c]);
@@ -1824,17 +1858,15 @@ export default function App() {
               delete next[c.id];
               return next;
             });
-            if (demo) {
-              const restored = recovery.workspace(false, [
-                ...connections.map((x) => x.id),
-                c.id,
-              ]);
-              setDemo(false);
-              setTabs(restored.tabs);
-              setActiveId(restored.activeId);
-              setHistory([]);
+            if (c.kind === "k8s" || c.kind === "k3s") {
+              setInfraSelected(c.id);
+              setInfraEnvironment("");
+              setInfraActiveId("");
+              window.location.hash = "infra/resources";
+            } else {
+              setMiddlewareSelected(c.id);
+              window.location.hash = "workbench";
             }
-            setSelected(c.id);
             setView("connections");
             notify("Connection saved securely");
           }}
@@ -2057,11 +2089,7 @@ export default function App() {
               New connection <kbd>⌘ / Ctrl + N</kbd>
             </p>
             <h3>Explore with confidence</h3>
-            <p>
-              Demo connections use sample data. SQL in the demo runs in a local
-              SQLite engine. Live connections are available in the Wails desktop
-              app.
-            </p>
+            <p>Connections and queries use the Wails desktop app.</p>
             <p>
               This release focuses on reading and exploring. SQL runs in a
               read-only session. Redis uses a command allowlist; MongoDB

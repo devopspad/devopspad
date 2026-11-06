@@ -111,6 +111,15 @@ func kafkaClient(c Connection) *kafka.Client {
 	return &kafka.Client{Addr: kafka.TCP(address(c)), Timeout: 10 * time.Second, Transport: t}
 }
 func kubeConfig(c Connection) (*rest.Config, error) {
+	if c.clusterConfig != nil {
+		cfg := rest.CopyConfig(c.clusterConfig)
+		if c.tunnel != nil {
+			cfg.Dial = c.tunnel.DialContext
+			cfg.Proxy = func(*http.Request) (*url.URL, error) { return nil, nil }
+		}
+		return cfg, nil
+	}
+
 	config, e := clientcmd.LoadFromFile(c.Kubeconfig)
 	if e != nil {
 		return nil, errors.New("Cannot read kubeconfig file")

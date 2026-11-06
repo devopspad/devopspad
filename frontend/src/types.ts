@@ -32,6 +32,19 @@ export type Connection = {
   hasPassword: boolean;
 };
 export type Resource = { name: string; kind: string; query: string };
+export type Workload = {
+  kind: string;
+  namespace: string;
+  name: string;
+  uid: string;
+  resource: string;
+  desired: number;
+  ready: number;
+  image: string;
+  extraImages: number;
+  updatedAt: string;
+  selector: string;
+};
 export type QueryResult = {
   resourceType?: string;
   columns: string[];

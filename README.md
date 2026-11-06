@@ -2,7 +2,7 @@
 
 A desktop workspace for databases, caches, event streams, and Kubernetes. Built with **Wails v2, Go, React, Vite, Tailwind CSS, and CodeMirror**, with **gotomicro/ego**, **ego-component/egorm**, and **ego-component/eredis** on the backend.
 
-An English-language, Navicat-inspired **read-only exploration MVP**. First launch opens in a clearly labeled demo workspace. Optional draft recovery returns to the last workspace on later launches. Switch to **Personal workspace** or choose **New connection** to work with your own infrastructure. Full Navicat feature parity is a longer-term goal.
+A Navicat-inspired **read-only database workbench** under **中间件**, with **Infra** for cluster nodes, application configuration, and reviewed Deployment releases. First launch starts with your saved connections or an empty workspace. Choose **New connection** to add infrastructure; optional draft recovery restores real query drafts without executing them. Full Navicat feature parity is a longer-term goal.
 
 Product scope, milestones, and acceptance criteria: [implementation plan](PLAN.md).
 
@@ -33,7 +33,7 @@ npm run dev --prefix frontend
 # http://127.0.0.1:3415
 ```
 
-Browser preview supports the demo workspace, local SQL queries, saved queries, result filtering/sorting, and CSV export. Live connections, OS keychain storage, kubeconfig selection, and AI provider calls require Wails. No unauthenticated network bridge to the Go backend is exposed.
+Browser preview shows the UI and connection setup empty states without seeded data or simulated operations. Live connections, OS keychain storage, kubeconfig selection, and AI provider calls require Wails. No unauthenticated network bridge to the Go backend is exposed.
 
 ## Included
 
@@ -47,7 +47,7 @@ Browser preview supports the demo workspace, local SQL queries, saved queries, r
 - Resource tree, independent query tabs, CodeMirror editor, and Cmd/Ctrl+Enter execution.
 - Result sorting, filtering, pagination, row inspection, precision-preserving SQL values, and CSV export.
 - Session-only history (last 100 queries in the current workspace), saved queries in local browser/webview storage, and a Cmd/Ctrl+K connection palette.
-- Independent demo/personal query tabs survive workspace switches. Optional startup recovery restores query drafts, active tabs, and database/context scopes without executing restored queries.
+- Query tabs survive navigation between 中间件 and Infra. Optional startup recovery restores real query drafts, active tabs, and database/context scopes without executing restored queries. Existing personal drafts migrate from the older workspace format.
 - AI settings for an OpenAI-compatible Chat Completions endpoint, including local providers. Model ID is user-supplied. Suggestions can be inserted into the editor and never execute automatically.
 - OS keychain storage for passwords and API keys. Connection metadata is written atomically with owner-only file permissions. Passwords are not returned to the frontend after saving. Blank password fields preserve an existing secret.
 
@@ -104,7 +104,7 @@ To inspect a cluster resource, run a list such as `get pods`, then double-click 
 
 The inspector keeps the query result's context, namespace, resource type and UID, even after editor text or sidebar selection changes. A replaced resource requires reopening from refreshed results. Kubernetes RBAC still applies: resource details need `get`, events need `list events`, and logs need `get pods` plus `get pods/log`. Events/log permission errors remain local to their sections.
 
-SQL/document results are capped at 500 rows/documents; cluster pages at 500 items. Queries have a 20-second outer context; driver initialization also has bounded connection timeouts. Cancellation stops or abandons the client request; a server may continue until its own timeout. MySQL and Kubernetes/K3s query previews also stop at an 8 MiB encoded result budget and show why the preview is partial. MySQL reports truncation only when another row exists or the byte budget is reached. Cluster previews omit managed fields. Redis responses can exceed 500 items, but query responses above 8 MiB are rejected with guidance to use bounded ranges or smaller SCAN batches. These are desktop preview limits: a driver may allocate a response or large row before checking it, so they are not a process-memory or network-transfer ceiling. Redis key browsing supports Load more keys and MATCH patterns. SCAN can return empty batches or duplicate keys while data changes; the UI keeps the cursor and deduplicates displayed names. Key-value previews show up to 100 collection entries or 64 KiB of string content. Value pagination remains a query-editor operation. Kafka and cluster adapters expose no mutations.
+SQL/document results are capped at 500 rows/documents; cluster pages at 500 items. Queries have a 20-second outer context; driver initialization also has bounded connection timeouts. Cancellation stops or abandons the client request; a server may continue until its own timeout. MySQL and Kubernetes/K3s query previews also stop at an 8 MiB encoded result budget and show why the preview is partial. MySQL reports truncation only when another row exists or the byte budget is reached. Cluster previews omit managed fields. Redis responses can exceed 500 items, but query responses above 8 MiB are rejected with guidance to use bounded ranges or smaller SCAN batches. These are desktop preview limits: a driver may allocate a response or large row before checking it, so they are not a process-memory or network-transfer ceiling. Redis key browsing supports Load more keys and MATCH patterns. SCAN can return empty batches or duplicate keys while data changes; the UI keeps the cursor and deduplicates displayed names. Key-value previews show up to 100 collection entries or 64 KiB of string content. Value pagination remains a query-editor operation. Kafka and cluster query adapters expose no mutations; confirmed desktop application releases use the separate release engine.
 
 ## SSH tunnels
 
@@ -129,14 +129,14 @@ Configure **Settings → AI provider** with a base URL, model ID, and optional A
 
 Each request includes the prompt and engine name. **Include resource names** is off by default; enabling it sends visible resource names. Credentials and result rows are never automatically included. Each prompt is independent; displayed chat history is not sent as context. Resource names do not supply column definitions, so review generated queries.
 
-Demo AI returns a labeled sample suggestion and makes no provider call. Demo SQL runs against a seeded, read-only SQLite WebAssembly database. Dialect-specific MySQL/ClickHouse syntax requires a live connection. Other demo engines use local sample responses.
+AI requests use the configured provider, and queries use the selected connection. The application contains no sample response fallback or embedded demonstration database.
 
 Profiles live under `os.UserConfigDir()/Infradex/workspace.json` (macOS: `~/Library/Application Support/Infradex/workspace.json`). Secrets use the `infradex` service in the OS credential store. Saving secrets requires a working keychain and never falls back to plaintext. Saved queries are local text; history is in memory and clears when switching workspaces or closing the app. AI provider settings and their API key are read as one snapshot, so concurrent provider changes cannot pair a URL with another provider’s key.
 
 ## Architecture
 
 ```text
-frontend/src/             React workspace, editor, dialogs, demo engine
+frontend/src/             React workspace, editor, dialogs, cluster and application consoles
 frontend/src/api.ts       Typed facade over Wails bindings
 app.go                    Desktop lifecycle, cancellation, file dialogs
 internal/workspace/       Profiles, keychain, engine adapters, AI client
@@ -145,6 +145,20 @@ artifacts/                Verified interface screenshots
 ```
 
 Ego supplies component configuration/logging; Wails owns the desktop lifecycle. Ego container construction is serialized and temporary credential configuration is cleared afterward. The eredis version used here does not propagate named ACL users and can drop verified TLS configuration, so those modes use upstream go-redis. egorm imports the ClickHouse v1 SQL driver; the HTTP adapter avoids duplicate SQL driver registration from importing v2 alongside it. References: [ego components](https://github.com/gotomicro/ego#3-ego-component), [ClickHouse HTTP interface](https://clickhouse.com/docs/interfaces/http).
+
+## Local application services
+
+The **Infra** rail entry opens the application console with environments, cluster nodes, configuration, and release workflows using the original Orca dark theme (with an optional light theme). The rail contains only **中间件** and **Infra**. `/#infra` opens Infra, and older `/#apps` links redirect to it. Cluster resource queries and connection management remain available through **集群资源**.
+
+- Local YAML project, immutable-digest artifact registration, independent release records, and manual Git sharing between local checkouts.
+- Deployment / Pod views, Pod container log snapshots, events, and CPU/memory snapshots via metrics-server.
+- Desktop-only image releases to an existing Deployment: server dry-run, reviewable plan, per-target cluster Lease, resource-version checks, rollout verification, and persistent outcome records.
+
+Deployment rows also support scaling and restart, and successful image release records can prepare a rollback to that version. All three actions reuse dry-run, version checks, deployment leases, rollout verification, and local operation records.
+
+AI executors can report versioned, idempotent start/step/finish events through `infradexctl runs record`. Successful builds appear in the artifact library; external release reports retain build/source/actor linkage. See [AI integration contract](docs/ai-execution.md) and its JSON Schema. The **接入 K3s** action discovers workloads using saved local connections and adds their selectors to the project.
+
+Setup, project example, permissions, synchronization behavior, and current limits: [本地应用服务](docs/local-applications.md). This adds an explicit write path in `internal/release`; the database/query workspace remains read-only. CRDT editing, image builds/uploads, historical monitoring, streaming logs, and full fleet release execution are not included in this version.
 
 ## OPC release checks
 
@@ -166,7 +180,7 @@ go vet ./...
 npm run test:e2e --prefix frontend
 ```
 
-Playwright uses installed Google Chrome locally and its managed Chromium in CI. Browser tests cover queries, filters, sorting, row inspection, CSV, saved queries, tabs, all demo engines, errors, minimum window size, and a mocked Wails bridge for live connection/AI flows. Go unit tests use an in-memory vault, Redis protocol test server, and HTTP servers for Kubernetes, ClickHouse, and AI. The local integration suite has also passed against real MySQL, Redis, MongoDB, Kafka, ClickHouse, and an isolated K3s API server (used by both Kubernetes/K3s profiles), plus the real macOS keychain. Run `python3 tests/integration/run.py --keychain`; see [fixture instructions](tests/integration/README.md). The cluster fixture has no worker node: real API tests cover resource details, UID-filtered events, empty unscheduled-Pod logs and log-subresource RBAC. Nonempty log output, previous-instance options, response bounds and timeout cancellation are covered by HTTP protocol tests, not a running kubelet. Running-container log acceptance remains to be verified on a cluster with a worker node. This does not cover every server version, Kubernetes distribution, or authentication setup. Native desktop file dialogs remain a manual verification item.
+Playwright uses installed Google Chrome locally and its managed Chromium in CI. Browser tests cover queries, filters, sorting, row inspection, CSV, saved queries, tabs, all supported engine interfaces, empty states, legacy draft migration, errors, minimum window size, and a mocked Wails bridge for connection/AI flows. Go unit tests use an in-memory vault, Redis protocol test server, and HTTP servers for Kubernetes, ClickHouse, and AI. The local integration suite has also passed against real MySQL, Redis, MongoDB, Kafka, ClickHouse, and an isolated K3s API server (used by both Kubernetes/K3s profiles), plus the real macOS keychain. Run `python3 tests/integration/run.py --keychain`; see [fixture instructions](tests/integration/README.md). The cluster fixture has no worker node: real API tests cover resource details, UID-filtered events, empty unscheduled-Pod logs and log-subresource RBAC. Nonempty log output, previous-instance options, response bounds and timeout cancellation are covered by HTTP protocol tests, not a running kubelet. Running-container log acceptance remains to be verified on a cluster with a worker node. This does not cover every server version, Kubernetes distribution, or authentication setup. Native desktop file dialogs remain a manual verification item.
 
 ## Workspace recovery
 

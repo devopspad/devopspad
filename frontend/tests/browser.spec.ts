@@ -1,6 +1,7 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, openWorkbench } from "./fixtures/workspace";
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
+  await openWorkbench(page);
   await expect(page.getByText("Olivia Rhye", { exact: true })).toBeVisible();
 });
 
@@ -23,7 +24,7 @@ test("database navigation preserves each query tab scope", async ({ page }) => {
   await expect(page.locator("tbody")).toContainText("Checkout redesign");
 });
 
-test("table inspector exposes columns, indexes and native demo DDL", async ({
+test("table inspector exposes columns, indexes and native DDL", async ({
   page,
 }) => {
   await page.getByRole("button", { name: "Structure", exact: true }).click();
@@ -37,7 +38,7 @@ test("table inspector exposes columns, indexes and native demo DDL", async ({
   ).toBeVisible();
   await dialog.getByRole("tab", { name: "DDL", exact: true }).click();
   await expect(dialog.locator("pre")).toContainText("CREATE TABLE orders");
-  await expect(dialog).toContainText("SQLite demo");
+  await expect(dialog).not.toContainText("SQLite demo");
   await dialog.getByRole("button", { name: "Open query", exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(
@@ -82,7 +83,7 @@ test("Redis key pages can be loaded, filtered and inspected", async ({
 test("engine capability dialog clearly distinguishes supported operations", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Connections 7" }).click();
+  await page.getByRole("button", { name: "Connections 5" }).click();
   const card = page
     .locator(".connection-card")
     .filter({ has: page.getByRole("heading", { name: "Event pipeline" }) });

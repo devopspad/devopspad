@@ -1,0 +1,14 @@
+apiVersion: infradex.project/v1
+name: 本地应用空间
+environments:
+  - name: pro
+    connection: local-k3s
+    namespace: default
+  - name: dev
+    connection: local-k3s
+    namespace: dev
+applications:
+  - name: svc-user
+    selector: app=svc-user
+  - name: svc-api
+    selector: app=svc-api

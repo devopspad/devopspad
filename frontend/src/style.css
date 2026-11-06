@@ -1403,26 +1403,6 @@ tbody tr:hover td {
   font-size: 11px;
   margin-top: 9px;
 }
-.demo-notice {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  background: #f2f7e9;
-  border: 1px solid #e5edd9;
-  padding: 12px 14px;
-  border-radius: 7px;
-  margin-bottom: 25px;
-  color: #92a27b;
-  font-size: 10px;
-}
-.demo-notice button {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  color: #788e5e;
-}
 .connection-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -2093,12 +2073,6 @@ td {
   }
   .connection-cards {
     grid-template-columns: 1fr;
-  }
-  .demo-notice {
-    flex-wrap: wrap;
-  }
-  .demo-notice button {
-    margin-left: 25px;
   }
   .page-heading {
     align-items: flex-start;

@@ -1,9 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures/workspace";
 
 test("cluster demo exposes overview, UID events, container logs and JSON", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/#infra/resources");
   await page
     .getByRole("button", { name: "US East cluster", exact: false })
     .click();
@@ -134,8 +134,7 @@ test("cluster log responses preserve scope, reject stale UI responses and isolat
       },
     };
   });
-  await page.goto("/");
-  await page.locator(".workspace-switch").click();
+  await page.goto("/#infra/resources");
   await page.getByRole("button", { name: "pods", exact: true }).click();
   await page.getByRole("button", { name: "Run query" }).first().click();
   await expect(
@@ -188,7 +187,7 @@ test("pod inspector remains usable at the desktop minimum size", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1000, height: 680 });
-  await page.goto("/");
+  await page.goto("/#infra/resources");
   await page
     .getByRole("button", { name: "US East cluster", exact: false })
     .click();

@@ -206,9 +206,6 @@ test("slow resource responses cannot overwrite a newer database selection", asyn
     };
   });
   await page.goto("/");
-  await page
-    .getByRole("button", { name: "Connect your infrastructure" })
-    .click();
   const picker = page.getByRole("combobox", {
     name: "Database for Scope fixture",
   });

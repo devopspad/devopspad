@@ -10,13 +10,13 @@
 }
 .app-shell {
   display: grid;
-  grid-template-columns: 58px 222px minmax(0, 1fr);
+  grid-template-columns: 64px 222px minmax(0, 1fr);
   min-width: 1000px;
   min-height: 620px;
   background: #fff;
 }
 .app-shell.with-assistant {
-  grid-template-columns: 58px clamp(290px, 22vw, 380px) 222px minmax(0, 1fr);
+  grid-template-columns: 64px 222px minmax(0, 1fr) clamp(290px, 22vw, 380px);
 }
 .app-rail {
   display: flex;
@@ -540,7 +540,7 @@
   height: 100%;
   background: #f4f5f8;
   border: 0;
-  border-right: 1px solid var(--border);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
 }
@@ -803,12 +803,6 @@
 .capability-link {
   color: #68798b;
 }
-.demo-notice {
-  color: #7b8796;
-  background: #edf1f5;
-  border-color: #dfe5ed;
-  border-radius: 6px;
-}
 .modal {
   color: #4d5663;
   border-color: #dfe3e9;
@@ -912,7 +906,7 @@ select:focus {
 }
 @media (min-width: 1750px) {
   .app-shell.with-assistant {
-    grid-template-columns: 64px 420px 250px minmax(0, 1fr);
+    grid-template-columns: 64px 250px minmax(0, 1fr) 420px;
   }
   .query-editor {
     height: 310px;
@@ -926,10 +920,10 @@ select:focus {
 }
 @media (max-width: 1200px) {
   .app-shell.with-assistant {
-    grid-template-columns: 50px 265px 180px minmax(0, 1fr);
+    grid-template-columns: 64px 180px minmax(0, 1fr) 265px;
   }
   .app-shell.without-assistant {
-    grid-template-columns: 50px 200px minmax(0, 1fr);
+    grid-template-columns: 64px 200px minmax(0, 1fr);
   }
   .assistant-content {
     padding: 20px 16px;

@@ -10,15 +10,19 @@ import (
 
 	"github.com/gotomicro/ego/core/elog"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"infradex/internal/ops"
 	"infradex/internal/workspace"
 )
 
 type App struct {
-	ctx     context.Context
-	store   *workspace.Store
-	initErr error
-	mu      sync.Mutex
-	queries map[string]context.CancelFunc
+	opsMu    sync.Mutex
+	ops      *ops.Store
+	opsPlans map[string]pendingOpsRelease
+	ctx      context.Context
+	store    *workspace.Store
+	initErr  error
+	mu       sync.Mutex
+	queries  map[string]context.CancelFunc
 }
 
 func NewApp() *App { return &App{queries: map[string]context.CancelFunc{}} }
@@ -197,6 +201,19 @@ func (a *App) ExportCSV(content string) (bool, error) {
 		return false, e
 	}
 	return true, os.WriteFile(path, []byte(content), 0600)
+}
+
+func (a *App) ListWorkloads(id, namespace string) ([]workspace.Workload, error) {
+	if e := a.ready(); e != nil {
+		return nil, e
+	}
+	c, e := a.store.Get(id)
+	if e != nil {
+		return nil, e
+	}
+	ctx, cancel := context.WithTimeout(a.ctx, 20*time.Second)
+	defer cancel()
+	return workspace.ListWorkloads(ctx, c, namespace)
 }
 
 func (a *App) ListDatabases(id string) ([]string, error) {

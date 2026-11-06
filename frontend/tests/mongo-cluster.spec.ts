@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures/workspace";
 
 test("MongoDB batches keep sort and projection and require rerun after edits", async ({
   page,
@@ -114,8 +114,7 @@ test("cluster contexts load from kubeconfig; tabs keep their context and namespa
       },
     };
   });
-  await page.goto("/");
-  await page.locator(".workspace-switch").click();
+  await page.goto("/#infra/resources");
   await page.getByRole("button", { name: "pods", exact: true }).click();
   await page
     .getByRole("combobox", { name: "Namespace for Fixture cluster" })

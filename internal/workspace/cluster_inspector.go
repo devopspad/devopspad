@@ -61,7 +61,7 @@ func clusterTarget(c Connection, ref ClusterRef) (Connection, schema.GroupVersio
 		return c, gvr, errors.New("Select a Kubernetes or K3s connection")
 	}
 	switch ref.Resource {
-	case "deployments":
+	case "deployments", "statefulsets", "daemonsets":
 		gvr.Group = "apps"
 	case "pods", "services", "configmaps", "events":
 	case "nodes", "namespaces":

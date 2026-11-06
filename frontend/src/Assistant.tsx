@@ -19,11 +19,9 @@ import { engines, type Kind } from "./types";
 type Message = {
   role: "user" | "assistant";
   content: string;
-  sample?: boolean;
 };
 export function Assistant({
   kind,
-  demo,
   names,
   onInsert,
   onClose,
@@ -36,7 +34,6 @@ export function Assistant({
   activeTitle?: string;
   onFocusQuery: () => void;
   kind: Kind;
-  demo: boolean;
   names: string[];
   onInsert: (q: string) => void;
   onClose: () => void;
@@ -54,10 +51,12 @@ export function Assistant({
     setMessages((m) => [...m, { role: "user", content: text }]);
     setBusy(true);
     try {
-      const content = demo
-        ? `This is a sample suggestion, not a model response. Configure a provider and switch to your workspace to use live AI.\n\n${kind === "mysql" || kind === "clickhouse" ? "Here is a starting point for exploring order revenue by status:\n```sql\nSELECT status, COUNT(*) AS orders,\n       SUM(total) AS revenue\nFROM orders\nGROUP BY status\nORDER BY revenue DESC;\n```\nReview the query, then add it to your editor." : "Choose a resource in the sidebar to explore this sample connection. Live AI can help you write engine-specific queries."}`
-        : await api.AskAI({ prompt: text, kind, schema: context ? names : [] });
-      setMessages((m) => [...m, { role: "assistant", content, sample: demo }]);
+      const content = await api.AskAI({
+        prompt: text,
+        kind,
+        schema: context ? names : [],
+      });
+      setMessages((m) => [...m, { role: "assistant", content }]);
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -111,7 +110,7 @@ export function Assistant({
             </p>
             <span className="eyebrow">SUGGESTED PROMPTS</span>
             {[
-              "Show revenue by order status",
+              "Summarize the available resources",
               "Help me write a query",
               "Explain how to explore this database",
             ].map((text, i) => (
@@ -160,7 +159,6 @@ export function Assistant({
                 ) : (
                   <>
                     <Sparkles size={13} /> Infradex AI{" "}
-                    {m.sample && <span className="tiny-badge">SAMPLE</span>}
                   </>
                 )}
               </span>
@@ -240,11 +238,7 @@ export function Assistant({
           </div>
         </form>
         <div className="ai-footnote">
-          <span>
-            {demo
-              ? "Demo suggestions · no AI request sent"
-              : "AI can make mistakes. Review suggestions."}
-          </span>
+          <span>AI can make mistakes. Review suggestions.</span>
           <button
             className="icon-button"
             aria-label="AI provider settings"

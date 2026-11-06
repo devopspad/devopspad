@@ -10,7 +10,6 @@ import {
   Table2,
 } from "lucide-react";
 import { api, display, errorText } from "./api";
-import { demoInspect } from "./demo";
 import { Modal } from "./Modal";
 import type {
   Connection,
@@ -18,7 +17,6 @@ import type {
   Resource,
   ResourceDetails,
 } from "./types";
-
 function DetailGrid({ result }: { result: QueryResult }) {
   if (!result.columns.length || !result.rows.length)
     return <div className="detail-empty">No entries returned.</div>;
@@ -64,7 +62,6 @@ export function ResourceInspector({
   onClose: () => void;
   onQuery: () => void;
 }) {
-  const demo = connection.id.startsWith("demo-");
   const redis = connection.kind === "redis";
   const [details, setDetails] = useState<ResourceDetails | null>(null);
   const [error, setError] = useState("");
@@ -75,10 +72,8 @@ export function ResourceInspector({
     let stale = false;
     setDetails(null);
     setError("");
-    (demo
-      ? demoInspect(connection.kind, database, resource.name)
-      : api.InspectResource(connection.id, database, resource.name)
-    )
+    api
+      .InspectResource(connection.id, database, resource.name)
       .then((value) => {
         if (!stale) setDetails(value);
       })
@@ -88,11 +83,11 @@ export function ResourceInspector({
     return () => {
       stale = true;
     };
-  }, [connection.id, connection.kind, database, resource.name, attempt, demo]);
+  }, [connection.id, connection.kind, database, resource.name, attempt]);
   return (
     <Modal
       title={resource.name}
-      subtitle={`${redis ? "Key details" : "Table structure"} · ${database || "default"}${demo ? " · Sample data" : ""}`}
+      subtitle={`${redis ? "Key details" : "Table structure"} · ${database || "default"}`}
       wide
       onClose={onClose}
     >
@@ -151,12 +146,6 @@ export function ResourceInspector({
             </div>
             {tab === "ddl" ? (
               <div className="definition-panel">
-                {demo && (
-                  <p className="field-help">
-                    This definition comes from the local SQLite demo. Live
-                    connections show the server’s native DDL.
-                  </p>
-                )}
                 <pre>{details.definition || "No definition returned."}</pre>
                 <button
                   className="button"

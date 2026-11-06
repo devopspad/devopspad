@@ -34,10 +34,12 @@ export function EngineIcon({
 }
 export function ConnectionDialog({
   initial,
+  defaultKind = "mysql",
   onClose,
   onSaved,
 }: {
   initial?: Connection;
+  defaultKind?: Kind;
   onClose: () => void;
   onSaved: (c: Connection) => void;
 }) {
@@ -45,12 +47,12 @@ export function ConnectionDialog({
     initial || {
       id: "",
       name: "",
-      kind: "mysql",
+      kind: defaultKind,
       host: "localhost",
-      port: 3306,
+      port: engines[defaultKind].port,
       username: "",
       password: "",
-      database: "",
+      database: defaultKind === "k3s" || defaultKind === "k8s" ? "default" : "",
       environment: "Development",
       tls: false,
       kubeconfig: "",
@@ -171,14 +173,17 @@ export function ConnectionDialog({
             </label>
             <label>
               Environment
-              <select
+              <input
+                list="connection-environments"
                 value={c.environment}
                 onChange={(e) => patch({ environment: e.target.value })}
-              >
-                {["Development", "Staging", "Production"].map((x) => (
-                  <option key={x}>{x}</option>
+                placeholder="例如 Production、heartie-pro"
+              />
+              <datalist id="connection-environments">
+                {["Development", "Staging", "Production"].map((name) => (
+                  <option key={name} value={name} />
                 ))}
-              </select>
+              </datalist>
             </label>
           </div>
           {cluster ? (

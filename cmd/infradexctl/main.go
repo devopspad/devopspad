@@ -38,6 +38,10 @@ func dispatch(args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "release":
 		return cmdRelease(args[1:], stdout, stderr)
+	case "runs":
+		return cmdRuns(args[1:], stdout, stderr)
+	case "cluster":
+		return cmdCluster(args[1:], stdout, stderr)
 	case "fleet":
 		return cmdFleet(args[1:], stdout, stderr)
 	default:
@@ -126,11 +130,17 @@ func (stubVault) Set(string, string) error   { return nil }
 func (stubVault) Get(string) (string, error) { return "", errors.New("not used") }
 func (stubVault) Delete(string) error        { return nil }
 
-const usage = `infradexctl — local OPC release checks
+const usage = `infradexctl — local cluster access and AI execution records
 
 Usage:
   infradexctl release validate -f <spec.yaml>
+  infradexctl runs record --project <dir> -f <event.json|->
+  infradexctl runs list --project <dir>
+  infradexctl runs get --project <dir> --id <run-id>
   infradexctl fleet list
+  infradexctl cluster inspect --connection <name> --namespace <namespace>
+  infradexctl cluster attach --connection <name> --namespace <namespace> --environment <name> [--project <dir>]
+  infradexctl cluster attach --connection <name> --namespace <namespace> --environment <name> --application <name> --selector <labels> [--project <dir>]
 
 Config:
   INFRADEX_CONFIG_DIR  directory containing fleet.json

@@ -1,20 +1,21 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, openWorkbench } from "./fixtures/workspace";
 
-test("reference desktop layout places the assistant left of Explorer and top-level query tabs", async ({
+test("reference desktop layout places the assistant right of the query workspace", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1920, height: 1195 });
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
+  await openWorkbench(page);
   await expect(page.getByText("Olivia Rhye", { exact: true })).toBeVisible();
   const rail = await page.locator(".app-rail").boundingBox();
   const assistant = await page.locator(".assistant").boundingBox();
   const explorer = await page.locator(".sidebar").boundingBox();
   const main = await page.locator(".main-shell").boundingBox();
-  expect(assistant!.x).toBe(rail!.width);
-  expect(explorer!.x).toBe(assistant!.x + assistant!.width);
+  expect(explorer!.x).toBe(rail!.width);
   expect(main!.x).toBe(explorer!.x + explorer!.width);
+  expect(assistant!.x).toBe(main!.x + main!.width);
   await expect(
     page.locator(".topbar").getByRole("tab", { name: "orders Close orders" }),
   ).toBeVisible();
@@ -28,7 +29,7 @@ test("reference desktop layout places the assistant left of Explorer and top-lev
     .locator(".main-shell")
     .screenshot({ path: "../artifacts/desktop-reference-editor.png" });
   await page
-    .getByRole("button", { name: "Connections 7", exact: true })
+    .getByRole("button", { name: "Connections 5", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Your connections" }),
@@ -43,6 +44,7 @@ test("assistant collapse preserves query content and frees workspace width", asy
   page,
 }) => {
   await page.goto("/");
+  await openWorkbench(page);
   const editor = page.getByRole("textbox", { name: "Query editor" });
   await editor.fill("SELECT 42 AS answer;");
   const before = (await page.locator(".main-shell").boundingBox())!.width;
@@ -66,6 +68,7 @@ test("desktop reference layout at working and minimum window sizes", async ({
   page,
 }) => {
   await page.goto("/");
+  await openWorkbench(page);
   await expect(page.getByText("Olivia Rhye", { exact: true })).toBeVisible();
   await page.screenshot({ path: "../artifacts/desktop-reference-1480.png" });
   await page

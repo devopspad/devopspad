@@ -2,27 +2,29 @@ package workspace
 
 import (
 	"errors"
+	"k8s.io/client-go/rest"
 	"strconv"
 	"strings"
 )
 
 type Connection struct {
-	SSH         SSHConfig `json:"ssh"`
-	tunnel      *sshTunnel
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Kind        string `json:"kind"`
-	Host        string `json:"host"`
-	Port        int    `json:"port"`
-	Username    string `json:"username"`
-	Password    string `json:"password,omitempty"`
-	Database    string `json:"database"`
-	AuthSource  string `json:"authSource,omitempty"`
-	Environment string `json:"environment"`
-	TLS         bool   `json:"tls"`
-	Kubeconfig  string `json:"kubeconfig"`
-	Context     string `json:"context"`
-	HasPassword bool   `json:"hasPassword"`
+	clusterConfig *rest.Config // Frozen API endpoint for a confirmed release plan; never serialized.
+	SSH           SSHConfig    `json:"ssh"`
+	tunnel        *sshTunnel
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Kind          string `json:"kind"`
+	Host          string `json:"host"`
+	Port          int    `json:"port"`
+	Username      string `json:"username"`
+	Password      string `json:"password,omitempty"`
+	Database      string `json:"database"`
+	AuthSource    string `json:"authSource,omitempty"`
+	Environment   string `json:"environment"`
+	TLS           bool   `json:"tls"`
+	Kubeconfig    string `json:"kubeconfig"`
+	Context       string `json:"context"`
+	HasPassword   bool   `json:"hasPassword"`
 }
 type Resource struct {
 	Name  string `json:"name"`

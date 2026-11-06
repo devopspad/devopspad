@@ -1,0 +1,328 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "infradex.run-event/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+    },
+    "type": {
+      "enum": [
+        "start",
+        "step",
+        "finish"
+      ]
+    },
+    "start": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "build",
+            "release"
+          ]
+        },
+        "application": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 120,
+          "minLength": 1
+        },
+        "actor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "ai",
+                "human"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 120,
+              "minLength": 1
+            },
+            "sessionId": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "name",
+            "sessionId"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "maxLength": 500,
+              "minLength": 1
+            },
+            "commit": {
+              "type": "string",
+              "pattern": "^([a-f0-9]{40}|[a-f0-9]{64})$"
+            },
+            "branch": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "dirty": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "repository",
+            "commit"
+          ]
+        },
+        "recipe": {
+          "type": "string",
+          "maxLength": 500,
+          "minLength": 1
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "environment": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+            },
+            "workload": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+            },
+            "container": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+            },
+            "buildId": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+            }
+          },
+          "required": [
+            "environment",
+            "workload",
+            "container",
+            "buildId"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "application",
+        "version",
+        "actor",
+        "source",
+        "recipe"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "release"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "target"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "target"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 120,
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "succeeded",
+            "failed"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "logPath": {
+          "type": "string",
+          "maxLength": 500,
+          "pattern": "^logs/[^\\\\]+$"
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ]
+    },
+    "finish": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "succeeded",
+            "failed",
+            "cancelled"
+          ]
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 1023,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}$",
+          "not": {
+            "pattern": ":latest@"
+          }
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 4000,
+          "minLength": 1
+        }
+      },
+      "required": [
+        "status",
+        "message"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "succeeded"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "image"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "image"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "apiVersion",
+    "id",
+    "runId",
+    "type"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Infradex AI execution event v1",
+  "description": "The CLI additionally validates registered applications/environments, source build linkage, repository and log references, lifecycle, immutable digest and required successful steps.",
+  "oneOf": [
+    {
+      "properties": {
+        "type": {
+          "const": "start"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "step"
+            ]
+          },
+          {
+            "required": [
+              "finish"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "step"
+        }
+      },
+      "required": [
+        "step"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "start"
+            ]
+          },
+          {
+            "required": [
+              "finish"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "finish"
+        }
+      },
+      "required": [
+        "finish"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "start"
+            ]
+          },
+          {
+            "required": [
+              "step"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

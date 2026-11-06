@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { test, expect, openWorkbench } from "./fixtures/workspace";
 
 const key = "infradex-workspace-v1";
 async function enableRecovery(page: Page) {
@@ -13,16 +14,19 @@ test("workspace switches preserve drafts without enabling disk recovery", async 
   page,
 }) => {
   await page.goto("/");
+  await openWorkbench(page);
   const editor = page.getByRole("textbox", { name: "Query editor" });
   await editor.fill("SELECT 'unsaved draft';");
   await page
-    .getByRole("button", { name: "Switch workspace", exact: true })
+    .getByRole("group", { name: "工作区导航" })
+    .getByRole("button", { name: "Infra", exact: true })
     .click();
   await expect(
-    page.getByText("Personal workspace", { exact: true }),
+    page.getByRole("heading", { name: "制品库", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Switch workspace", exact: true })
+    .getByRole("group", { name: "工作区导航" })
+    .getByRole("button", { name: "中间件", exact: true })
     .click();
   await expect(editor).toContainText("unsaved draft");
   expect(await page.evaluate((k) => localStorage.getItem(k), key)).toBeNull();
@@ -32,6 +36,7 @@ test("opt-in recovery restores active drafts and scopes without results or autom
   page,
 }) => {
   await page.goto("/");
+  await openWorkbench(page);
   await expect(page.getByText("Olivia Rhye", { exact: true })).toBeVisible();
   await enableRecovery(page);
   await page
@@ -50,10 +55,10 @@ test("opt-in recovery restores active drafts and scopes without results or autom
     (k) => JSON.parse(localStorage.getItem(k)!),
     key,
   );
-  expect(stored.workspaces.demo.tabs).toHaveLength(2);
-  expect(stored.workspaces.demo.tabs[0].database).toBe("commerce");
+  expect(stored.workspace.tabs).toHaveLength(2);
+  expect(stored.workspace.tabs[0].database).toBe("commerce");
   expect(JSON.stringify(stored)).not.toContain("Olivia");
-  expect(stored.workspaces.demo.tabs[0]).not.toHaveProperty("result");
+  expect(stored.workspace.tabs[0]).not.toHaveProperty("result");
   await page.getByRole("tab", { name: "orders", exact: false }).click();
   await expect(
     page.getByRole("textbox", { name: "Query editor" }),
@@ -80,6 +85,7 @@ test("invalid recovery data stays intact and storage failures remain visible", a
     key,
   );
   await page.goto("/");
+  await openWorkbench(page);
   await expect(page.getByRole("alert")).toContainText("could not be restored");
   expect(await page.evaluate((k) => localStorage.getItem(k), key)).toBe(
     '{"version":99}',
@@ -152,9 +158,20 @@ test("personal recovery preserves context and drops deleted connections after me
         JSON.stringify({
           version: 1,
           enabled: true,
-          demo: false,
+          demo: true,
           workspaces: {
-            demo: { tabs: [], activeId: "", selected: "" },
+            demo: {
+              tabs: [
+                {
+                  id: "fake",
+                  connectionId: "demo-mysql",
+                  title: "Fake orders",
+                  query: "SELECT fake",
+                },
+              ],
+              activeId: "fake",
+              selected: "demo-mysql",
+            },
             personal: {
               activeId: "kept",
               selected: c.id,
@@ -179,28 +196,20 @@ test("personal recovery preserves context and drops deleted connections after me
         }),
       );
   }, key);
-  await page.goto("/");
+  await page.goto("/#infra/resources");
   await expect(page.getByRole("tab", { name: "Pods draft" })).toBeVisible();
   await expect(page.getByRole("tab")).toHaveCount(1);
+  await expect(page.getByRole("tab", { name: "Fake orders" })).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).__executions)).toBe(0);
   await page.getByRole("button", { name: "Run query" }).first().click();
   await expect
     .poll(() => page.evaluate(() => (window as any).__scope))
     .toEqual({ database: "team", context: "original-context" });
-  await page
-    .getByRole("button", { name: "Switch workspace", exact: true })
-    .click();
   await page.reload();
-  await expect(
-    page.getByRole("button", { name: "Demo workspace Sample" }),
-  ).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Pods draft" })).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => (window as any).__ready))
     .toBe(true);
-  await page
-    .getByRole("button", { name: "Switch workspace", exact: true })
-    .click();
-  await expect(page.getByRole("tab", { name: "Pods draft" })).toBeVisible();
 });
 
 test("recovery settings remain usable at the minimum desktop size", async ({
@@ -208,6 +217,7 @@ test("recovery settings remain usable at the minimum desktop size", async ({
 }) => {
   await page.setViewportSize({ width: 1000, height: 680 });
   await page.goto("/");
+  await openWorkbench(page);
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(
     page.getByRole("checkbox", { name: "Restore query drafts on startup" }),

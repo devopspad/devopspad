@@ -1,7 +1,8 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, openWorkbench } from "./fixtures/workspace";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
+  await openWorkbench(page);
   await expect(page.getByText("Olivia Rhye", { exact: true })).toBeVisible();
 });
 
@@ -34,14 +35,14 @@ test("query execution, filtering, sorting, inspection, and CSV export", async ({
   expect(csv).toContain('"Olivia Rhye"');
 });
 
-test("AI sample is labeled, inserts a query, and query executes against demo data", async ({
+test("AI provider response inserts a query and executes through the bridge", async ({
   page,
 }) => {
   await page
-    .getByRole("button", { name: "Show revenue by order status" })
+    .getByRole("button", { name: "Summarize the available resources" })
     .click();
   await expect(
-    page.getByText("This is a sample suggestion", { exact: false }),
+    page.getByText("Fixture provider response", { exact: false }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Insert into editor" }).click();
   await page.getByRole("button", { name: "Run query" }).first().click();
@@ -97,17 +98,15 @@ test("command palette opens another connection and tabs retain independent conte
   ).toContainText("FROM orders");
 });
 
-test("seven demo engines can be explored through real UI interactions", async ({
+test("middleware engines can be explored through real UI interactions", async ({
   page,
 }) => {
-  await page.getByRole("button", { name: "Connections 7" }).click();
-  await expect(page.locator(".connection-card")).toHaveCount(7);
+  await page.getByRole("button", { name: "Connections 5" }).click();
+  await expect(page.locator(".connection-card")).toHaveCount(5);
   for (const name of [
     "Product catalog",
     "Event pipeline",
     "Product analytics",
-    "US East cluster",
-    "Edge cluster",
   ]) {
     await page
       .locator(".connection-card")
@@ -120,11 +119,11 @@ test("seven demo engines can be explored through real UI interactions", async ({
     await page.getByRole("button", { name: "Run query" }).first().click();
     await expect(page.locator("tbody tr").first()).toBeVisible();
     await expect(page.locator(".query-error")).toHaveCount(0);
-    await page.getByRole("button", { name: "Connections 7" }).click();
+    await page.getByRole("button", { name: "Connections 5" }).click();
   }
 });
 
-test("connection dialog supports all engines and preview never claims a live connection", async ({
+test("connection dialog supports all engines through the desktop bridge", async ({
   page,
 }) => {
   await page
@@ -134,7 +133,7 @@ test("connection dialog supports all engines and preview never claims a live con
   const dialog = page.getByRole("dialog", { name: "New connection" });
   await expect(
     dialog.getByRole("button", { name: "Test connection" }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await dialog
     .getByRole("button", { name: "Kubernetes", exact: false })
     .click();
@@ -153,15 +152,9 @@ test("connection dialog supports all engines and preview never claims a live con
   ).toHaveValue("0");
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Connect your infrastructure" })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "A home for all your data." }),
-  ).toBeVisible();
 });
 
-test("SQL errors are explicit and demo writes cannot change sample data", async ({
+test("SQL errors are explicit and read-only fixture rejects writes", async ({
   page,
 }) => {
   const editor = page.getByRole("textbox", { name: "Query editor" });

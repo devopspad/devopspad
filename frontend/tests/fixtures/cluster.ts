@@ -1,10 +1,11 @@
+// Test-only cluster responses.
 import type {
   ClusterDetails,
   ClusterRef,
   PodLogRequest,
   PodLogs,
   QueryResult,
-} from "./types";
+} from "../../src/types";
 
 export async function demoClusterDetails(
   ref: ClusterRef,

@@ -1,0 +1,1468 @@
+.ops-console {
+  --ops-border: var(--ops-line, #ececf0);
+  --ops-muted: var(--ops-dim, #85858f);
+  --ops-primary: var(--ops-accent, #5062dc);
+  --ops-bg: var(--ops-canvas, #f9f9fa);
+  color-scheme: var(--ops-scheme, light);
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+  grid-template-rows: 54px minmax(0, 1fr);
+  background: var(--ops-bg);
+  color: var(--ops-fg, #303034);
+  font:
+    14px/1.5 Geist,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  letter-spacing: 0;
+}
+.ops-console * {
+  box-sizing: border-box;
+}
+.ops-console button,
+.ops-console input,
+.ops-console select,
+.ops-console textarea {
+  font: inherit;
+  letter-spacing: inherit;
+}
+.ops-console button {
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 5px 8px;
+  line-height: 1.5;
+  box-shadow: none;
+}
+.ops-console button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ops-console button:hover:not(:disabled) {
+  background: var(--ops-hover, #f1f2f7);
+}
+.ops-console button:focus-visible,
+.ops-console a:focus-visible {
+  outline: 2px solid var(--ops-focus, #6979e5);
+  outline-offset: 2px;
+}
+.ops-console input,
+.ops-console select,
+.ops-console textarea {
+  color: var(--ops-fg, #303034);
+  background: var(--ops-surface, #fff);
+  border: 1px solid var(--ops-input-line, #dedee5);
+  border-radius: 5px;
+  outline: none;
+  padding: 7px 10px;
+  min-width: 0;
+}
+.ops-console input:focus,
+.ops-console select:focus,
+.ops-console textarea:focus {
+  border-color: var(--ops-focus, #7b88e9);
+  box-shadow: 0 0 0 2px var(--ops-focus-ring, #5062dc12);
+}
+.ops-console input[type="checkbox"] {
+  accent-color: var(--ops-primary);
+  width: 14px;
+  height: 14px;
+  box-shadow: none;
+  margin: 0;
+}
+.ops-console h1,
+.ops-console h2,
+.ops-console h3,
+.ops-console p {
+  margin: 0;
+}
+.ops-console h1 {
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.ops-console h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.ops-console h3 {
+  font-size: 14px;
+  font-weight: 550;
+}
+.ops-console small {
+  font-size: 12px;
+  color: var(--ops-muted);
+}
+.ops-console code {
+  font:
+    12px/1.6 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+}
+.ops-console .ops-muted {
+  color: var(--ops-muted);
+}
+.ops-console .ops-top {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--ops-border);
+  background: var(--ops-inset, #fafafa);
+  min-width: 0;
+}
+.ops-brand {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ops-fg, #303034);
+  text-decoration: none;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+.ops-brand span {
+  color: var(--ops-accent, #6577f5);
+}
+.ops-top nav {
+  display: flex;
+  gap: 23px;
+  height: 100%;
+  align-items: center;
+}
+.ops-top nav button {
+  font-size: 15px;
+  font-weight: 560;
+  color: var(--ops-secondary, #666);
+  padding: 10px 0;
+}
+.ops-top nav button.active {
+  color: var(--ops-accent, #6677ef);
+}
+.ops-top-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ops-dim, #7f8089);
+}
+.ops-top-right > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--ops-input-line, #e1e1e7);
+  border-radius: 18px;
+  padding: 5px 12px;
+  background: var(--ops-surface, #fff);
+}
+.ops-sidebar {
+  border-right: 1px solid var(--ops-border);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--ops-inset, #fafafa);
+}
+.ops-context-select {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ops-context-select label {
+  position: relative;
+}
+.ops-context-select select {
+  width: 100%;
+  height: 34px;
+  padding: 4px 12px;
+  border-color: var(--ops-input-line, #dedee3);
+  box-shadow: 0 1px 2px var(--ops-shadow, #00000004);
+}
+.ops-context-select svg {
+  position: absolute;
+  right: 30px;
+  top: 10px;
+  color: var(--ops-good, #37c975);
+  pointer-events: none;
+}
+.ops-app-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ops-dim, #93939a);
+  padding: 18px 7px 4px;
+  font-size: 12px;
+}
+.ops-app-meta > span:first-of-type {
+  border: 1px solid var(--ops-line, #ececf0);
+  border-radius: 5px;
+  padding: 0 7px;
+}
+.ops-meta-dot {
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  background: var(--ops-good, #38c575);
+  border-radius: 50%;
+}
+.ops-nav-group {
+  margin-top: 12px;
+}
+.ops-nav-group > p {
+  font-size: 12px;
+  color: var(--ops-dim, #92929a);
+  padding: 0 7px 7px;
+}
+.ops-nav-group button {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+  gap: 10px;
+  height: 36px;
+  margin-bottom: 3px;
+  padding: 6px 10px;
+  font-size: 14px;
+  color: var(--ops-secondary, #707075);
+  border-radius: 6px;
+}
+.ops-nav-group button.selected {
+  background: var(--ops-selected, #ebebf8);
+  color: var(--ops-accent, #6477fa);
+  font-weight: 600;
+}
+.ops-sidebar-bottom {
+  margin-top: auto;
+  padding: 24px 7px 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--ops-dim, #96969e);
+}
+.ops-sidebar-bottom span,
+.ops-sidebar-bottom button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0;
+}
+.ops-main {
+  padding: 10px;
+  min-width: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ops-panel {
+  background: var(--ops-surface, #fff);
+  border: 1px solid var(--ops-border);
+  border-radius: 12px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  flex: 1;
+}
+.ops-panel-head {
+  min-height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ops-border);
+}
+.ops-panel-head p {
+  font-size: 12px;
+  color: var(--ops-muted);
+  margin-top: 1px;
+}
+.ops-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ops-console .ops-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--ops-input-line, #e2e2e8);
+  background: var(--ops-surface, #fff);
+  color: var(--ops-secondary, #555560);
+  padding: 6px 12px;
+  white-space: nowrap;
+  height: 33px;
+  font-size: 13px;
+  border-radius: 5px;
+}
+.ops-console .ops-btn.primary {
+  background: var(--ops-primary);
+  border-color: var(--ops-primary);
+  color: var(--ops-on-primary, #fff);
+}
+.ops-console .ops-btn.primary:hover:not(:disabled) {
+  background: var(--ops-accent-hover, #4253ca);
+}
+.ops-console .ops-icon {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+  color: var(--ops-secondary, #63636b);
+  flex-shrink: 0;
+}
+.ops-console .ops-link {
+  color: var(--ops-primary);
+  padding: 2px 5px;
+  font-size: 13px;
+  text-align: left;
+  justify-content: flex-start;
+  vertical-align: middle;
+}
+.ops-console .ops-link.neutral {
+  color: var(--ops-fg, #38383f);
+  padding-left: 0;
+}
+.ops-toolbar {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--ops-border);
+  padding: 10px 20px;
+  font-size: 12px;
+}
+.ops-toolbar select {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+.ops-toolbar-spacer {
+  flex: 1;
+}
+.ops-toolbar-sep {
+  height: 14px;
+  border-left: 1px solid var(--ops-line, #e6e6ec);
+}
+.ops-poll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ops-dim, #92929c);
+  white-space: nowrap;
+  font-size: 11px;
+}
+.ops-console .ops-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px;
+  border: 1px solid var(--ops-line, #e9e9ef);
+  border-radius: 5px;
+  color: var(--ops-dim, #a0a0aa);
+  background: var(--ops-surface, #fff);
+}
+.ops-console .ops-search input {
+  width: 145px;
+  padding: 5px 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  font-size: 12px;
+}
+.ops-console .ops-tag,
+.ops-console .ops-badge {
+  display: inline-block;
+  background: var(--ops-code-bg, #f0f9ff);
+  color: var(--ops-tag, #3386b4);
+  border: 1px solid var(--ops-code-line, #cceaff);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  line-height: 19px;
+}
+.ops-console .ops-tag.green {
+  background: var(--ops-good-bg, #f1fff6);
+  color: var(--ops-good, #369a5e);
+  border-color: var(--ops-good-line, #d2f5df);
+}
+.ops-console .ops-tag.amber {
+  background: var(--ops-warning-bg, #fff8eb);
+  color: var(--ops-warning, #a77218);
+  border-color: var(--ops-warning-line, #fae9c5);
+}
+.ops-console .ops-badge {
+  background: var(--ops-code-bg, #f6f6fa);
+  border-color: var(--ops-line, #ededf3);
+  color: var(--ops-dim, #9999a7);
+  margin-left: 4px;
+}
+.ops-table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+.ops-table-wrap.bordered {
+  border: 1px solid var(--ops-border);
+  border-radius: 7px;
+}
+.ops-table-pad {
+  padding: 16px;
+}
+.ops-console .ops-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  color: var(--ops-fg, #38383e);
+  font-size: 13px;
+}
+.ops-table th {
+  font-weight: 550;
+  color: var(--ops-secondary, #55555d);
+  font-size: 12px;
+  background: var(--ops-surface, #fff);
+  white-space: nowrap;
+  text-align: left;
+  height: 40px;
+  padding: 9px 18px;
+  border-bottom: 1px solid var(--ops-border);
+}
+.ops-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--ops-border);
+  vertical-align: middle;
+  max-width: 450px;
+}
+.ops-table tr:last-child td {
+  border-bottom: 0;
+}
+.ops-table tbody tr:hover {
+  background: var(--ops-hover, #fcfcff);
+}
+.ops-table td small {
+  display: block;
+  font-size: 11px;
+  margin-top: 3px;
+}
+.ops-table .ops-right {
+  text-align: right;
+  white-space: nowrap;
+}
+.ops-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.ops-title-cell > svg {
+  color: var(--ops-dim, #8d91a6);
+}
+.ops-title-cell strong {
+  font-weight: 550;
+}
+.ops-image-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 360px;
+}
+.ops-console .ops-digest {
+  color: var(--ops-code, #838ebd);
+  display: block;
+  margin-top: 3px;
+}
+.ops-table.compact td {
+  padding: 13px 10px;
+}
+.ops-table.compact th {
+  padding: 10px;
+}
+.ops-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ops-health {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 54px;
+  font-size: 12px;
+  color: var(--ops-secondary, #505058);
+  vertical-align: middle;
+}
+.ops-health small {
+  color: var(--ops-dim, #9999a2);
+}
+.ops-health progress {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 56px;
+  height: 3px;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ops-line, #efeff3);
+}
+.ops-health progress::-webkit-progress-bar {
+  background: var(--ops-line, #efeff3);
+}
+.ops-health.good progress::-webkit-progress-value {
+  background: var(--ops-good, #29c866);
+}
+.ops-health.warn progress::-webkit-progress-value {
+  background: var(--ops-warning, #e4a136);
+}
+.ops-health progress::-moz-progress-bar {
+  background: var(--ops-good, #29c866);
+}
+.ops-release-row {
+  display: flex !important;
+  width: 100%;
+  border-radius: 0 !important;
+  gap: 28px !important;
+  padding: 14px 20px !important;
+  text-align: left;
+  min-height: 72px;
+  border-bottom: 1px solid var(--ops-border) !important;
+}
+.ops-release-row:nth-child(even) {
+  background: var(--ops-inset, #fafafa);
+}
+.ops-release-row:hover {
+  background: var(--ops-selected, #eeeffb) !important;
+}
+.ops-release-main {
+  flex: 1;
+  min-width: 0;
+}
+.ops-release-main strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.ops-release-main strong > .ops-muted {
+  font-size: 12px;
+  font-family: monospace;
+  margin-right: 6px;
+}
+.ops-release-main small {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 3px;
+}
+.ops-release-main small > span {
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ops-version {
+  color: var(--ops-accent, #5f78e9);
+}
+.ops-status {
+  display: inline-block;
+  white-space: nowrap;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--ops-warning, #a67a2c);
+  background: var(--ops-warning-bg, #fff9ec);
+}
+.ops-status.succeeded {
+  color: var(--ops-good, #20bb58);
+  background: var(--ops-good-bg, #f0fff5);
+}
+.ops-status.failed {
+  color: var(--ops-bad, #ca5656);
+  background: var(--ops-bad-bg, #fff2f2);
+}
+.ops-release-time {
+  font-size: 12px;
+  text-align: right;
+  color: var(--ops-dim, #898994);
+  min-width: 130px;
+}
+.ops-release-time small {
+  display: block;
+  font-size: 11px;
+}
+.ops-release-row .ops-health {
+  min-width: 60px;
+}
+.ops-release-row .ops-health > span {
+  display: none;
+}
+.ops-pod-groups {
+  padding: 8px;
+}
+.ops-pod-group {
+  border: 1px solid var(--ops-border);
+  border-radius: 7px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.ops-pod-group summary {
+  display: grid;
+  grid-template-columns: 16px minmax(180px, 1fr) 1fr 1fr 65px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 12px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+}
+.ops-pod-group summary::-webkit-details-marker {
+  display: none;
+}
+.ops-pod-group summary strong {
+  font-weight: 550;
+  color: var(--ops-fg, #3a3a42);
+}
+.ops-pod-group summary > span {
+  color: var(--ops-dim, #92929d);
+}
+.ops-pod-group:not([open]) summary > svg {
+  transform: rotate(-90deg);
+}
+.ops-pod-group-body {
+  padding: 16px 16px 20px 44px;
+  border-top: 1px solid var(--ops-border);
+  background: var(--ops-surface, #fefefe);
+}
+.ops-tab-active {
+  display: inline-block;
+  background: var(--ops-surface, #fff);
+  box-shadow: 0 1px 5px var(--ops-shadow, #00000016);
+  border-radius: 5px;
+  padding: 3px 13px;
+  margin-bottom: 18px;
+  font-size: 12px;
+}
+.ops-pods-table {
+  min-width: 880px;
+}
+.ops-pods-table td {
+  padding: 14px 9px;
+  font-size: 11px;
+}
+.ops-pods-table th {
+  padding: 10px 9px;
+  font-size: 11px;
+}
+.ops-pods-table td:first-child {
+  width: 38%;
+}
+.ops-pods-table code {
+  font-size: 11px;
+  color: var(--ops-dim, #93939e);
+}
+.ops-console .ops-pods-table .ops-link {
+  font-size: 11px;
+}
+.ops-port-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.ops-running {
+  color: var(--ops-good, #25b95f);
+  font-size: 11px;
+}
+.ops-empty {
+  flex: 1;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--ops-dim, #9797a2);
+  padding: 60px 24px;
+  text-align: center;
+}
+.ops-empty > svg {
+  color: var(--ops-code-line, #c7cad9);
+}
+.ops-empty strong {
+  font-weight: 400;
+  font-size: 14px;
+}
+.ops-empty p {
+  font-size: 12px;
+  color: var(--ops-dim, #a3a3af);
+  max-width: 480px;
+}
+.ops-empty-action {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 100px;
+}
+.ops-inline-empty {
+  padding: 30px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ops-muted);
+}
+.ops-footnote {
+  padding: 12px 20px !important;
+  color: var(--ops-dim, #9b9ba6);
+  font-size: 11px;
+  margin-top: auto !important;
+}
+.ops-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--ops-code-bg, #f4f6ff);
+  border: 1px solid var(--ops-code-line, #e3e7fb);
+  border-radius: 5px;
+  color: var(--ops-code, #6e789b);
+  padding: 10px 12px !important;
+  font-size: 12px;
+}
+.ops-error {
+  margin: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  background: var(--ops-bad-bg, #fff5f4);
+  border: 1px solid var(--ops-bad-line, #f4d9d5);
+  border-radius: 5px;
+  padding: 10px 12px;
+  color: var(--ops-bad, #b6524a);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.ops-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ops-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+  color: var(--ops-muted);
+}
+.ops-observe,
+.ops-metrics {
+  padding: 20px;
+}
+.ops-observe-toolbar,
+.ops-log-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  font-size: 12px;
+}
+.ops-observe-toolbar label,
+.ops-log-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ops-observe-toolbar select {
+  max-width: 550px;
+  font-size: 12px;
+}
+.ops-log-controls select {
+  font-size: 12px;
+  padding: 5px 10px;
+}
+.ops-log-controls .ops-search {
+  margin-left: auto;
+}
+.ops-console .ops-log-output {
+  background: #1c202b;
+  border: 1px solid #262c3b;
+  border-radius: 7px;
+  color: var(--ops-code-line, #cad2e2);
+  padding: 22px;
+  font:
+    12px/2 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  min-height: 380px;
+  max-height: 65vh;
+  overflow: auto;
+  white-space: pre;
+  margin: 0;
+}
+.ops-metric-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--ops-border);
+  border-radius: 7px;
+  margin-bottom: 24px;
+}
+.ops-metric-summary > div {
+  padding: 20px 24px;
+  border-right: 1px solid var(--ops-border);
+}
+.ops-metric-summary > div:last-child {
+  border: 0;
+}
+.ops-metric-summary span {
+  font-size: 12px;
+  color: var(--ops-muted);
+}
+.ops-metric-summary strong {
+  font-size: 28px;
+  font-weight: 500;
+  display: block;
+  margin-top: 8px;
+}
+.ops-metric-summary small {
+  font-size: 12px;
+  font-weight: 400;
+  margin-left: 8px;
+}
+.ops-config {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 0 28px;
+  flex: 1;
+  align-content: start;
+}
+.ops-editor-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ops-inset, #fafafa);
+  border: 1px solid var(--ops-border);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  padding: 10px 14px;
+  font-size: 12px;
+}
+.ops-editor-title .ops-muted {
+  margin-left: auto;
+  font-size: 11px;
+}
+.ops-console .ops-yaml {
+  grid-column: 1;
+  resize: vertical;
+  min-height: 500px;
+  width: 100%;
+  border: 1px solid var(--ops-border);
+  border-radius: 0 0 6px 6px;
+  padding: 18px;
+  font:
+    12px/1.9 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  white-space: pre;
+  overflow: auto;
+  color: var(--ops-code, #56618b);
+}
+.ops-config-help {
+  grid-column: 2;
+  grid-row: 1/3;
+  font-size: 12px;
+  color: var(--ops-dim, #9696a2);
+  padding-top: 10px;
+}
+.ops-config-help strong {
+  color: var(--ops-secondary, #656571);
+  font-size: 13px;
+}
+.ops-config-help p {
+  margin: 12px 0;
+}
+.ops-config-help pre {
+  font:
+    11px/1.8 ui-monospace,
+    monospace;
+  background: var(--ops-inset, #fafafa);
+  border: 1px solid var(--ops-border);
+  padding: 14px;
+  border-radius: 5px;
+  color: var(--ops-code, #767f9e);
+  overflow: auto;
+}
+.ops-sharing {
+  padding: 24px 30px;
+  max-width: 1100px;
+  width: 100%;
+}
+.ops-sharing-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 0 20px;
+}
+.ops-sharing-section > svg {
+  color: var(--ops-dim, #8a90a9);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.ops-sharing-section > div {
+  flex: 1;
+  min-width: 0;
+}
+.ops-sharing-section p {
+  font-size: 12px;
+  color: var(--ops-dim, #858592);
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.ops-directory {
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+  margin: 0 0 28px 38px;
+  padding: 8px 16px;
+}
+.ops-directory > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+.ops-directory svg {
+  color: var(--ops-dim, #9297ad);
+}
+.ops-directory code {
+  width: 175px;
+  flex-shrink: 0;
+}
+.ops-directory span {
+  font-size: 12px;
+  color: var(--ops-dim, #93939d);
+}
+.ops-sharing-actions {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 24px 38px;
+}
+.ops-sharing .ops-notice {
+  margin-bottom: 24px;
+}
+.ops-console .modal {
+  color-scheme: var(--ops-scheme, light);
+  background: var(--ops-surface, #fff);
+  border: 1px solid var(--ops-input-line, #e4e4ed);
+  color: var(--ops-fg, #303034);
+  box-shadow: 0 20px 80px var(--ops-shadow, #18204c33);
+  border-radius: 12px;
+  width: min(620px, calc(100vw - 40px));
+  max-height: 90vh;
+  padding: 0;
+  font:
+    13px/1.6 Geist,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    sans-serif;
+}
+.ops-console .modal.wide {
+  width: min(900px, calc(100vw - 40px));
+}
+.ops-console .modal::backdrop {
+  background: var(--ops-backdrop, #161c3440);
+  backdrop-filter: blur(2px);
+}
+.ops-console .modal-head {
+  background: var(--ops-surface, #fff);
+  border-bottom: 1px solid var(--ops-border);
+  padding: 20px 24px;
+  color: var(--ops-fg, #303034);
+}
+.ops-console .modal-head h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.ops-console .modal-head p {
+  font-size: 12px;
+  color: var(--ops-dim, #9797a4);
+  margin-top: 4px;
+}
+.ops-dialog-body {
+  padding: 24px;
+  max-height: 67vh;
+  overflow: auto;
+}
+.ops-dialog-body p {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.ops-dialog-body .ops-error {
+  margin: 0 0 16px;
+}
+.ops-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ops-form > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ops-secondary, #656570);
+}
+.ops-form > label input,
+.ops-form > label select {
+  height: 36px;
+}
+.ops-dialog-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--ops-border);
+  background: var(--ops-inset, #fcfcfd);
+}
+.ops-release-images {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.ops-release-images label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ops-dim, #9494a0);
+}
+.ops-release-images code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--ops-code, #647097);
+  padding: 12px;
+  border: 1px solid var(--ops-line, #e8eaf2);
+  background: var(--ops-code-bg, #f8f9fc);
+  border-radius: 5px;
+  font-size: 11px;
+}
+.ops-steps {
+  list-style: none;
+  margin: 20px 0;
+  padding: 0;
+}
+.ops-steps li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 0;
+  color: var(--ops-secondary, #68726e);
+  font-size: 12px;
+}
+.ops-steps svg {
+  color: var(--ops-good, #39b36d);
+}
+.ops-console .ops-definition {
+  background: var(--ops-code-bg, #f8f9fc);
+  color: var(--ops-code, #5e698a);
+  border: 1px solid var(--ops-line, #eaecf3);
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+  max-height: 60vh;
+  font:
+    12px/1.8 ui-monospace,
+    SFMono-Regular,
+    monospace;
+  margin: 0;
+}
+@media (min-width: 1800px) {
+  .ops-console {
+    grid-template-columns: 216px minmax(0, 1fr);
+  }
+  .ops-table th,
+  .ops-table td {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .ops-nav-group button {
+    height: 38px;
+  }
+  .ops-release-row {
+    min-height: 76px;
+  }
+}
+@media (max-width: 1100px) {
+  .ops-console {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+  .ops-top {
+    gap: 22px !important;
+  }
+  .ops-top nav {
+    gap: 16px;
+  }
+  .ops-config {
+    grid-template-columns: 1fr;
+  }
+  .ops-config-help {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .ops-release-row {
+    gap: 14px !important;
+  }
+  .ops-release-time {
+    min-width: 100px;
+  }
+  .ops-release-main small > span {
+    max-width: 180px;
+  }
+  .ops-table td {
+    padding: 12px;
+  }
+  .ops-pod-group summary {
+    grid-template-columns: 14px minmax(150px, 1fr) 100px 110px 60px;
+    gap: 8px;
+  }
+  .ops-pod-group-body {
+    padding-left: 22px;
+  }
+  .ops-toolbar {
+    gap: 9px;
+  }
+  .ops-observe-toolbar select {
+    max-width: 440px;
+  }
+}
+@media (max-width: 760px) {
+  .ops-console {
+    grid-template-columns: 160px minmax(0, 1fr);
+  }
+  .ops-top nav button {
+    font-size: 13px;
+  }
+  .ops-top-right > span {
+    display: none;
+  }
+  .ops-top nav {
+    gap: 8px;
+  }
+  .ops-top {
+    gap: 14px !important;
+    padding: 0 12px !important;
+  }
+  .ops-top-right {
+    font-size: 10px;
+  }
+  .ops-brand {
+    font-size: 17px;
+  }
+  .ops-nav-group button {
+    font-size: 12px;
+  }
+  .ops-panel-head {
+    padding: 12px;
+  }
+  .ops-toolbar {
+    padding: 10px 12px;
+  }
+  .ops-panel-head h1 {
+    font-size: 16px;
+  }
+  .ops-release-time {
+    display: none;
+  }
+  .ops-table {
+    min-width: 650px;
+  }
+  .ops-config {
+    padding: 12px;
+  }
+  .ops-sharing {
+    padding: 16px;
+  }
+  .ops-directory {
+    margin-left: 0;
+  }
+  .ops-directory span {
+    display: none;
+  }
+  .ops-sharing-actions {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+  .ops-observe-toolbar select {
+    max-width: 250px;
+  }
+  .ops-metric-summary > div {
+    padding: 12px;
+  }
+  .ops-metric-summary strong {
+    font-size: 22px;
+  }
+}
+
+/* Isolate the application's tables from the legacy database grid. */
+.ops-console .ops-table th,
+.ops-console .ops-table td {
+  border-right: 0;
+  letter-spacing: 0;
+  color: var(--ops-fg, #3b3b42);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.ops-console .ops-table th {
+  font-size: 12px;
+  color: var(--ops-secondary, #55555d);
+}
+.ops-console .ops-table tbody tr:hover td {
+  background: var(--ops-hover, #fbfbfe);
+}
+.ops-console .ops-table td.ops-muted {
+  color: var(--ops-muted);
+}
+.ops-console .ops-table td .ops-health small {
+  display: inline;
+  margin: 0;
+}
+.ops-console .ops-pods-table td,
+.ops-console .ops-pods-table th {
+  font-size: 12px;
+}
+.ops-console .ops-resource-page .ops-panel-head {
+  position: absolute;
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  min-height: 0;
+  white-space: nowrap;
+}
+.ops-console .ops-resource-page .ops-panel-head .ops-actions {
+  display: none;
+}
+.ops-console .ops-resource-page .ops-toolbar {
+  min-height: 54px;
+}
+.ops-console .modal-head h2 {
+  color: var(--ops-fg, #303034);
+}
+
+/* Application pages inherit the original Orca workspace palette. The light
+   screenshot palette remains available through the theme control. */
+.ops-console[data-theme="dark"] {
+  --ops-scheme: dark;
+  --ops-canvas: var(--background);
+  --ops-surface: #111111;
+  --ops-inset: var(--sidebar);
+  --ops-hover: #222222;
+  --ops-selected: var(--sidebar-accent);
+  --ops-line: #ffffff14;
+  --ops-input-line: #ffffff1f;
+  --ops-fg: var(--foreground);
+  --ops-secondary: #d4d4d4;
+  --ops-dim: #a1a1a1;
+  --ops-accent: #e5e5e5;
+  --ops-accent-hover: #ffffff;
+  --ops-on-primary: #171717;
+  --ops-focus: #a1a1a1;
+  --ops-focus-ring: #ffffff14;
+  --ops-good: #86efac;
+  --ops-good-bg: #16251d;
+  --ops-good-line: #294534;
+  --ops-warning: #facc75;
+  --ops-warning-bg: #2a2418;
+  --ops-warning-line: #514025;
+  --ops-bad: #ff8c8e;
+  --ops-bad-bg: #301b1d;
+  --ops-bad-line: #593036;
+  --ops-tag: #b6c8e8;
+  --ops-code: #b1b1bf;
+  --ops-code-bg: #1a1a20;
+  --ops-code-line: #30303a;
+  --ops-shadow: #00000066;
+  --ops-backdrop: #00000080;
+}
+.ops-console[data-theme="dark"] .ops-sidebar {
+  background: var(--sidebar);
+}
+.ops-console[data-theme="dark"] .ops-top {
+  background: var(--background);
+}
+.ops-console[data-theme="dark"] .ops-panel {
+  border-radius: var(--radius);
+}
+
+.ops-run-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+.ops-run-filter .ops-muted {
+  margin-left: auto;
+}
+.ops-run-steps li {
+  align-items: flex-start;
+}
+.ops-run-steps li > svg {
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.ops-run-steps li > div {
+  min-width: 0;
+  flex: 1;
+}
+.ops-run-steps small {
+  display: block;
+}
+.ops-run-steps p {
+  overflow-wrap: anywhere;
+  margin-top: 4px;
+  white-space: pre-wrap;
+}
+.ops-console .ops-status.cancelled {
+  color: var(--ops-muted);
+  background: var(--ops-code-bg, #f6f6fa);
+}
+
+.ops-form > .ops-status {
+  align-self: flex-start;
+}
+.ops-run-steps li.failed > svg {
+  color: var(--ops-bad, #ca5656);
+}
+
+/* Keep configuration content inside the workspace, including long YAML lines. */
+.ops-panel,
+.ops-config,
+.ops-config-help,
+.ops-editor-title,
+.ops-panel-head > div,
+.ops-sharing-section > div {
+  min-width: 0;
+}
+.ops-panel-head {
+  flex-wrap: wrap;
+}
+.ops-panel-head p,
+.ops-sharing-section p {
+  overflow-wrap: anywhere;
+}
+.ops-console .ops-yaml {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ops-application-config {
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.ops-config-card {
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+.ops-config-card h3,
+.ops-config-card > p {
+  padding: 12px 16px;
+  overflow-wrap: anywhere;
+}
+.ops-config-card h3 {
+  background: var(--ops-inset, #fafafa);
+}
+.ops-config-value {
+  padding: 0 16px 12px;
+}
+.ops-config-value h4 {
+  margin: 12px 0 8px;
+  overflow-wrap: anywhere;
+}
+.ops-config-card pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 12px/1.8 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ops-config-table {
+  table-layout: fixed;
+  min-width: 0;
+  width: 100%;
+}
+.ops-config-table td,
+.ops-config-table th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .ops-config { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* The main pane owns vertical scrolling; panels must grow with their content. */
+.ops-main { min-height: 0; }
+.ops-main > .ops-panel { flex: 1 0 auto; overflow: visible; }
+.ops-panel-head { flex-shrink: 0; }
+.ops-application-config { flex-shrink: 0; }
+.ops-sidebar { min-height: 0; }
+.ops-sidebar > * { flex-shrink: 0; }
+
+.ops-config-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-right: 12px;
+  background: var(--ops-inset, #fafafa);
+}
+.ops-config-card-head h3 { margin: 0; min-width: 0; }
+.ops-config-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px; }
+.ops-config-value h4 { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ops-config-value h4 .ops-muted { font-size: 11px; font-weight: 400; }
+.ops-config-editor {
+  --config-keyword: #7c3aed;
+  --config-string: #167040;
+  --config-number: #a64b08;
+  --config-property: #2363ac;
+  border: 1px solid var(--ops-border);
+  border-radius: 5px;
+  overflow: hidden;
+  min-width: 0;
+}
+.ops-console[data-theme="dark"] .ops-config-editor {
+  --config-keyword: #c4b5fd;
+  --config-string: #86efac;
+  --config-number: #fdba74;
+  --config-property: #93c5fd;
+}
+.ops-config-editor .cm-editor { background: var(--ops-inset, #fafafa); color: var(--ops-fg, #303034); font-size: 12px; }
+.ops-config-editor .cm-scroller { min-height: 76px; max-height: 360px; overflow: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.8; }
+.ops-config-editor .cm-content { padding: 8px 0; overflow-wrap: anywhere; }
+.ops-config-editor .cm-gutters { background: var(--ops-inset, #fafafa); color: var(--ops-muted); border-color: var(--ops-border); }
+.ops-config-editor .cm-activeLine, .ops-config-editor .cm-activeLineGutter { background: color-mix(in srgb, var(--ops-primary) 8%, transparent); }
+.ops-config-editor .cm-cursor { border-left-color: var(--ops-fg, #303034); }
+.ops-config-editor .cm-selectionBackground, .ops-config-editor .cm-focused .cm-selectionBackground { background: color-mix(in srgb, var(--ops-primary) 24%, transparent) !important; }
+.ops-config-editor .cm-focused { outline: 1px solid var(--ops-primary); }
+.ops-config-editor .cm-panels { background: var(--ops-inset, #fafafa); color: var(--ops-fg, #303034); }

@@ -12,7 +12,6 @@ export default defineConfig({
             "@codemirror/lang-sql",
             "@codemirror/lang-json",
           ],
-          "sql-demo": ["sql.js"],
         },
       },
     },

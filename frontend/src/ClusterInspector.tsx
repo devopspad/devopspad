@@ -2,11 +2,6 @@ import { useEffect, useState } from "react";
 import { Copy, LoaderCircle, RefreshCw, Terminal } from "lucide-react";
 import { Modal } from "./Modal";
 import { api, display, errorText } from "./api";
-import {
-  demoClusterDetails,
-  demoClusterEvents,
-  demoPodLogs,
-} from "./cluster-demo";
 import type {
   ClusterDetails,
   ClusterRef,
@@ -14,7 +9,6 @@ import type {
   PodLogs,
   QueryResult,
 } from "./types";
-
 export function ClusterInspector({
   connection,
   resource,
@@ -24,7 +18,6 @@ export function ClusterInspector({
   resource: ClusterRef;
   onClose: () => void;
 }) {
-  const demo = connection.id.startsWith("demo-");
   const [tab, setTab] = useState("overview");
   const [details, setDetails] = useState<ClusterDetails>();
   const [detailError, setDetailError] = useState("");
@@ -44,10 +37,8 @@ export function ClusterInspector({
     setDetailError("");
     setEvents(undefined);
     setLogs(undefined);
-    (demo
-      ? demoClusterDetails(resource)
-      : api.InspectClusterResource(connection.id, resource)
-    )
+    api
+      .InspectClusterResource(connection.id, resource)
       .then((d) => {
         if (stale) return;
         setDetails(d);
@@ -63,13 +54,14 @@ export function ClusterInspector({
     return () => {
       stale = true;
     };
-  }, [connection.id, resource, demo, version]);
+  }, [connection.id, resource, version]);
   useEffect(() => {
     if (tab !== "events" || !details) return;
     let stale = false;
     setEvents(undefined);
     setEventError("");
-    (demo ? demoClusterEvents() : api.ClusterEvents(connection.id, details.ref))
+    api
+      .ClusterEvents(connection.id, details.ref)
       .then((r) => {
         if (!stale) setEvents(r);
       })
@@ -79,14 +71,15 @@ export function ClusterInspector({
     return () => {
       stale = true;
     };
-  }, [tab, details, connection.id, demo, sectionVersion]);
+  }, [tab, details, connection.id, sectionVersion]);
   useEffect(() => {
     if (tab !== "logs" || !details || !container) return;
     let stale = false;
     setLogs(undefined);
     setLogError("");
     const request = { ref: details.ref, container, tailLines, previous };
-    (demo ? demoPodLogs(request) : api.ReadPodLogs(connection.id, request))
+    api
+      .ReadPodLogs(connection.id, request)
       .then((r) => {
         if (!stale) setLogs(r);
       })
@@ -103,7 +96,6 @@ export function ClusterInspector({
     tailLines,
     previous,
     connection.id,
-    demo,
     sectionVersion,
   ]);
   async function copy(text: string) {
@@ -123,7 +115,7 @@ export function ClusterInspector({
   return (
     <Modal
       title={resource.name}
-      subtitle={`${resource.resource} · ${resource.context || "Current context"} / ${resource.namespace || "Cluster-wide"}${demo ? " · Sample data" : ""}`}
+      subtitle={`${resource.resource} · ${resource.context || "Current context"} / ${resource.namespace || "Cluster-wide"}`}
       wide
       onClose={onClose}
     >
@@ -323,9 +315,7 @@ export function ClusterInspector({
                   </label>
                 </div>
                 <p className="field-help">
-                  {demo
-                    ? "Sample logs · no cluster request sent"
-                    : "Log snapshot · timestamps included · up to 256 KiB"}
+                  {"Log snapshot · timestamps included · up to 256 KiB"}
                 </p>
                 {!container ? (
                   <div className="detail-empty">No containers available.</div>
@@ -369,8 +359,7 @@ export function ClusterInspector({
       </div>
       <div className="modal-footer">
         <span className="field-help">
-          Read-only ·{" "}
-          {demo ? "Sample resource" : "Permissions enforced by your cluster"}
+          Read-only · {"Permissions enforced by your cluster"}
         </span>
         <button
           className="button"

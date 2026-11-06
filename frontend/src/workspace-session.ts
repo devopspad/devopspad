@@ -4,15 +4,9 @@ import type { Tab } from "./types";
 const storageKey = "infradex-workspace-v1";
 const maxSize = 2 * 1024 * 1024;
 type Snapshot = { tabs: Tab[]; activeId: string; selected: string };
-type Session = {
-  version: 1;
-  demo: boolean;
-  enabled: boolean;
-  workspaces: { demo: Snapshot; personal: Snapshot };
-};
-const workspaceKey = (demo: boolean) => (demo ? "demo" : "personal");
+type Session = { version: 2; enabled: boolean; workspace: Snapshot };
 
-// Allowlist draft fields: never serialize results, errors, or connection objects.
+// Only query drafts and scopes are saved, never results or connection credentials.
 function draft(tab: Tab): Tab {
   return {
     id: tab.id,
@@ -23,7 +17,7 @@ function draft(tab: Tab): Tab {
     context: tab.context,
   };
 }
-function snapshot(value: unknown, demo: boolean): Snapshot {
+function snapshot(value: unknown): Snapshot {
   if (!value || typeof value !== "object") throw new Error("Invalid workspace");
   const s = value as Snapshot;
   if (
@@ -41,7 +35,6 @@ function snapshot(value: unknown, demo: boolean): Snapshot {
       !t.id ||
       ids.has(t.id) ||
       typeof t.connectionId !== "string" ||
-      t.connectionId.startsWith("demo-") !== demo ||
       typeof t.title !== "string" ||
       typeof t.query !== "string" ||
       (t.database !== undefined && typeof t.database !== "string") ||
@@ -57,40 +50,25 @@ function snapshot(value: unknown, demo: boolean): Snapshot {
     selected: s.selected,
   };
 }
-export function loadSession(firstTab: Tab): {
-  session: Session;
-  error: string;
-} {
+export function loadSession(): { session: Session; error: string } {
   const fallback: Session = {
-    version: 1,
-    demo: true,
+    version: 2,
     enabled: false,
-    workspaces: {
-      demo: {
-        tabs: [firstTab],
-        activeId: firstTab.id,
-        selected: firstTab.connectionId,
-      },
-      personal: { tabs: [], activeId: "", selected: "" },
-    },
+    workspace: { tabs: [], activeId: "", selected: "" },
   };
   try {
     const raw = localStorage.getItem(storageKey);
     if (!raw) return { session: fallback, error: "" };
     if (raw.length > maxSize) throw new Error("Workspace too large");
     const s = JSON.parse(raw);
-    if (s.version !== 1 || s.enabled !== true || typeof s.demo !== "boolean")
+    if (![1, 2].includes(s.version) || s.enabled !== true)
       throw new Error("Unsupported workspace");
+    // Migrate only real connection drafts from the old two-workspace format.
+    const restored = snapshot(
+      s.version === 1 ? s.workspaces?.personal : s.workspace,
+    );
     return {
-      session: {
-        version: 1,
-        demo: s.demo,
-        enabled: true,
-        workspaces: {
-          demo: snapshot(s.workspaces.demo, true),
-          personal: snapshot(s.workspaces.personal, false),
-        },
-      },
+      session: { version: 2, enabled: true, workspace: restored },
       error: "",
     };
   } catch {
@@ -101,42 +79,25 @@ export function loadSession(firstTab: Tab): {
     };
   }
 }
-
 export function useWorkspaceSession(
   initial: ReturnType<typeof loadSession>,
-  current: Snapshot & { demo: boolean },
+  current: Snapshot,
 ) {
   const [enabled, setEnabled] = useState(initial.session.enabled);
   const [error, setError] = useState(initial.error);
-  const sessions = useRef(initial.session.workspaces);
   const currentRef = useRef(current);
   currentRef.current = current;
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
-  // Preserve in-memory results when switching; only draft fields reach storage.
-  sessions.current[workspaceKey(current.demo)] = current;
   const save = () => {
     if (!enabledRef.current) return;
-    const now = currentRef.current;
-    sessions.current[workspaceKey(now.demo)] = now;
     try {
-      const workspaces = Object.fromEntries(
-        Object.entries(sessions.current).map(([key, s]) => [
-          key,
-          {
-            tabs: s.tabs.map(draft),
-            activeId: s.activeId,
-            selected: s.selected,
-          },
-        ]),
-      );
-      if (Object.values(sessions.current).some((s) => s.tabs.length > 100))
-        throw new Error("Too many drafts");
+      const now = currentRef.current;
+      if (now.tabs.length > 100) throw new Error("Too many drafts");
       const raw = JSON.stringify({
-        version: 1,
+        version: 2,
         enabled: true,
-        demo: now.demo,
-        workspaces,
+        workspace: { ...now, tabs: now.tabs.map(draft) },
       });
       if (raw.length > maxSize) throw new Error("Drafts too large");
       localStorage.setItem(storageKey, raw);
@@ -152,7 +113,7 @@ export function useWorkspaceSession(
   useEffect(() => {
     const timer = setTimeout(() => saveRef.current(), 300);
     return () => clearTimeout(timer);
-  }, [enabled, current.demo, current.tabs, current.activeId, current.selected]);
+  }, [enabled, current.tabs, current.activeId, current.selected]);
   useEffect(() => {
     const flush = () => saveRef.current();
     const visibility = () => {
@@ -183,12 +144,12 @@ export function useWorkspaceSession(
     setError("");
     if (next) save();
   }
-  function workspace(demo: boolean, validConnections: string[]) {
-    const s = sessions.current[workspaceKey(demo)];
+  function workspace(validConnections: string[]) {
+    const s = currentRef.current;
     const tabs = s.tabs.filter((t) =>
       validConnections.includes(t.connectionId),
     );
-    const restored = {
+    return {
       tabs,
       activeId: tabs.some((t) => t.id === s.activeId)
         ? s.activeId
@@ -197,8 +158,6 @@ export function useWorkspaceSession(
         ? s.selected
         : tabs[0]?.connectionId || validConnections[0] || "",
     };
-    sessions.current[workspaceKey(demo)] = restored;
-    return restored;
   }
   return { enabled, error, changeEnabled, workspace, retry: save };
 }

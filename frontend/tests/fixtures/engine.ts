@@ -1,18 +1,47 @@
+// Test-only API responses; never imported by the application.
 import type {
   Connection,
   Kind,
   QueryResult,
   Resource,
   ResourceDetails,
-} from "./types";
-import { engines } from "./types";
-import initSqlJs from "sql.js";
-import wasmURL from "sql.js/dist/sql-wasm.wasm?url";
+} from "../../src/types";
+import { engines } from "../../src/types";
+import { DatabaseSync } from "node:sqlite";
+class FixtureDatabase {
+  db = new DatabaseSync(":memory:");
+  run(sql: string, args?: unknown[]) {
+    if (args) this.db.prepare(sql).run(...(args as any[]));
+    else this.db.exec(sql);
+  }
+  prepare(sql: string) {
+    const statement = this.db.prepare(sql);
+    statement.setReturnArrays(true);
+    const rows = statement.all();
+    let index = -1;
+    return {
+      getColumnNames: () => statement.columns().map((c) => c.name),
+      step: () => ++index < rows.length,
+      get: () => rows[index],
+      free: () => {},
+    };
+  }
+  exec(sql: string) {
+    const s = this.db.prepare(sql);
+    s.setReturnArrays(true);
+    return [
+      {
+        columns: s.columns().map((c) => c.name),
+        values: s.all() as unknown[][],
+      },
+    ];
+  }
+}
 
-export const demoConnections: Connection[] = (
+export const fixtureConnections: Connection[] = (
   Object.keys(engines) as Kind[]
 ).map((kind, i) => ({
-  id: `demo-${kind}`,
+  id: `fixture-${kind}`,
   kind,
   name: [
     "Commerce database",
@@ -24,13 +53,13 @@ export const demoConnections: Connection[] = (
     "Edge cluster",
   ][i],
   host: [
-    "mysql.demo.local",
-    "redis.demo.local",
-    "mongo.demo.local",
-    "kafka.demo.local",
-    "analytics.demo.local",
-    "us-east.demo.local",
-    "edge.demo.local",
+    "mysql.fixture.local",
+    "redis.fixture.local",
+    "mongo.fixture.local",
+    "kafka.fixture.local",
+    "analytics.fixture.local",
+    "us-east.fixture.local",
+    "edge.fixture.local",
   ][i],
   port: engines[kind].port,
   database:
@@ -62,7 +91,7 @@ const people = [
   ["Alex Morgan", "alex@linear.app", 189, "Pending"],
   ["Sam Rivera", "sam@notion.so", 649, "Completed"],
 ];
-const sqlEngine = initSqlJs({ locateFile: () => wasmURL });
+const sqlEngine = Promise.resolve({ Database: FixtureDatabase });
 const database = sqlEngine.then((SQL) => {
   const db = new SQL.Database();
   db.run(
@@ -90,11 +119,11 @@ const sandboxDatabase = sqlEngine.then((SQL) => {
   );
   return db;
 });
-export function demoDatabases(kind: Kind): string[] {
+export function fixtureDatabases(kind: Kind): string[] {
   if (kind === "k8s" || kind === "k3s") return ["*", "default", "kube-system"];
   return kind === "mongo" ? ["commerce"] : ["commerce", "sandbox"];
 }
-export function demoResources(kind: Kind, scope = "commerce"): Resource[] {
+export function fixtureResources(kind: Kind, scope = "commerce"): Resource[] {
   if ((kind === "mysql" || kind === "clickhouse") && scope === "sandbox")
     return [
       {
@@ -134,7 +163,7 @@ export function demoResources(kind: Kind, scope = "commerce"): Resource[] {
     (name) => ({ name, kind: "resource", query: `get ${name}` }),
   );
 }
-export async function demoExecute(
+export async function fixtureExecute(
   kind: Kind,
   query: string,
   scope = "commerce",
@@ -146,7 +175,7 @@ export async function demoExecute(
     const db = await (scope === "sandbox" ? sandboxDatabase : database);
     if (/^\s*show\s+tables\s*;?\s*$/i.test(query)) {
       columns = ["table"];
-      rows = demoResources(kind, scope).map((r) => [r.name]);
+      rows = fixtureResources(kind, scope).map((r) => [r.name]);
     } else {
       if (!/^\s*(select|with|explain)\b/i.test(query))
         throw new Error(
@@ -266,7 +295,7 @@ export async function demoExecute(
     const name = query.trim().split(/\s+/)[1];
     if (
       !query.startsWith("get ") ||
-      !demoResources(kind).some((r) => r.name === name)
+      !fixtureResources(kind).some((r) => r.name === name)
     )
       throw new Error(
         "Try: get pods, get deployments, get services, get nodes, or get namespaces",
@@ -313,7 +342,7 @@ export async function demoExecute(
   };
 }
 
-export async function demoInspect(
+export async function fixtureInspect(
   kind: Kind,
   scope: string,
   name: string,
@@ -336,7 +365,7 @@ export async function demoInspect(
     definition: "",
   };
   if (kind === "redis") {
-    const result = await demoExecute(kind, `GET ${name}`);
+    const result = await fixtureExecute(kind, `GET ${name}`);
     details.properties.push(
       { name: "Type", value: "string" },
       { name: "TTL", value: "No expiration (sample)" },

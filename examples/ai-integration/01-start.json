@@ -1,0 +1,23 @@
+{
+  "apiVersion": "infradex.run-event/v1",
+  "id": "65f6db59-1a63-4be2-91be-000000000001",
+  "runId": "d2123752-39ab-4ae6-9e87-8856419db18b",
+  "type": "start",
+  "start": {
+    "kind": "build",
+    "application": "svc-api",
+    "version": "1.0.0",
+    "actor": {
+      "kind": "ai",
+      "name": "Codex",
+      "sessionId": "replace-with-real-session-id"
+    },
+    "source": {
+      "repository": "https://example.com/team/svc-api.git",
+      "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "branch": "main",
+      "dirty": false
+    },
+    "recipe": "docker buildx build and push"
+  }
+}
