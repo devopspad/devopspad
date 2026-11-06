@@ -1,0 +1,180 @@
+# Builds a signed and notarized macOS package (Apple Silicon).
+#   - Run manually (Actions → Release → Run workflow): the DMG is attached to the run as an artifact.
+#     Without the Apple secrets a manual run still builds, ad-hoc signed and not notarized (testing only).
+#   - Push a tag vX.Y.Z matching info.productVersion in wails.json: signing and notarization are
+#     required, and the DMG and devopspadctl are attached to a draft GitHub Release, published by hand.
+#
+# Secrets of the `release` environment:
+#   MACOS_CSC_P12_BASE64     base64 of the "Developer ID Application" certificate exported as .p12
+#   MACOS_CSC_KEY_PASSWORD   password of that .p12
+#   APPLE_API_ISSUER         App Store Connect API: Issuer ID
+#   APPLE_API_KEY_ID         App Store Connect API: Key ID
+#   APPLE_API_KEY_P8         App Store Connect API: contents of AuthKey_<Key ID>.p8
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: macOS arm64
+    runs-on: macos-15
+    environment: release
+    timeout-minutes: 60
+    env:
+      APP: build/bin/devopspad.app
+      SIGNED: ${{ secrets.MACOS_CSC_P12_BASE64 != '' }}
+      NOTARIZE: ${{ secrets.MACOS_CSC_P12_BASE64 != '' && secrets.APPLE_API_KEY_P8 != '' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check tag and secrets
+        id: version
+        run: |
+          version=$(jq -r .info.productVersion wails.json)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then
+            [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "::error::Tag $GITHUB_REF_NAME does not match wails.json productVersion $version"; exit 1; }
+            [ "$NOTARIZE" = true ] || { echo "::error::Release tags require the signing and notarization secrets"; exit 1; }
+          fi
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Import signing certificate
+        if: env.SIGNED == 'true'
+        env:
+          MACOS_CSC_P12_BASE64: ${{ secrets.MACOS_CSC_P12_BASE64 }}
+          MACOS_CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password=$(openssl rand -hex 24)
+          echo "$MACOS_CSC_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$MACOS_CSC_KEY_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+          identity=$(security find-identity -v -p codesigning "$keychain" | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)
+          [ -n "$identity" ] || { echo "::error::No Developer ID Application identity in MACOS_CSC_P12_BASE64"; exit 1; }
+          echo "Signing as $identity"
+          echo "MACOS_SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+
+      - name: Notarization key
+        if: env.NOTARIZE == 'true'
+        env:
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: |
+          printf '%s\n' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+          echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+
+      - name: Build app and CLI
+        run: |
+          go run github.com/wailsapp/wails/v2/cmd/wails@v2.12.0 build -clean -platform darwin/arm64
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o build/cli/devopspadctl ./cmd/devopspadctl
+
+      - name: Sign app and CLI
+        if: env.SIGNED == 'true'
+        run: |
+          codesign --force --options runtime --timestamp --sign "$MACOS_SIGNING_IDENTITY" build/cli/devopspadctl
+          codesign --force --options runtime --timestamp --sign "$MACOS_SIGNING_IDENTITY" "$APP"
+
+      - name: Notarize app and CLI
+        if: env.NOTARIZE == 'true'
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
+        run: |
+          notarize() { xcrun notarytool submit "$1" --key "$APPLE_API_KEY_PATH" --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" --wait; }
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/app.zip"
+          notarize "$RUNNER_TEMP/app.zip"
+          xcrun stapler staple "$APP"
+          # A bare Mach-O cannot be stapled; Gatekeeper finds its ticket online.
+          ditto -c -k --keepParent build/cli/devopspadctl "$RUNNER_TEMP/cli.zip"
+          notarize "$RUNNER_TEMP/cli.zip"
+
+      - name: Package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p dist "$RUNNER_TEMP/dmg"
+          cp -R "$APP" "$RUNNER_TEMP/dmg/DevOpsPad.app"
+          ln -s /Applications "$RUNNER_TEMP/dmg/Applications"
+          hdiutil create -volname DevOpsPad -srcfolder "$RUNNER_TEMP/dmg" -ov -format UDZO "dist/DevOpsPad-$VERSION-macos-arm64.dmg"
+          name="devopspadctl-$VERSION-darwin-arm64"
+          mkdir "$RUNNER_TEMP/$name" && cp build/cli/devopspadctl "$RUNNER_TEMP/$name/"
+          tar -C "$RUNNER_TEMP" -czf "dist/$name.tar.gz" "$name"
+
+      - name: Sign and notarize DMG
+        if: env.NOTARIZE == 'true'
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
+        run: |
+          for dmg in dist/*.dmg; do
+            codesign --force --timestamp --sign "$MACOS_SIGNING_IDENTITY" "$dmg"
+            xcrun notarytool submit "$dmg" --key "$APPLE_API_KEY_PATH" --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER" --wait
+            xcrun stapler staple "$dmg"
+          done
+
+      - name: Verify
+        run: |
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign --verify --strict --verbose=2 build/cli/devopspadctl
+          if [ "$NOTARIZE" = true ]; then
+            spctl --assess --type execute --verbose=2 "$APP"
+            xcrun stapler validate "$APP"
+            for dmg in dist/*.dmg; do
+              spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
+              xcrun stapler validate "$dmg"
+            done
+          fi
+          (cd dist && shasum -a 256 * > SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DevOpsPad-macos-arm64
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
+
+  release:
+    name: Draft release
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: DevOpsPad-macos-arm64
+          path: dist
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --draft --generate-notes --title "DevOpsPad ${GITHUB_REF_NAME#v}"
