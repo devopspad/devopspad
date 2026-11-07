@@ -325,7 +325,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
       </nav>
       <header className="ops-top">
         <a className="ops-brand" href="#infra">
-          Infra<span>dex</span>
+          DevOps<span>Pad</span>
         </a>
         <nav aria-label="工作区">
           <button
