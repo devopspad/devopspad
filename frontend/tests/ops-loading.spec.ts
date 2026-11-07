@@ -67,7 +67,7 @@ test("Deployment loads only workloads, shares pending reads, caches navigation a
               });
             if (w.__failNext) {
               w.__failNext = false;
-              throw new Error("集群连接中断");
+              throw new Error("Cluster connection lost");
             }
             return result(selector);
           },
@@ -89,35 +89,35 @@ test("Deployment loads only workloads, shares pending reads, caches navigation a
   const counts = () => page.evaluate(() => (window as any).__reads);
   await page.goto("/#apps");
   await navigate("Deployment");
-  await expect(page.getByRole("status")).toContainText("正在读取集群负载");
-  await navigate("制品库");
+  await expect(page.getByRole("status")).toContainText("Loading cluster workloads");
+  await navigate("Artifacts");
   await navigate("Deployment");
   expect(await counts()).toEqual({ workloads: 1, full: 0 });
   await page.evaluate(() => (window as any).__finishRead());
   await expect(row("svc-user")).toBeVisible();
-  await navigate("制品库");
+  await navigate("Artifacts");
   await navigate("Deployment");
   await expect(row("svc-user")).toBeVisible();
   expect(await counts()).toEqual({ workloads: 1, full: 0 });
 
-  await navigate("刷新");
+  await navigate("Refresh");
   await expect(
-    page.getByRole("button", { name: "刷新", exact: true }),
+    page.getByRole("button", { name: "Refresh", exact: true }),
   ).toBeEnabled();
   expect(await counts()).toEqual({ workloads: 2, full: 0 });
-  await navigate("Pod 实例");
+  await navigate("Pods");
   await expect.poll(counts).toEqual({ workloads: 2, full: 1 });
   await navigate("Deployment");
   await expect(row("svc-user")).toBeVisible();
   expect(await counts()).toEqual({ workloads: 2, full: 1 });
 
-  await navigate("制品库");
+  await navigate("Artifacts");
   await page.evaluate(() => {
     (window as any).__advance += 16000;
   });
   await navigate("Deployment");
   await expect.poll(counts).toEqual({ workloads: 3, full: 1 });
-  await page.getByLabel("应用", { exact: true }).selectOption("svc-other");
+  await page.getByLabel("Application", { exact: true }).selectOption("svc-other");
   await expect(row("svc-other")).toBeVisible();
   await expect(row("svc-user")).toHaveCount(0);
   expect(await counts()).toEqual({ workloads: 4, full: 1 });
@@ -125,10 +125,10 @@ test("Deployment loads only workloads, shares pending reads, caches navigation a
   await page.evaluate(() => {
     (window as any).__failNext = true;
   });
-  await navigate("刷新");
-  await expect(page.getByRole("alert")).toContainText("集群连接中断");
+  await navigate("Refresh");
+  await expect(page.getByRole("alert")).toContainText("Cluster connection lost");
   await expect(row("svc-other")).toHaveCount(0);
-  await navigate("制品库");
+  await navigate("Artifacts");
   await navigate("Deployment");
   await expect(row("svc-other")).toBeVisible();
   expect(await counts()).toEqual({ workloads: 6, full: 1 });

@@ -118,7 +118,7 @@ export default function App({
     (c) =>
       mode !== "infra" ||
       !infraEnvironment ||
-      (c.environment || "未分组") === infraEnvironment,
+      (c.environment || "Ungrouped") === infraEnvironment,
   );
   const selectedID = mode === "infra" ? infraSelected : middlewareSelected;
   const selected =
@@ -666,7 +666,7 @@ export default function App({
       </nav>
       <aside className="sidebar">
         <div className="explorer-heading">
-          <span>{mode === "infra" ? "Infra · 集群与节点" : "中间件"}</span>
+          <span>{mode === "infra" ? "Infra · Clusters and nodes" : "Data"}</span>
           <button
             className="icon-button"
             aria-label="Search workspace"
@@ -682,8 +682,8 @@ export default function App({
         <div className="workspace-switch">
           <Database className="workspace-symbol" size={18} />
           <span>
-            <strong>本地工作区</strong>
-            <small>你的连接与查询</small>
+            <strong>Local workspace</strong>
+            <small>Your connections and queries</small>
           </span>
         </div>
         <div className="section-label">
@@ -709,19 +709,19 @@ export default function App({
         </div>
         {mode === "infra" && (
           <label className="infra-environment-filter">
-            环境
+            Environment
             <select
-              aria-label="Infra 环境"
+              aria-label="Infra environment"
               value={infraEnvironment}
               onChange={(e) => {
                 setInfraEnvironment(e.target.value);
                 setInfraActiveId("");
               }}
             >
-              <option value="">全部环境</option>
+              <option value="">All environments</option>
               {[
                 ...new Set([
-                  ...groupConnections.map((c) => c.environment || "未分组"),
+                  ...groupConnections.map((c) => c.environment || "Ungrouped"),
                   ...(infraEnvironment ? [infraEnvironment] : []),
                 ]),
               ]
@@ -744,7 +744,7 @@ export default function App({
         <div className="connection-tree">
           {mode === "infra" && !visibleConnections.length && (
             <p className="tree-message">
-              当前环境没有集群连接，可切换环境或新建 K3s / Kubernetes 连接。
+              No cluster connections in this environment. Switch environments or add a K3s / Kubernetes connection.
             </p>
           )}
           {visibleConnections.map((c) => (
@@ -1487,11 +1487,11 @@ export default function App({
                     <span className="eyebrow">
                       YOUR INFRASTRUCTURE, CONNECTED
                     </span>
-                    <h1>还没有打开的连接</h1>
+                    <h1>No open connections yet</h1>
                     <p>
                       {desktop
-                        ? "添加连接后即可查询你的中间件或集群。"
-                        : "请打开 DevOpsPad 桌面应用来连接你的中间件和集群。"}
+                        ? "Add a connection to query your databases or clusters."
+                        : "Open the DevOpsPad desktop app to connect to your databases and clusters."}
                     </p>
                     <button
                       className="button primary"

@@ -177,7 +177,7 @@ export function ConnectionDialog({
                 list="connection-environments"
                 value={c.environment}
                 onChange={(e) => patch({ environment: e.target.value })}
-                placeholder="例如 Production、heartie-pro"
+                placeholder="e.g. Production, heartie-pro"
               />
               <datalist id="connection-environments">
                 {["Development", "Staging", "Production"].map((name) => (

@@ -9,11 +9,11 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
-  Layers3,
   FileCode2,
   FolderOpen,
   X,
 } from "lucide-react";
+import { BrandMark } from "./BrandMark";
 import { api, errorText } from "./api";
 import { engines, type Kind } from "./types";
 type Message = {
@@ -100,7 +100,7 @@ export function Assistant({
             </button>
             <div className="assistant-identity">
               <span>
-                <Layers3 size={17} />
+                <BrandMark size={17} />
               </span>
               <strong>DevOpsPad</strong>
             </div>

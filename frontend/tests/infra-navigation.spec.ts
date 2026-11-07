@@ -176,14 +176,14 @@ test("Infra groups environments and shows every K3s node with scoped inspection"
   await expect(
     page.getByRole("button", { name: "pro-a-node-3", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("3 台机器", { exact: true })).toBeVisible();
+  await expect(page.getByText("3 nodes", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("cell", { name: "control-plane", exact: true }),
   ).toBeVisible();
   await expect(page.getByText("16 GiB").first()).toBeVisible();
   await expect(page.getByText("NotReady", { exact: true })).toBeVisible();
   await expect(page.locator(".tree-connection")).toHaveCount(3);
-  await page.getByLabel("Infra 环境").selectOption("Production");
+  await page.getByLabel("Infra environment").selectOption("Production");
   await expect(page.locator(".tree-connection")).toHaveCount(2);
   await page.getByRole("button", { name: "K3s backup", exact: false }).click();
   await expect(
@@ -204,16 +204,16 @@ test("Infra groups environments and shows every K3s node with scoped inspection"
     uid: "pro-b-0",
   });
   await page.getByRole("button", { name: "Done", exact: true }).click();
-  await page.getByLabel("搜索节点").fill("10.0.0.2");
+  await page.getByLabel("Search nodes").fill("10.0.0.2");
   await expect(page.locator(".infra-node-table tbody tr")).toHaveCount(1);
-  await page.getByLabel("搜索节点").fill("");
-  await page.getByRole("tab", { name: "工作负载", exact: true }).click();
+  await page.getByLabel("Search nodes").fill("");
+  await page.getByRole("tab", { name: "Workloads", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "api", exact: true }),
   ).toBeVisible();
-  await page.getByRole("tab", { name: "节点 / 机器", exact: true }).click();
+  await page.getByRole("tab", { name: "Nodes", exact: true }).click();
   await page.reload();
-  await expect(page.getByLabel("Infra 环境")).toHaveValue("Production");
+  await expect(page.getByLabel("Infra environment")).toHaveValue("Production");
   await expect(
     page.getByRole("button", { name: "pro-b-node-1", exact: true }),
   ).toBeVisible();
@@ -228,7 +228,7 @@ test("node reads isolate pending requests, show permission failures, and support
 }) => {
   await install(page);
   await page.goto("/#infra/resources");
-  await expect(page.getByText("3 台机器", { exact: true })).toBeVisible();
+  await expect(page.getByText("3 nodes", { exact: true })).toBeVisible();
   await page.evaluate(() => {
     (window as any).__hold = "pro-b";
   });
@@ -236,7 +236,7 @@ test("node reads isolate pending requests, show permission failures, and support
   await expect
     .poll(() => page.evaluate(() => typeof (window as any).__release))
     .toBe("function");
-  await page.getByLabel("Infra 环境").selectOption("Development");
+  await page.getByLabel("Infra environment").selectOption("Development");
   await expect(
     page.getByRole("button", { name: "dev-node-1", exact: true }),
   ).toBeVisible();
@@ -247,7 +247,7 @@ test("node reads isolate pending requests, show permission failures, and support
   await page.evaluate(() => {
     (window as any).__deny = true;
   });
-  await page.getByRole("button", { name: "刷新节点", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh nodes", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Access denied: list nodes",
   );
@@ -258,8 +258,8 @@ test("node reads isolate pending requests, show permission failures, and support
     (window as any).__deny = false;
     (window as any).__truncated = true;
   });
-  await page.getByRole("button", { name: "刷新节点", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("不是集群的全部节点");
+  await page.getByRole("button", { name: "Refresh nodes", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("not every node in the cluster");
 });
 
 test("Infra is the application console and the rail only has two workspaces", async ({
@@ -272,23 +272,23 @@ test("Infra is the application console and the rail only has two workspaces", as
   const editor = page.getByRole("textbox", { name: "Query editor" });
   await editor.fill("SELECT 42 AS retained;");
   const nav = () =>
-    page.getByRole("group", { name: "工作区导航", exact: true });
+    page.getByRole("group", { name: "Workspace navigation", exact: true });
   await expect(nav().getByRole("button")).toHaveCount(2);
   await nav().getByRole("button", { name: "Infra", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "制品库", exact: true }),
+    page.getByRole("heading", { name: "Artifacts", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "应用服务", exact: true }),
+    page.getByRole("button", { name: "Application services", exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "节点 / 机器", exact: true }),
+    page.getByRole("button", { name: "Nodes", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "共享与同步", exact: true }).click();
+  await page.getByRole("button", { name: "Sharing & sync", exact: true }).click();
   await expect(
     nav().getByRole("button", { name: "Infra", exact: true }),
   ).toBeInViewport();
-  await nav().getByRole("button", { name: "中间件", exact: true }).click();
+  await nav().getByRole("button", { name: "Data", exact: true }).click();
   await expect(editor).toHaveText("SELECT 42 AS retained;");
   await expect(
     page.getByRole("button", { name: "Settings", exact: true }),
@@ -306,24 +306,24 @@ test("the unified Infra console lists nodes for its selected application environ
   await install(page);
   await page.goto("/#infra");
   await expect(
-    page.getByRole("heading", { name: "制品库", exact: true }),
+    page.getByRole("heading", { name: "Artifacts", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "节点 / 机器", exact: true }).click();
+  await page.getByRole("button", { name: "Nodes", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "pro-a-node-1", exact: true }),
   ).toBeVisible();
-  const application = page.getByLabel("应用", { exact: true });
+  const application = page.getByLabel("Application", { exact: true });
   await expect(application).toBeEnabled();
   await application.selectOption("api");
   await expect(application).toHaveValue("api");
-  await page.getByRole("button", { name: "制品库", exact: true }).click();
+  await page.getByRole("button", { name: "Artifacts", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "制品库", exact: true }),
+    page.getByRole("heading", { name: "Artifacts", exact: true }),
   ).toBeVisible();
   await expect(application).toHaveValue("api");
-  await page.getByRole("button", { name: "节点 / 机器", exact: true }).click();
+  await page.getByRole("button", { name: "Nodes", exact: true }).click();
   await expect(application).toHaveValue("api");
-  await page.getByLabel("环境", { exact: true }).selectOption("dev");
+  await page.getByLabel("Environment", { exact: true }).selectOption("dev");
   await expect(
     page.getByRole("button", { name: "dev-node-1", exact: true }),
   ).toBeVisible();

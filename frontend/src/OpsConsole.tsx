@@ -79,78 +79,78 @@ type Page =
   | "sharing";
 const nav = [
   {
-    group: "集群",
-    items: [{ id: "nodes", label: "节点 / 机器", icon: Server }],
+    group: "Cluster",
+    items: [{ id: "nodes", label: "Nodes", icon: Server }],
   },
   {
-    group: "部署",
+    group: "Deploy",
     items: [
-      { id: "runs", label: "AI 执行记录", icon: Terminal },
-      { id: "artifacts", label: "制品库", icon: Package },
-      { id: "releases", label: "制品发布", icon: Rocket },
+      { id: "runs", label: "AI runs", icon: Terminal },
+      { id: "artifacts", label: "Artifacts", icon: Package },
+      { id: "releases", label: "Releases", icon: Rocket },
       { id: "deployments", label: "Deployment", icon: Boxes },
-      { id: "pods", label: "Pod 实例", icon: Server },
+      { id: "pods", label: "Pods", icon: Server },
     ],
   },
   {
-    group: "可观测",
+    group: "Observe",
     items: [
-      { id: "metrics", label: "监控", icon: Activity },
-      { id: "logs", label: "日志", icon: FileText },
-      { id: "events", label: "应用事件", icon: Bell },
+      { id: "metrics", label: "Metrics", icon: Activity },
+      { id: "logs", label: "Logs", icon: FileText },
+      { id: "events", label: "Events", icon: Bell },
     ],
   },
   {
-    group: "配置",
+    group: "Configure",
     items: [
-      { id: "config", label: "应用配置", icon: Settings2 },
-      { id: "nginx", label: "Nginx 配置", icon: FileCode2 },
-      { id: "project", label: "项目映射", icon: FileCode2 },
-      { id: "sharing", label: "共享与同步", icon: GitBranch },
+      { id: "config", label: "App config", icon: Settings2 },
+      { id: "nginx", label: "Nginx config", icon: FileCode2 },
+      { id: "project", label: "Project mapping", icon: FileCode2 },
+      { id: "sharing", label: "Sharing & sync", icon: GitBranch },
     ],
   },
 ];
 const titles: Record<Page, string> = {
-  nodes: "节点 / 机器",
-  runs: "AI 执行记录",
-  artifacts: "制品库",
-  releases: "制品发布",
+  nodes: "Nodes",
+  runs: "AI runs",
+  artifacts: "Artifacts",
+  releases: "Releases",
   deployments: "Deployment",
-  pods: "Pod 实例",
-  metrics: "监控",
-  logs: "日志",
-  events: "应用事件",
-  config: "应用配置",
-  nginx: "Nginx 配置",
-  project: "项目映射",
-  sharing: "共享与同步",
+  pods: "Pods",
+  metrics: "Metrics",
+  logs: "Logs",
+  events: "Events",
+  config: "App config",
+  nginx: "Nginx config",
+  project: "Project mapping",
+  sharing: "Sharing & sync",
 };
 function operationName(record: Pick<OpsRecord, "action">) {
-  if (record.action === "nginx") return "Nginx 配置";
+  if (record.action === "nginx") return "Nginx config";
   return record.action === "scale"
-    ? "扩缩容"
+    ? "Scale"
     : record.action === "restart"
-      ? "滚动重启"
+      ? "Rolling restart"
       : record.action === "rollback"
-        ? "版本回退"
-        : "发布";
+        ? "Rollback"
+        : "Release";
 }
 function operationStatus(record: Pick<OpsRecord, "action" | "status" | "origin">) {
-  if (record.origin === "external" && record.status === "succeeded") return "上报成功";
-  if (record.status === "cancelled") return "已取消";
-  const label = !record.action || record.action === "release" ? "发布" : "操作";
+  if (record.origin === "external" && record.status === "succeeded") return "Reported";
+  if (record.status === "cancelled") return "Cancelled";
+  const release = !record.action || record.action === "release";
   return record.status === "succeeded"
-    ? `${label}完成`
+    ? release ? "Release complete" : "Done"
     : record.status === "running"
-      ? "执行中 / 待核实"
-      : `${label}未完成`;
+      ? "Running / unverified"
+      : release ? "Release incomplete" : "Incomplete";
 }
 function date(s: string) {
-  return s ? new Date(s).toLocaleString("zh-CN", { hour12: false }) : "—";
+  return s ? new Date(s).toLocaleString("en-US", { hour12: false }) : "—";
 }
 function age(s: string) {
   const h = Math.max(0, Math.floor((Date.now() - Date.parse(s)) / 3600000));
-  return h < 24 ? `${h} 小时` : `${Math.floor(h / 24)} 天 ${h % 24} 小时`;
+  return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d ${h % 24}h`;
 }
 function Empty({ title, children }: { title: string; children?: ReactNode }) {
   return (
@@ -178,7 +178,7 @@ function Status({ ready, total }: { ready: number; total: number }) {
       <progress
         max={Math.max(1, total)}
         value={ready}
-        aria-label={`${ready} / ${total} 就绪`}
+        aria-label={`${ready} / ${total} ready`}
       />
     </span>
   );
@@ -187,8 +187,8 @@ function Refresher({ busy, onClick }: { busy: boolean; onClick: () => void }) {
   return (
     <button
       className="ops-icon"
-      title="刷新"
-      aria-label="刷新"
+      title="Refresh"
+      aria-label="Refresh"
       onClick={onClick}
       disabled={busy}
     >
@@ -282,7 +282,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
           if (!stale) setSnapshot(s);
         })
         .catch((e) => {
-          if (!stale) setNotice(`执行记录刷新失败：${errorText(e)}`);
+          if (!stale) setNotice(`Could not refresh run records: ${errorText(e)}`);
         });
     };
     const timer = window.setInterval(refreshRecords, 10000);
@@ -320,14 +320,14 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
   }
   return (
     <div className="ops-console" data-theme={theme}>
-      <nav className="ops-workspace-rail" aria-label="主导航">
+      <nav className="ops-workspace-rail" aria-label="Main navigation">
         <WorkspaceNavigation active="infra" disabled={busy} />
       </nav>
       <header className="ops-top">
         <a className="ops-brand" href="#infra">
           DevOps<span>Pad</span>
         </a>
-        <nav aria-label="工作区">
+        <nav aria-label="Workspace">
           <button
             className="active"
             disabled={busy}
@@ -341,20 +341,20 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
             }}
             disabled={busy}
           >
-            集群资源 <ChevronDown size={13} />
+            Cluster resources <ChevronDown size={13} />
           </button>
           <button disabled={busy} onClick={() => setPage("project")}>
-            项目设置 <ChevronDown size={13} />
+            Project settings <ChevronDown size={13} />
           </button>
         </nav>
         <div className="ops-top-right">
           <button disabled={busy || !snapshot} onClick={openConnect}>
             <PlugZap size={15} />
-            接入 K3s
+            Connect K3s
           </button>
           <button
-            aria-label={theme === "dark" ? "切换浅色风格" : "切换深色风格"}
-            title={theme === "dark" ? "切换浅色风格" : "切换深色风格"}
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
             onClick={() => {
               const next = theme === "dark" ? "light" : "dark";
               setTheme(next);
@@ -365,16 +365,16 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
           </button>
           <span>
             <HardDrive size={14} />
-            本地项目
+            Local project
           </span>
         </div>
       </header>
       <aside className="ops-sidebar">
         <div className="ops-context-select">
           <label>
-            <span className="sr-only">环境</span>
+            <span className="sr-only">Environment</span>
             <select
-              aria-label="环境"
+              aria-label="Environment"
               disabled={busy}
               value={env?.name || ""}
               onChange={(e) => setEnvironment(e.target.value)}
@@ -382,14 +382,14 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
               {snapshot?.project.environments.map((e) => (
                 <option key={e.name}>{e.name}</option>
               ))}
-              {!env && <option value="">选择环境</option>}
+              {!env && <option value="">Select environment</option>}
             </select>
             <LockKeyhole size={13} />
           </label>
           <label>
-            <span className="sr-only">应用</span>
+            <span className="sr-only">Application</span>
             <select
-              aria-label="应用"
+              aria-label="Application"
               disabled={busy}
               value={app?.name || ""}
               onChange={(e) => setApplication(e.target.value)}
@@ -397,7 +397,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
               {snapshot?.project.applications.map((a) => (
                 <option key={a.name}>{a.name}</option>
               ))}
-              {!app && <option value="">选择应用</option>}
+              {!app && <option value="">Select application</option>}
             </select>
           </label>
         </div>
@@ -426,11 +426,11 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
         <div className="ops-sidebar-bottom">
           <span>
             <HardDrive size={14} />
-            数据保存在本地
+            Data stays on this device
           </span>
           <button onClick={onWorkbench} disabled={busy}>
             <ArrowLeft size={14} />
-            数据库工作台
+            Database workbench
           </button>
         </div>
       </aside>
@@ -438,7 +438,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
         {notice && (
           <div className="ops-notice" role="status">
             {notice}
-            <button aria-label="关闭提示" onClick={() => setNotice("")}>
+            <button aria-label="Dismiss notice" onClick={() => setNotice("")}>
               <X size={14} />
             </button>
           </div>
@@ -447,7 +447,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
           <>
             <ErrorNotice>{error}</ErrorNotice>
             <button className="ops-btn" onClick={() => void reload()}>
-              重新加载项目
+              Reload project
             </button>
           </>
         )}
@@ -456,14 +456,14 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
             <div className="ops-panel-head">
               <h1>Infra</h1>
             </div>
-            <Empty title="连接你的基础设施">
-              <span>请打开 DevOpsPad 桌面应用，添加集群连接并接入应用。</span>
+            <Empty title="Connect your infrastructure">
+              <span>Open the DevOpsPad desktop app, add a cluster connection and connect an application.</span>
             </Empty>
           </section>
         ) : loading && !snapshot ? (
           <div className="ops-loading">
             <LoaderCircle size={20} className="spin" />
-            正在打开项目…
+            Opening project…
           </div>
         ) : (
           snapshot && (
@@ -507,18 +507,18 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
                   ) : (
                     <>
                       <div className="ops-panel-head">
-                        <h1>节点 / 机器</h1>
+                        <h1>Nodes</h1>
                       </div>
-                      <Empty title="选择环境对应的集群">
+                      <Empty title="Choose the cluster for this environment">
                         <span>
                           {matches.length > 1
-                            ? "集群连接名称重复，请在集群资源中重命名后刷新。"
-                            : "接入 K3s 或在项目映射中配置环境与集群连接。"}
+                            ? "Two cluster connections share this name. Rename one in Cluster resources, then refresh."
+                            : "Connect K3s, or map environments to cluster connections in Project mapping."}
                         </span>
                       </Empty>
                       <div className="ops-empty-action">
                         <button className="ops-btn" onClick={openConnect}>
-                          接入 K3s
+                          Connect K3s
                         </button>
                       </div>
                     </>
@@ -535,13 +535,13 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
                   connection={connection}
                   connectionError={
                     matches.length > 1
-                      ? "发现同名集群连接，请在集群资源重命名后刷新"
-                      : "未找到环境对应的集群连接，请在集群资源添加连接，再刷新项目"
+                      ? "Two cluster connections share this name. Rename one in Cluster resources, then refresh"
+                      : "No cluster connection matches this environment. Add one in Cluster resources, then reload the project"
                   }
                 />
               ) : page === "nginx" && env && app ? (
                 <section className="ops-panel">
-                  <div className="ops-panel-head"><div><h1>Nginx 配置</h1><p>{app.name} · {env.name} · 宿主机配置</p></div></div>
+                  <div className="ops-panel-head"><div><h1>Nginx config</h1><p>{app.name} · {env.name} · Host config</p></div></div>
                   <div className="ops-application-config">
                     <OpsNginxConfig key={`${snapshot.root}:${env.name}:${app.name}:${app.nginxPath || ""}`} projectRoot={snapshot.root} environment={env.name} application={app.name} path={app.nginxPath} saving={busy} onBusy={setBusy} />
                   </div>
@@ -558,8 +558,8 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
                   connection={connection}
                   connectionError={
                     matches.length > 1
-                      ? "发现同名集群连接，请在集群资源重命名后刷新"
-                      : "未找到环境对应的集群连接，请在集群资源添加连接，再刷新项目"
+                      ? "Two cluster connections share this name. Rename one in Cluster resources, then refresh"
+                      : "No cluster connection matches this environment. Add one in Cluster resources, then reload the project"
                   }
                   busy={busy}
                   onBusy={setBusy}
@@ -571,13 +571,13 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
                   <div className="ops-panel-head">
                     <h1>{titles[page]}</h1>
                   </div>
-                  <Empty title="创建你的第一个应用">
-                    <span>选择已有 K3s 连接，读取负载后接入本地应用。</span>
+                  <Empty title="Create your first application">
+                    <span>Pick a saved K3s connection, read its workloads and connect them as local applications.</span>
                   </Empty>
                   <div className="ops-empty-action">
                     <button className="ops-btn primary" onClick={openConnect}>
                       <PlugZap size={16} />
-                      接入集群应用
+                      Connect cluster app
                     </button>
                   </div>
                 </section>
@@ -604,7 +604,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
             setApplication(appName);
             setPage("deployments");
             setConnect(false);
-            setNotice("K3s 应用已接入，连接凭据保留在本机。");
+            setNotice("K3s app connected. Credentials stay on this device.");
           }}
         />
       )}
@@ -763,7 +763,7 @@ function OpsScope({
       environment: r.target.environment, connection: r.connection || "", namespace: r.namespace || "",
       workload: r.target.workload, container: r.target.container, image: r.image || snapshot.artifacts.find(a => a.id === r.target!.buildId)?.image || "",
       beforeImage: "", version: r.version, status: r.status, startedAt: r.startedAt, finishedAt: r.finishedAt || "", message: r.message,
-      steps: r.events.flatMap(e => e.event.step ? [`${e.event.step.status === "succeeded" ? "完成" : "失败"} · ${e.event.step.name}${e.event.step.message ? `：${e.event.step.message}` : ""}`] : []) }];
+      steps: r.events.flatMap(e => e.event.step ? [`${e.event.step.status === "succeeded" ? "Done" : "Failed"} · ${e.event.step.name}${e.event.step.message ? `: ${e.event.step.message}` : ""}`] : []) }];
   });
   const releases = [...snapshot.releases, ...externalReleases].filter(
     r => r.application === app.name && r.environment === env.name,
@@ -796,10 +796,10 @@ function OpsScope({
       <div className="ops-panel-head">
         <div>
           <h1>{titles[page]}</h1>
-          {page === "artifacts" && <p>{artifacts.length} 个制品 · 全部环境</p>}
+          {page === "artifacts" && <p>{artifacts.length} {artifacts.length === 1 ? "artifact" : "artifacts"} · all environments</p>}
           {page === "releases" && (
             <p>
-              {releases.length} 条发布记录 · {env.name}
+              {releases.length} {releases.length === 1 ? "release record" : "release records"} · {env.name}
             </p>
           )}
         </div>
@@ -807,7 +807,7 @@ function OpsScope({
           {page === "artifacts" && (
             <button className="ops-btn primary" onClick={() => setAdd(true)}>
               <Plus size={16} />
-              登记制品
+              Register artifact
             </button>
           )}
           {page === "releases" && (
@@ -817,25 +817,25 @@ function OpsScope({
               onClick={() => setRelease(artifacts[0])}
             >
               <Rocket size={16} />
-              发布
+              Release
             </button>
           )}
           <Refresher busy={loading || busy} onClick={refresh} />
         </div>
       </div>
       <div className="ops-toolbar">
-        <span className="ops-muted">当前上下文</span>
+        <span className="ops-muted">Current context</span>
         <span className="ops-tag">{env.connection}</span>
         <span>{env.namespace}</span>
         <span className="ops-toolbar-sep" />
         <span>{app.name}</span>
         {["deployments", "pods"].includes(page) && (
           <select
-            aria-label="负载类型"
+            aria-label="Workload type"
             value={kind}
             onChange={(e) => setKind(e.target.value)}
           >
-            <option value="">全部负载类型</option>
+            <option value="">All workload types</option>
             <option>Deployment</option>
             <option>StatefulSet</option>
             <option>DaemonSet</option>
@@ -852,15 +852,15 @@ function OpsScope({
               checked={poll}
               onChange={(e) => setPoll(e.target.checked)}
             />
-            每 10 秒刷新
+            Refresh every 10s
           </label>
         )}
         {["artifacts", "releases", "deployments", "pods"].includes(page) && (
           <label className="ops-search">
             <Search size={14} />
             <input
-              aria-label="筛选列表"
-              placeholder="搜索名称或版本"
+              aria-label="Filter list"
+              placeholder="Search name or version"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -871,7 +871,7 @@ function OpsScope({
         <>
           {loading && !cluster && (
             <div className="ops-loading" role="status">
-              <LoaderCircle size={18} className="spin" /> 正在读取集群负载…
+              <LoaderCircle size={18} className="spin" /> Loading cluster workloads…
             </div>
           )}
           <ErrorNotice>{clusterError}</ErrorNotice>
@@ -880,7 +880,7 @@ function OpsScope({
           ))}
           {cluster?.truncated && (
             <div className="ops-notice">
-              仅显示前 500 条资源，请缩小应用选择器。
+              Showing the first 500 resources only. Narrow the application selector.
             </div>
           )}
         </>
@@ -907,10 +907,10 @@ function OpsScope({
               <table className="ops-table">
                 <thead>
                   <tr>
-                    <th>版本 / 来源</th>
-                    <th>镜像地址</th>
-                    <th>登记时间</th>
-                    <th className="ops-right">操作</th>
+                    <th>Version / source</th>
+                    <th>Image</th>
+                    <th>Registered</th>
+                    <th className="ops-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -926,7 +926,7 @@ function OpsScope({
                             <strong>{a.version}</strong>
                             <span className="ops-badge">Image</span>
                           </div>
-                          <small>{a.source || "手动登记"}</small>
+                          <small>{a.source || "Registered manually"}</small>
                           {a.runId && (
                             <button
                               className="ops-link"
@@ -935,7 +935,7 @@ function OpsScope({
                                 onPage("runs");
                               }}
                             >
-                              查看构建记录
+                              View build record
                             </button>
                           )}
                         </td>
@@ -955,7 +955,7 @@ function OpsScope({
                             disabled={busy}
                           >
                             <Rocket size={14} />
-                            发布
+                            Release
                           </button>
                         </td>
                       </tr>
@@ -965,13 +965,13 @@ function OpsScope({
             </div>
           ) : (
             <Empty
-              title={artifacts.length ? "没有匹配的制品" : "当前应用暂无制品"}
+              title={artifacts.length ? "No matching artifacts" : "No artifacts for this application yet"}
             >
-              登记已推送到镜像仓库的制品，即可生成发布计划。
+              Register an image that is already in your registry to create a release plan.
             </Empty>
           )}
           <p className="ops-footnote">
-            制品保存镜像地址与不可变摘要，镜像内容保存在你的 OCI 仓库中。
+            Artifacts store the image address and immutable digest. Image content stays in your OCI registry.
           </p>
         </>
       )}
@@ -1000,7 +1000,7 @@ function OpsScope({
                         {r.environment}
                         <span>
                           {r.action === "scale" || r.action === "restart"
-                            ? `副本 ${r.beforeReplicas} → ${r.replicas}`
+                            ? `Replicas ${r.beforeReplicas} → ${r.replicas}`
                             : r.image.split("@")[0]}
                         </span>
                         <Boxes size={13} />
@@ -1021,15 +1021,15 @@ function OpsScope({
                       {operationStatus(r)}
                     </span>
                     <span className="ops-release-time">
-                      {r.origin === "external" ? "外部发布" : "本地客户端"}<small>{date(r.startedAt)}</small>
+                      {r.origin === "external" ? "External release" : "Local client"}<small>{date(r.startedAt)}</small>
                     </span>
                     <ChevronRight size={16} />
                   </button>
                 ))}
             </div>
           ) : (
-            <Empty title="当前上下文暂无发布记录">
-              从制品库选择版本，检查发布计划后执行。
+            <Empty title="No release records in this context">
+              Pick a version in Artifacts, review the release plan, then run it.
             </Empty>
           )}
         </>
@@ -1043,8 +1043,8 @@ function OpsScope({
                   <th>Kind</th>
                   <th>workloadName</th>
                   <th>Namespace</th>
-                  <th>集群 · 副本数</th>
-                  <th className="ops-right">操作</th>
+                  <th>Cluster · replicas</th>
+                  <th className="ops-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1075,7 +1075,7 @@ function OpsScope({
                           onPage("pods");
                         }}
                       >
-                        实例
+                        View Pods
                       </button>
                       {w.kind === "Deployment" && (
                         <>
@@ -1086,7 +1086,7 @@ function OpsScope({
                               setAction({ kind: "scale", workload: w })
                             }
                           >
-                            扩缩容
+                            Scale
                           </button>
                           <button
                             className="ops-link"
@@ -1095,12 +1095,12 @@ function OpsScope({
                               setAction({ kind: "restart", workload: w })
                             }
                           >
-                            重启
+                            Restart
                           </button>
                         </>
                       )}
                       <button className="ops-link" onClick={() => setDetail(w)}>
-                        详情
+                        Details
                       </button>
                     </td>
                   </tr>
@@ -1108,7 +1108,7 @@ function OpsScope({
               </tbody>
             </table>
             {!workloads.length && !loading && (
-              <Empty title="没有匹配的工作负载" />
+              <Empty title="No matching workloads" />
             )}
           </div>
         </div>
@@ -1135,14 +1135,14 @@ function OpsScope({
           ))}
           {pods.some((p) => !p.workload) && (
             <div className="ops-pod-group-body">
-              <h3>其他 Pod</h3>
+              <h3>Other Pods</h3>
               <PodTable
                 pods={pods.filter((p) => !p.workload)}
                 onLogs={openLogs}
               />
             </div>
           )}
-          {!pods.length && !loading && <Empty title="当前应用暂无 Pod" />}
+          {!pods.length && !loading && <Empty title="No Pods for this application" />}
         </div>
       )}
       {page === "metrics" && (
@@ -1162,14 +1162,14 @@ function OpsScope({
             <label>
               Pod{" "}
               <select
-                aria-label="选择 Pod"
+                aria-label="Select Pod"
                 value={selectedPod?.name || ""}
                 onChange={(e) => setPod(e.target.value)}
               >
                 {cluster?.pods.map((p) => (
                   <option key={p.uid}>{p.name}</option>
                 ))}
-                {!cluster?.pods.length && <option value="">暂无 Pod</option>}
+                {!cluster?.pods.length && <option value="">No Pods</option>}
               </select>
             </label>
             {selectedPod && (
@@ -1189,8 +1189,8 @@ function OpsScope({
             <Empty
               title={
                 loading
-                  ? "正在读取 Pod…"
-                  : "选择 Pod 后查看" + (page === "logs" ? "日志" : "事件")
+                  ? "Loading Pods…"
+                  : "Select a Pod to view its " + (page === "logs" ? "logs" : "events")
               }
             />
           )}
@@ -1198,9 +1198,9 @@ function OpsScope({
       )}
       {needsCluster && cluster && (
         <p className="ops-footnote">
-          最近读取：{date(cluster.fetchedAt)} · {cluster.workloads.length}{" "}
-          个负载
-          {clusterMode === "full" ? ` · ${cluster.pods.length} 个 Pod` : ""}
+          Last read: {date(cluster.fetchedAt)} · {cluster.workloads.length}{" "}
+          {cluster.workloads.length === 1 ? "workload" : "workloads"}
+          {clusterMode === "full" ? ` · ${cluster.pods.length} ${cluster.pods.length === 1 ? "Pod" : "Pods"}` : ""}
         </p>
       )}
       {add && (
@@ -1242,22 +1242,22 @@ function OpsScope({
             </span>
             <p>
               {record.message ||
-                "如客户端曾中断，请刷新集群核实状态，不要直接重试。"}
+                "If the client was interrupted, refresh the cluster to check the actual state. Do not just retry."}
             </p>
-            {record.action === "nginx" ? <p>宿主机 Nginx 配置校验与重载记录</p> : record.action === "scale" || record.action === "restart" ? (
+            {record.action === "nginx" ? <p>Host Nginx config test and reload record</p> : record.action === "scale" || record.action === "restart" ? (
               <p>
-                副本数：{record.beforeReplicas} → {record.replicas}
+                Replicas: {record.beforeReplicas} → {record.replicas}
                 {record.action === "restart"
-                  ? " · 按 Deployment 策略重建 Pod"
+                  ? " · Pods recreated by the Deployment strategy"
                   : ""}
               </p>
             ) : (
               <div className="ops-release-images">
                 <label>
-                  原镜像<code>{record.beforeImage || "未记录"}</code>
+                  Previous image<code>{record.beforeImage || "Not recorded"}</code>
                 </label>
                 <label>
-                  目标镜像<code>{record.image}</code>
+                  Target image<code>{record.image}</code>
                 </label>
               </div>
             )}
@@ -1270,7 +1270,7 @@ function OpsScope({
                   onPage("runs");
                 }}
               >
-                {record.origin === "external" ? "查看发布执行记录" : "查看构建记录"}
+                {record.origin === "external" ? "View release record" : "View build record"}
               </button>
             )}
             <ol className="ops-steps">
@@ -1294,7 +1294,7 @@ function OpsScope({
                   setRecord(undefined);
                 }}
               >
-                回退到此版本
+                Roll back to this version
               </button>
             </div>
           )}
@@ -1339,14 +1339,14 @@ function PodTable({
       <table className="ops-table ops-pods-table">
         <thead>
           <tr>
-            <th>名称</th>
+            <th>Name</th>
             <th>Pod IP</th>
-            <th>节点 IP</th>
-            <th>重启</th>
-            <th>运行时间</th>
-            <th>端口</th>
-            <th>状态</th>
-            <th className="ops-right">操作</th>
+            <th>Node IP</th>
+            <th>Restarts</th>
+            <th>Age</th>
+            <th>Ports</th>
+            <th>Status</th>
+            <th className="ops-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -1388,14 +1388,14 @@ function PodTable({
                   {p.phase}
                 </span>
                 <small>
-                  {p.ready} / {p.total} 就绪
+                  {p.ready} / {p.total} ready
                 </small>
               </td>
               <td className="ops-right">
                 <button
                   className="ops-icon"
-                  aria-label={`查看 ${p.name} 日志`}
-                  title="查看日志"
+                  aria-label={`View ${p.name} logs`}
+                  title="View logs"
                   onClick={() => onLogs(p)}
                 >
                   <FileText size={16} />
@@ -1406,7 +1406,7 @@ function PodTable({
         </tbody>
       </table>
       {!pods.length && (
-        <div className="ops-inline-empty">此负载暂无匹配的 Pod</div>
+        <div className="ops-inline-empty">No Pods match this workload</div>
       )}
     </div>
   );
@@ -1436,7 +1436,7 @@ function Metrics({
       setLoading(true);
       setError("");
       try {
-        if (!connection) throw new Error("请先配置集群连接");
+        if (!connection) throw new Error("Configure a cluster connection first");
         const data = await api.ReadOpsMetrics(
           connection!.id,
           env.namespace,
@@ -1473,7 +1473,7 @@ function Metrics({
       <ErrorNotice>{error}</ErrorNotice>
       <div className="ops-metric-summary">
         <div>
-          <span>CPU 使用量</span>
+          <span>CPU usage</span>
           <strong>
             {metrics.length
               ? metrics.reduce((sum, m) => sum + m.cpu, 0).toFixed(0)
@@ -1482,7 +1482,7 @@ function Metrics({
           </strong>
         </div>
         <div>
-          <span>内存使用量</span>
+          <span>Memory usage</span>
           <strong>
             {metrics.length
               ? metrics.reduce((sum, m) => sum + m.memory, 0).toFixed(1)
@@ -1491,7 +1491,7 @@ function Metrics({
           </strong>
         </div>
         <div>
-          <span>Pod 就绪</span>
+          <span>Pods ready</span>
           <strong>
             {cluster?.pods.filter((p) => p.ready === p.total && p.total > 0)
               .length ?? "—"}
@@ -1504,9 +1504,9 @@ function Metrics({
           <thead>
             <tr>
               <th>Pod</th>
-              <th>CPU（mCPU）</th>
-              <th>内存（MiB）</th>
-              <th>采样时间</th>
+              <th>CPU (mCPU)</th>
+              <th>Memory (MiB)</th>
+              <th>Sampled at</th>
             </tr>
           </thead>
           <tbody>
@@ -1521,13 +1521,13 @@ function Metrics({
           </tbody>
         </table>
         {!metrics.length && !loading && (
-          <Empty title="暂无可用指标">
-            需要目标集群安装 metrics-server，并授予读取权限。
+          <Empty title="No metrics available">
+            The cluster needs metrics-server installed and read access granted.
           </Empty>
         )}
       </div>
       <p className="ops-footnote">
-        当前资源用量快照 · 1,000 mCPU = 1 核 · 不保存历史监控数据
+        Current usage snapshot · 1,000 mCPU = 1 core · no history is stored
       </p>
     </div>
   );
@@ -1571,7 +1571,7 @@ function PodObservation({
           resource: "pods",
         };
         if (page === "logs") {
-          if (!container) throw new Error("此 Pod 没有可读取日志的容器");
+          if (!container) throw new Error("This Pod has no container with readable logs");
           const r = await api.ReadPodLogs(connection!.id, {
             ref,
             container,
@@ -1612,9 +1612,9 @@ function PodObservation({
         <>
           <div className="ops-log-controls">
             <label>
-              容器{" "}
+              Container{" "}
               <select
-                aria-label="日志容器"
+                aria-label="Log container"
                 value={container}
                 onChange={(e) => setContainer(e.target.value)}
               >
@@ -1626,9 +1626,9 @@ function PodObservation({
               </select>
             </label>
             <label>
-              行数{" "}
+              Lines{" "}
               <select
-                aria-label="日志行数"
+                aria-label="Log lines"
                 value={tail}
                 onChange={(e) => setTail(Number(e.target.value))}
               >
@@ -1643,31 +1643,31 @@ function PodObservation({
                 checked={previous}
                 onChange={(e) => setPrevious(e.target.checked)}
               />
-              上一实例
+              Previous instance
             </label>
             <label className="ops-search">
               <Search size={14} />
               <input
-                aria-label="过滤日志"
+                aria-label="Filter logs"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="过滤当前日志"
+                placeholder="Filter current logs"
               />
             </label>
           </div>
-          <pre className="ops-log-output" aria-label="日志输出">
+          <pre className="ops-log-output" aria-label="Log output">
             {loading
-              ? "正在读取日志…"
-              : visible || (!error ? "暂无日志输出" : "读取失败")}
+              ? "Loading logs…"
+              : visible || (!error ? "No log output" : "Read failed")}
           </pre>
           {truncated && (
             <p className="ops-notice">
-              日志达到 256 KiB 限制，请减少读取行数。
+              Logs hit the 256 KiB limit. Read fewer lines.
             </p>
           )}
           <p className="ops-footnote">
-            日志快照 · {poll ? "每 10 秒重新读取" : "手动刷新"} ·
-            日志正文不写入共享项目
+            Log snapshot · {poll ? "re-read every 10s" : "manual refresh"} ·
+            log text is not written to the shared project
           </p>
         </>
       ) : (
@@ -1691,10 +1691,10 @@ function PodObservation({
             </tbody>
           </table>
           {!loading && !events?.rows.length && (
-            <Empty title="此 Pod 暂无保留事件" />
+            <Empty title="No retained events for this Pod" />
           )}
           {events?.truncated && (
-            <p className="ops-notice">事件列表达到预览限制。</p>
+            <p className="ops-notice">The event list hit the preview limit.</p>
           )}
         </div>
       )}
@@ -1724,7 +1724,7 @@ function ArtifactDialog({
       !/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}$/.test(image) ||
       image.includes(":latest@")
     ) {
-      setError("镜像必须包含完整的 sha256 摘要，不能使用 latest");
+      setError("The image must include a full sha256 digest; latest is not allowed");
       return;
     }
     setSaving(true);
@@ -1748,8 +1748,8 @@ function ArtifactDialog({
   }
   return (
     <Modal
-      title="登记制品"
-      subtitle={`${app} · 已有 OCI 镜像`}
+      title="Register artifact"
+      subtitle={`${app} · existing OCI image`}
       onClose={() => {
         if (!saving) onClose();
       }}
@@ -1758,20 +1758,20 @@ function ArtifactDialog({
         <div className="ops-dialog-body ops-form">
           <ErrorNotice>{error}</ErrorNotice>
           <label>
-            版本
+            Version
             <input
               required
               maxLength={120}
               autoFocus
-              placeholder="例如 1.4.3"
+              placeholder="e.g. 1.4.3"
               value={version}
               onChange={(e) => setVersion(e.target.value)}
             />
           </label>
           <label>
-            镜像地址
+            Image
             <textarea
-              aria-label="镜像地址"
+              aria-label="Image"
               required
               rows={3}
               maxLength={1024}
@@ -1781,16 +1781,16 @@ function ArtifactDialog({
             />
           </label>
           <label>
-            来源 / 更新说明
+            Source / notes
             <input
               maxLength={500}
-              placeholder="提交说明或构建编号"
+              placeholder="Commit message or build number"
               value={source}
               onChange={(e) => setSource(e.target.value)}
             />
           </label>
           <p className="ops-muted">
-            登记不会上传或构建镜像。请填写已存在且目标集群可以拉取的镜像摘要。
+            Registering does not build or push an image. Enter the digest of an image that exists and the cluster can pull.
           </p>
         </div>
         <div className="ops-dialog-footer">
@@ -1800,7 +1800,7 @@ function ArtifactDialog({
             disabled={saving}
             onClick={onClose}
           >
-            取消
+            Cancel
           </button>
           <button className="ops-btn primary" disabled={saving}>
             {saving ? (
@@ -1808,7 +1808,7 @@ function ArtifactDialog({
             ) : (
               <Plus size={15} />
             )}
-            保存制品
+            Save artifact
           </button>
         </div>
       </form>
@@ -1890,7 +1890,7 @@ function ReleaseDialog({
     setBusy(true);
     setError("");
     try {
-      if (!connection) throw new Error("请先配置集群连接");
+      if (!connection) throw new Error("Configure a cluster connection first");
       const p = await api.PlanOpsRelease(
         env.name,
         app.name,
@@ -1931,7 +1931,7 @@ function ReleaseDialog({
   }
   return (
     <Modal
-      title={plan ? "确认发布计划" : "发布制品"}
+      title={plan ? "Review release plan" : "Release artifact"}
       subtitle={`${artifact.version} → ${env.name} / ${env.namespace}`}
       onClose={() => {
         if (!busy) onClose();
@@ -1944,7 +1944,7 @@ function ReleaseDialog({
           <label>
             Deployment
             <select
-              aria-label="发布目标"
+              aria-label="Release target"
               value={workload?.name || ""}
               disabled={busy || !!plan}
               onChange={(e) => setTarget(e.target.value)}
@@ -1953,14 +1953,14 @@ function ReleaseDialog({
                 <option key={w.uid}>{w.name}</option>
               ))}
               {!deployments.length && (
-                <option value="">暂无可用 Deployment</option>
+                <option value="">No Deployments available</option>
               )}
             </select>
           </label>
           <label>
-            容器
+            Container
             <select
-              aria-label="发布容器"
+              aria-label="Release container"
               value={container}
               disabled={busy || !!plan || detailsLoading}
               onChange={(e) => setContainer(e.target.value)}
@@ -1970,7 +1970,7 @@ function ReleaseDialog({
               ))}
               {!containers.length && (
                 <option value="">
-                  {detailsLoading ? "正在读取容器…" : "暂无容器"}
+                  {detailsLoading ? "Loading containers…" : "No containers"}
                 </option>
               )}
             </select>
@@ -1978,27 +1978,27 @@ function ReleaseDialog({
           <div className="ops-release-images">
             {plan && (
               <label>
-                当前镜像<code>{plan.beforeImage}</code>
+                Current image<code>{plan.beforeImage}</code>
               </label>
             )}
             <label>
-              目标镜像<code>{artifact.image}</code>
+              Target image<code>{artifact.image}</code>
             </label>
           </div>
           {plan ? (
             <p className="ops-muted">
-              预检查已通过。确认后更新镜像并等待就绪，最长 180
-              秒。失败不会自动回滚。计划有效至 {date(plan.expiresAt)}。
+              Dry-run passed. On confirm the image is updated and DevOpsPad waits up to 180
+              seconds for the rollout. Failures are not rolled back automatically. Plan valid until {date(plan.expiresAt)}.
             </p>
           ) : (
             <p className="ops-muted">
-              先读取目标状态并执行服务端 dry-run，再确认发布。
+              DevOpsPad reads the target state and runs a server-side dry-run before you confirm.
             </p>
           )}
           {busy && plan && (
             <p role="status">
               <LoaderCircle size={16} className="spin" />
-              正在执行发布并等待就绪…
+              Releasing and waiting for the rollout…
             </p>
           )}
         </div>
@@ -2009,7 +2009,7 @@ function ReleaseDialog({
             disabled={busy}
             onClick={() => (plan ? setPlan(undefined) : onClose())}
           >
-            {plan ? "返回修改" : "取消"}
+            {plan ? "Back" : "Cancel"}
           </button>
           {plan ? (
             <button
@@ -2019,14 +2019,14 @@ function ReleaseDialog({
               onClick={() => void apply()}
             >
               <Rocket size={15} />
-              {"确认发布"}
+              {"Confirm release"}
             </button>
           ) : (
             <button
               className="ops-btn primary"
               disabled={busy || detailsLoading || !workload || !container}
             >
-              生成发布计划
+              Create release plan
             </button>
           )}
         </div>
@@ -2083,7 +2083,7 @@ function WorkloadActionDialog({
         action.kind === "scale" &&
         (!/^\d+$/.test(replicas) || Number(replicas) > 1000)
       )
-        throw new Error("副本数必须是 0 到 1000 之间的整数");
+        throw new Error("Replicas must be a whole number from 0 to 1000");
       let next: OpsPlan;
       {
         next =
@@ -2132,7 +2132,7 @@ function WorkloadActionDialog({
   }
   return (
     <Modal
-      title={plan ? `确认${title}计划` : title}
+      title={plan ? `Review ${title.toLowerCase()} plan` : title}
       subtitle={`${name} · ${env.connection} / ${env.namespace}`}
       onClose={() => {
         if (!busy) onClose();
@@ -2145,9 +2145,9 @@ function WorkloadActionDialog({
           {action.kind === "scale" && (
             <>
               <label>
-                目标副本数
+                Target replicas
                 <input
-                  aria-label="目标副本数"
+                  aria-label="Target replicas"
                   type="number"
                   min={0}
                   max={1000}
@@ -2161,53 +2161,53 @@ function WorkloadActionDialog({
               </label>
               <p className="ops-muted">
                 {plan
-                  ? `副本数：${plan.beforeReplicas} → ${plan.replicas}`
-                  : `当前副本数：${current?.desired ?? action.workload.desired}`}
-                。若负载由 HPA 管理，自动扩缩容可能再次调整副本数。
+                  ? `Replicas: ${plan.beforeReplicas} → ${plan.replicas}`
+                  : `Current replicas: ${current?.desired ?? action.workload.desired}`}
+                . If an HPA manages this workload, it may change the replica count again.
               </p>
               {Number(replicas) === 0 && (
                 <div className="ops-notice">
-                  设为 0 将停止此 Deployment 的所有 Pod。
+                  Setting 0 stops every Pod of this Deployment.
                 </div>
               )}
             </>
           )}
           {action.kind === "restart" && (
             <p>
-              更新 Pod 模板注解，按当前 Deployment 的更新策略重建
-              Pod，保留镜像和副本配置。
+              Updates a Pod template annotation so the Deployment recreates its
+              Pods with its update strategy. Images and replicas are kept.
             </p>
           )}
           {action.kind === "rollback" && (
             <div className="ops-release-images">
               <label>
-                版本
+                Version
                 <code>
                   {action.record.version} · {action.record.container}
                 </code>
               </label>
               {plan && (
                 <label>
-                  当前镜像<code>{plan.beforeImage}</code>
+                  Current image<code>{plan.beforeImage}</code>
                 </label>
               )}
               <label>
-                目标镜像<code>{action.record.image}</code>
+                Target image<code>{action.record.image}</code>
               </label>
               <p className="ops-muted">
-                回退此容器的镜像版本，保留当前配置和其他容器。
+                Rolls back this container image only. Other settings and containers are kept.
               </p>
             </div>
           )}
           <p className="ops-muted">
             {plan
-              ? `预检查已通过。执行后等待就绪，最长 180 秒。计划有效至 ${date(plan.expiresAt)}。`
-              : "生成计划会读取最新状态并执行服务端预检查。"}
+              ? `Dry-run passed. DevOpsPad waits up to 180 seconds for the rollout. Plan valid until ${date(plan.expiresAt)}.`
+              : "Creating a plan reads the latest state and runs a server-side dry-run."}
           </p>
           {busy && (
             <p role="status">
               <LoaderCircle size={15} className="spin" />
-              {plan ? "正在执行并等待就绪…" : "正在生成计划…"}
+              {plan ? "Running and waiting for the rollout…" : "Creating plan…"}
             </p>
           )}
         </div>
@@ -2218,7 +2218,7 @@ function WorkloadActionDialog({
             disabled={busy}
             onClick={() => (plan ? setPlan(undefined) : onClose())}
           >
-            {plan ? "返回修改" : "取消"}
+            {plan ? "Back" : "Cancel"}
           </button>
           {plan ? (
             <button
@@ -2227,11 +2227,11 @@ function WorkloadActionDialog({
               disabled={busy}
               onClick={() => void apply()}
             >
-              {`确认${title}`}
+              {`Confirm ${title.toLowerCase()}`}
             </button>
           ) : (
             <button className="ops-btn primary" disabled={busy}>
-              生成操作计划
+              Create plan
             </button>
           )}
         </div>
@@ -2274,14 +2274,14 @@ function WorkloadDetail({
   return (
     <Modal
       title={workload.name}
-      subtitle={`${workload.kind} · ${workload.namespace} · 只读定义`}
+      subtitle={`${workload.kind} · ${workload.namespace} · read-only definition`}
       wide
       onClose={onClose}
     >
       <div className="ops-dialog-body">
         <ErrorNotice>{error}</ErrorNotice>
         <pre className="ops-definition">
-          {text || (!error ? "正在读取…" : "")}
+          {text || (!error ? "Loading…" : "")}
         </pre>
       </div>
     </Modal>
@@ -2313,7 +2313,7 @@ function ProjectSettings({
       const next = await api.SaveOpsProject(text, base);
       onSnapshot(next);
       setBase(next.revision);
-      onNotice("项目映射已保存");
+      onNotice("Project mapping saved");
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -2396,11 +2396,11 @@ function ProjectSettings({
                   }
                 }}
               >
-                格式化 YAML
+                Format YAML
               </button>
               <button className="ops-btn" onClick={download}>
                 <ArrowDownToLine size={15} />
-                导出 YAML
+                Export YAML
               </button>
               <button
                 className="ops-btn primary"
@@ -2408,7 +2408,7 @@ function ProjectSettings({
                 onClick={() => void save()}
               >
                 <Check size={15} />
-                保存配置
+                Save config
               </button>
             </>
           )}
@@ -2422,32 +2422,32 @@ function ProjectSettings({
             <FileCode2 size={16} />
             <span>project.yaml</span>
             <span className="ops-muted">
-              {text !== snapshot.yaml ? "有未保存改动" : "已保存"}
+              {text !== snapshot.yaml ? "Unsaved changes" : "Saved"}
             </span>
           </div>
           <textarea
             className="ops-yaml"
-            aria-label="项目 YAML"
+            aria-label="Project YAML"
             spellCheck
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={busy}
           />
           <div className="ops-config-help">
-            <strong>项目与应用映射</strong>
+            <strong>Project and application mapping</strong>
             <p>
-              这里维护整个项目的环境和应用选择器。查看所选应用的 ConfigMap
-              和环境变量，请打开“应用配置”。
+              Edit the environments and application selectors for the whole project. To see an application’s ConfigMaps
+              and environment variables, open App config.
             </p>
             <p>
-              connection 填写集群资源中 Kubernetes / K3s
-              连接的名称。每个人可以使用自己的 kubeconfig，应用通过 selector
-              匹配负载和 Pod。
+              Set connection to the name of a Kubernetes / K3s connection in Cluster
+              resources. Everyone can use their own kubeconfig; applications match workloads and Pods
+              by selector.
             </p>
             <pre>{`environments:\n  - name: pro\n    connection: local-k3s\n    namespace: default\napplications:\n  - name: svc-user\n    selector: app=svc-user`}</pre>
             <p>
-              保存时校验版本；出现冲突时先保留编辑内容，再刷新并合并。密码与
-              kubeconfig 不放入项目文件。
+              Saving checks the revision. On a conflict your edits are kept so you can refresh and merge. Passwords and
+              kubeconfigs never go into project files.
             </p>
           </div>
         </div>
@@ -2456,11 +2456,11 @@ function ProjectSettings({
           <div className="ops-sharing-section">
             <FolderOpen size={22} />
             <div>
-              <h2>项目目录</h2>
+              <h2>Project directory</h2>
               <p>{snapshot.root}</p>
               <p className="ops-muted">
-                配置、制品索引和发布记录集中存放。每台电脑使用自己的本地 Git
-                副本。
+                Configuration, the artifact index and release records live together. Each computer uses its own local Git
+                checkout.
               </p>
             </div>
             <button
@@ -2468,35 +2468,35 @@ function ProjectSettings({
               disabled={busy}
               onClick={() => void choose()}
             >
-              选择目录
+              Choose directory
             </button>
           </div>
           <div className="ops-directory">
             <div>
               <FileCode2 size={16} />
               <code>project.yaml</code>
-              <span>应用、环境与集群连接名称</span>
+              <span>Applications, environments and cluster connection names</span>
             </div>
             <div>
               <Package size={16} />
               <code>artifacts/*.yaml</code>
-              <span>制品版本、镜像摘要与来源</span>
+              <span>Artifact versions, image digests and sources</span>
             </div>
             <div>
               <Rocket size={16} />
               <code>releases/*.json</code>
-              <span>每次发布的步骤、结果与原镜像</span>
+              <span>Steps, result and previous image of every release</span>
             </div>
           </div>
           <div className="ops-sharing-section">
             <GitBranch size={22} />
             <div>
-              <h2>与团队同步</h2>
+              <h2>Sync with your team</h2>
               <p>
-                先克隆共享仓库，再选择仓库根目录。推送只提交上面的项目文件。
+                Clone the shared repository first, then choose its root. Push commits only the project files above.
               </p>
               <p className="ops-muted">
-                拉取采用快进合并；有本地改动或分叉时停止，由你处理冲突。
+                Pull fast-forwards only. It stops on local changes or divergence so you can resolve them.
               </p>
             </div>
           </div>
@@ -2507,7 +2507,7 @@ function ProjectSettings({
               onClick={() => void gitAction("status")}
             >
               <GitBranch size={15} />
-              查看状态
+              Show status
             </button>
             <button
               className="ops-btn"
@@ -2515,7 +2515,7 @@ function ProjectSettings({
               onClick={() => void gitAction("pull")}
             >
               <ArrowDownToLine size={15} />
-              拉取更新
+              Pull
             </button>
             <button
               className="ops-btn primary"
@@ -2523,7 +2523,7 @@ function ProjectSettings({
               onClick={() => void gitAction("push")}
             >
               <ArrowUpFromLine size={15} />
-              提交并推送
+              Commit and push
             </button>
           </div>
 
@@ -2535,10 +2535,10 @@ function ProjectSettings({
           <div className="ops-sharing-section">
             <LockKeyhole size={22} />
             <div>
-              <h2>每台设备独立保管凭据</h2>
+              <h2>Credentials stay on each device</h2>
               <p>
-                项目共享连接名称，不共享密码、私钥或
-                kubeconfig。发布前会检查集群锁和资源版本。
+                The project shares connection names, not passwords, private keys or
+                kubeconfigs. Releases check the cluster lock and resource version first.
               </p>
             </div>
           </div>

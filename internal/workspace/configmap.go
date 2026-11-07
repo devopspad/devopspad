@@ -24,7 +24,7 @@ type ConfigMapUpdate struct {
 // Both the read and the atomic Kubernetes update enforce the editor's version.
 func SaveConfigMap(ctx context.Context, c Connection, request ConfigMapUpdate) (string, error) {
 	if request.Ref.Resource != "configmaps" || request.Ref.UID == "" || request.ResourceVersion == "" || request.Data == nil {
-		return "", errors.New("缺少 ConfigMap 身份、版本或数据，请刷新配置后重试")
+		return "", errors.New("Missing ConfigMap identity, version or data; refresh the config and try again")
 	}
 	if _, _, err := clusterTarget(c, request.Ref); err != nil {
 		return "", err
@@ -32,12 +32,12 @@ func SaveConfigMap(ctx context.Context, c Connection, request ConfigMapUpdate) (
 	size := 0
 	for key, value := range request.Data {
 		if len(validation.IsConfigMapKey(key)) != 0 || !utf8.ValidString(value) {
-			return "", errors.New("配置包含无效的文件名或非 UTF-8 内容")
+			return "", errors.New("The config contains an invalid file name or non-UTF-8 content")
 		}
 		size += len(key) + len(value)
 	}
 	if size > 1<<20 {
-		return "", errors.New("ConfigMap 文本数据超过 1 MiB")
+		return "", errors.New("ConfigMap text data exceeds 1 MiB")
 	}
 	c, closeTransport, err := prepareTransport(ctx, c)
 	if err != nil {
@@ -49,23 +49,23 @@ func SaveConfigMap(ctx context.Context, c Connection, request ConfigMapUpdate) (
 		return "", err
 	}
 	if obj.GetResourceVersion() != request.ResourceVersion {
-		return "", errors.New("集群配置已变化，请保留需要的修改，取消编辑并刷新后重试")
+		return "", errors.New("The cluster config changed; keep the edits you need, cancel editing, refresh and try again")
 	}
 	if immutable, _, _ := unstructured.NestedBool(obj.Object, "immutable"); immutable {
-		return "", errors.New("此 ConfigMap 设置为不可修改（immutable）")
+		return "", errors.New("This ConfigMap is immutable")
 	}
 	if err = unstructured.SetNestedStringMap(obj.Object, request.Data, "data"); err != nil {
 		return "", err
 	}
 	updated, err := cl.Resource(schema.GroupVersionResource{Version: "v1", Resource: "configmaps"}).Namespace(request.Ref.Namespace).Update(ctx, obj, metav1.UpdateOptions{})
 	if apierrors.IsConflict(err) {
-		return "", fmt.Errorf("集群配置已变化，请保留需要的修改，取消编辑并刷新后重试: %w", err)
+		return "", fmt.Errorf("The cluster config changed; keep the edits you need, cancel editing, refresh and try again: %w", err)
 	}
 	if apierrors.IsForbidden(err) {
-		return "", fmt.Errorf("没有更新此 ConfigMap 的权限: %w", err)
+		return "", fmt.Errorf("No permission to update this ConfigMap: %w", err)
 	}
 	if err != nil {
-		return "", fmt.Errorf("保存未确认，请保留修改并刷新核对集群实际状态: %w", err)
+		return "", fmt.Errorf("The save was not confirmed; keep your edits and refresh to check the cluster state: %w", err)
 	}
 	updated.SetManagedFields(nil)
 	raw, err := json.Marshal(updated.Object)

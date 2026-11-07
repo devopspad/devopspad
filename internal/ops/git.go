@@ -26,17 +26,17 @@ func (s *Store) Git(ctx context.Context, action string) (string, error) {
 		cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0", "GCM_INTERACTIVE=never")
 		b, err := cmd.CombinedOutput()
 		if err != nil {
-			return "", fmt.Errorf("Git %s 失败，请在项目目录检查 Git 状态或远端认证（%v）", args[0], err)
+			return "", fmt.Errorf("Git %s failed; check the Git status or remote authentication in the project directory (%v)", args[0], err)
 		}
 		return strings.TrimSpace(string(b)), nil
 	}
 	top, err := run("rev-parse", "--show-toplevel")
 	if err != nil {
-		return "", errors.New("此目录不是 Git 仓库；请先克隆共享仓库，再选择其根目录")
+		return "", errors.New("This directory is not a Git repository; clone the shared repository first, then choose its root")
 	}
 	// Prevent accidentally staging another application's parent repository.
 	if top != s.Root {
-		return "", errors.New("请选择 Git 仓库根目录作为项目目录")
+		return "", errors.New("Choose the Git repository root as the project directory")
 	}
 	switch action {
 	case "status":
@@ -47,15 +47,15 @@ func (s *Store) Git(ctx context.Context, action string) (string, error) {
 			return "", err
 		}
 		if status != "" {
-			return "", errors.New("有未提交改动，请先提交后再拉取")
+			return "", errors.New("There are uncommitted changes; commit them before pulling")
 		}
 		if _, err = run("pull", "--ff-only"); err != nil {
-			return "", errors.New("无法快进同步。请在项目目录执行 git fetch，检查并合并分叉后重试；本地改动未被重置")
+			return "", errors.New("Cannot fast-forward. Run git fetch in the project directory, merge the divergence and try again; local changes were not reset")
 		}
 		if _, err = s.read(); err != nil {
-			return "", fmt.Errorf("已拉取，但项目校验失败: %w", err)
+			return "", fmt.Errorf("Pulled, but the project failed validation: %w", err)
 		}
-		return "已拉取共享项目", nil
+		return "Pulled the shared project", nil
 	case "push":
 		snapshot, readErr := s.read()
 		if readErr != nil {
@@ -100,10 +100,10 @@ func (s *Store) Git(ctx context.Context, action string) (string, error) {
 			}
 		}
 		if _, err = run("push"); err != nil {
-			return "", errors.New("本地提交已保留，但推送失败。请检查认证，或合并远端改动后重试")
+			return "", errors.New("The local commit is kept, but the push failed. Check authentication, or merge remote changes and try again")
 		}
-		return "已推送共享项目", nil
+		return "Pushed the shared project", nil
 	default:
-		return "", errors.New("不支持的 Git 操作")
+		return "", errors.New("Unsupported Git operation")
 	}
 }

@@ -2,7 +2,7 @@
 
 A desktop workspace for databases, caches, event streams, and Kubernetes. Built with **Wails v2, Go, React, Vite, Tailwind CSS, and CodeMirror**, with **gotomicro/ego**, **ego-component/egorm**, and **ego-component/eredis** on the backend.
 
-A Navicat-inspired **read-only database workbench** under **中间件**, with **Infra** for cluster nodes, application configuration, and reviewed Deployment releases. First launch starts with your saved connections or an empty workspace. Choose **New connection** to add infrastructure; optional draft recovery restores real query drafts without executing them. Full Navicat feature parity is a longer-term goal.
+A Navicat-inspired **read-only database workbench** under **Data**, with **Infra** for cluster nodes, application configuration, and reviewed Deployment releases. First launch starts with your saved connections or an empty workspace. Choose **New connection** to add infrastructure; optional draft recovery restores real query drafts without executing them. Full Navicat feature parity is a longer-term goal.
 
 Product scope, milestones, and acceptance criteria: [implementation plan](PLAN.md).
 
@@ -47,7 +47,7 @@ Browser preview shows the UI and connection setup empty states without seeded da
 - Resource tree, independent query tabs, CodeMirror editor, and Cmd/Ctrl+Enter execution.
 - Result sorting, filtering, pagination, row inspection, precision-preserving SQL values, and CSV export.
 - Session-only history (last 100 queries in the current workspace), saved queries in local browser/webview storage, and a Cmd/Ctrl+K connection palette.
-- Query tabs survive navigation between 中间件 and Infra. Optional startup recovery restores real query drafts, active tabs, and database/context scopes without executing restored queries. Existing personal drafts migrate from the older workspace format.
+- Query tabs survive navigation between Data and Infra. Optional startup recovery restores real query drafts, active tabs, and database/context scopes without executing restored queries. Existing personal drafts migrate from the older workspace format.
 - AI settings for an OpenAI-compatible Chat Completions endpoint, including local providers. Model ID is user-supplied. Suggestions can be inserted into the editor and never execute automatically.
 - OS keychain storage for passwords and API keys. Connection metadata is written atomically with owner-only file permissions. Passwords are not returned to the frontend after saving. Blank password fields preserve an existing secret.
 
@@ -148,7 +148,7 @@ Ego supplies component configuration/logging; Wails owns the desktop lifecycle. 
 
 ## Local application services
 
-The **Infra** rail entry opens the application console with environments, cluster nodes, configuration, and release workflows using the original Orca dark theme (with an optional light theme). The rail contains only **中间件** and **Infra**. `/#infra` opens Infra, and older `/#apps` links redirect to it. Cluster resource queries and connection management remain available through **集群资源**.
+The **Infra** rail entry opens the application console with environments, cluster nodes, configuration, and release workflows using the original Orca dark theme (with an optional light theme). The rail contains only **Data** and **Infra**. `/#infra` opens Infra, and older `/#apps` links redirect to it. Cluster resource queries and connection management remain available through **Cluster resources**.
 
 - Local YAML project, immutable-digest artifact registration, independent release records, and manual Git sharing between local checkouts.
 - Deployment / Pod views, Pod container log snapshots, events, and CPU/memory snapshots via metrics-server.
@@ -156,9 +156,9 @@ The **Infra** rail entry opens the application console with environments, cluste
 
 Deployment rows also support scaling and restart, and successful image release records can prepare a rollback to that version. All three actions reuse dry-run, version checks, deployment leases, rollout verification, and local operation records.
 
-AI executors can report versioned, idempotent start/step/finish events through `devopspadctl runs record`. Successful builds appear in the artifact library; external release reports retain build/source/actor linkage. See [AI integration contract](docs/ai-execution.md) and its JSON Schema. The **接入 K3s** action discovers workloads using saved local connections and adds their selectors to the project.
+AI executors can report versioned, idempotent start/step/finish events through `devopspadctl runs record`. Successful builds appear in the artifact library; external release reports retain build/source/actor linkage. See [AI integration contract](docs/ai-execution.md) and its JSON Schema. The **Connect K3s** action discovers workloads using saved local connections and adds their selectors to the project.
 
-Setup, project example, permissions, synchronization behavior, and current limits: [本地应用服务](docs/local-applications.md). This adds an explicit write path in `internal/release`; the database/query workspace remains read-only. CRDT editing, image builds/uploads, historical monitoring, streaming logs, and full fleet release execution are not included in this version.
+Setup, project example, permissions, synchronization behavior, and current limits: [Local application services](docs/local-applications.md). This adds an explicit write path in `internal/release`; the database/query workspace remains read-only. CRDT editing, image builds/uploads, historical monitoring, streaming logs, and full fleet release execution are not included in this version.
 
 ## OPC release checks
 

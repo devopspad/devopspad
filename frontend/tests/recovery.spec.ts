@@ -18,15 +18,15 @@ test("workspace switches preserve drafts without enabling disk recovery", async 
   const editor = page.getByRole("textbox", { name: "Query editor" });
   await editor.fill("SELECT 'unsaved draft';");
   await page
-    .getByRole("group", { name: "工作区导航" })
+    .getByRole("group", { name: "Workspace navigation" })
     .getByRole("button", { name: "Infra", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "制品库", exact: true }),
+    page.getByRole("heading", { name: "Artifacts", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("group", { name: "工作区导航" })
-    .getByRole("button", { name: "中间件", exact: true })
+    .getByRole("group", { name: "Workspace navigation" })
+    .getByRole("button", { name: "Data", exact: true })
     .click();
   await expect(editor).toContainText("unsaved draft");
   expect(await page.evaluate((k) => localStorage.getItem(k), key)).toBeNull();

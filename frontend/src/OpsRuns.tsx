@@ -4,15 +4,15 @@ import { Modal } from "./Modal";
 import type { OpsArtifact, OpsRun } from "./ops-api";
 
 const at = (s?: string) =>
-  s ? new Date(s).toLocaleString("zh-CN", { hour12: false }) : "—";
+  s ? new Date(s).toLocaleString("en-US", { hour12: false }) : "—";
 const status = (s: string) =>
   s === "succeeded"
-    ? "上报成功"
+    ? "Reported"
     : s === "failed"
-      ? "执行失败"
+      ? "Failed"
       : s === "cancelled"
-        ? "已取消"
-        : "执行中 / 待核实";
+        ? "Cancelled"
+        : "Running / unverified";
 export function OpsRuns({
   runs,
   artifacts,
@@ -40,33 +40,33 @@ export function OpsRuns({
     <div className="ops-table-pad">
       <div className="ops-run-filter">
         <select
-          aria-label="执行类型"
+          aria-label="Run type"
           value={kind}
           onChange={(e) => setKind(e.target.value)}
         >
-          <option value="">全部执行类型</option>
-          <option value="build">AI 构建</option>
-          <option value="release">外部发布</option>
+          <option value="">All run types</option>
+          <option value="build">AI build</option>
+          <option value="release">External release</option>
         </select>
         <input
-          aria-label="筛选执行记录"
-          placeholder="版本、提交或执行者"
+          aria-label="Filter runs"
+          placeholder="Version, commit or actor"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <span className="ops-muted">每 10 秒读取本地记录</span>
+        <span className="ops-muted">Reads local records every 10s</span>
       </div>
       <div className="ops-table-wrap bordered">
         <table className="ops-table">
           <thead>
             <tr>
-              <th>执行 / 版本</th>
-              <th>源码提交</th>
-              <th>执行者</th>
-              <th>目标</th>
-              <th>状态</th>
-              <th>开始时间</th>
-              <th className="ops-right">操作</th>
+              <th>Run / version</th>
+              <th>Commit</th>
+              <th>Actor</th>
+              <th>Target</th>
+              <th>Status</th>
+              <th>Started</th>
+              <th className="ops-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -78,7 +78,7 @@ export function OpsRuns({
                     onClick={() => onSelected(r.id)}
                   >
                     <Terminal size={15} />
-                    {r.kind === "build" ? "构建" : "发布"} · {r.version}
+                    {r.kind === "build" ? "Build" : "Release"} · {r.version}
                   </button>
                   <small>{r.id.slice(0, 8)}</small>
                 </td>
@@ -86,19 +86,19 @@ export function OpsRuns({
                   <code>{r.source.commit.slice(0, 12)}</code>
                   <small>
                     {r.source.branch}
-                    {r.source.dirty ? " · 有未提交改动" : ""}
+                    {r.source.dirty ? " · uncommitted changes" : ""}
                   </small>
                 </td>
                 <td>
                   {r.actor.name}
                   <small>
-                    {r.actor.kind === "ai" ? "AI 执行" : "人工执行"}
+                    {r.actor.kind === "ai" ? "AI" : "Human"}
                   </small>
                 </td>
                 <td>
                   {r.target
                     ? `${r.target.environment} / ${r.target.workload}`
-                    : "制品库"}
+                    : "Artifacts"}
                 </td>
                 <td>
                   <span className={`ops-status ${r.status}`}>
@@ -108,7 +108,7 @@ export function OpsRuns({
                 <td className="ops-muted">{at(r.startedAt)}</td>
                 <td className="ops-right">
                   <button className="ops-link" onClick={() => onSelected(r.id)}>
-                    详情
+                    Details
                   </button>
                   {r.kind === "build" &&
                     r.status === "succeeded" &&
@@ -120,7 +120,7 @@ export function OpsRuns({
                         }
                       >
                         <Rocket size={14} />
-                        发布制品
+                        Release artifact
                       </button>
                     )}
                 </td>
@@ -131,21 +131,21 @@ export function OpsRuns({
         {!visible.length && (
           <div className="ops-empty">
             <Terminal size={28} />
-            <strong>暂无执行记录</strong>
+            <strong>No runs yet</strong>
             <p>
-              让 AI 在执行前调用 devopspadctl runs record
-              上报开始，再记录步骤和结果。
+              Have the AI call devopspadctl runs record
+              to report the start, then each step and the result.
             </p>
           </div>
         )}
       </div>
       <p className="ops-footnote">
-        构建成功后自动生成制品索引。这里显示执行端上报的事实；外部发布上报不会触发集群操作，也不等同于本应用独立验收。
+        Successful builds are added to Artifacts automatically. This page shows what the executor reported; an external release report does not touch the cluster and is not verified by DevOpsPad.
       </p>
       {selected && (
         <Modal
           wide
-          title={`${selected.kind === "build" ? "构建" : "发布"} ${selected.version}`}
+          title={`${selected.kind === "build" ? "Build" : "Release"} ${selected.version}`}
           subtitle={`${selected.actor.name} · ${selected.id}`}
           onClose={() => onSelected(undefined)}
         >
@@ -155,36 +155,36 @@ export function OpsRuns({
             </span>
             <div className="ops-release-images">
               <label>
-                源码
+                Source
                 <code>
                   {selected.source.repository}
                   <br />
                   {selected.source.commit} · {selected.source.branch}
-                  {selected.source.dirty ? " · 工作区有未提交改动" : ""}
+                  {selected.source.dirty ? " · uncommitted changes in the working tree" : ""}
                 </code>
               </label>
               <label>
-                AI / 执行会话
+                AI / session
                 <code>
                   {selected.actor.name} · {selected.actor.sessionId}
                 </code>
               </label>
               <label>
-                构建 / 发布方式<code>{selected.recipe}</code>
+                Build / release method<code>{selected.recipe}</code>
               </label>
               {selected.image && (
                 <label>
-                  镜像摘要<code>{selected.image}</code>
+                  Image digest<code>{selected.image}</code>
                 </label>
               )}
               {selected.target && (
                 <label>
-                  发布目标
+                  Release target
                   <code>
                     {selected.connection} / {selected.namespace} /{" "}
                     {selected.target.workload} / {selected.target.container}
                     <br />
-                    构建 {selected.target.buildId}
+                    Build {selected.target.buildId}
                   </code>
                 </label>
               )}
@@ -213,7 +213,7 @@ export function OpsRuns({
                   <div>
                     <strong>
                       {saved.event.type === "start"
-                        ? "开始执行"
+                        ? "Started"
                         : saved.event.type === "finish"
                           ? status(selected.status)
                           : saved.event.step?.name}
@@ -223,7 +223,7 @@ export function OpsRuns({
                       {saved.event.step?.message || saved.event.finish?.message}
                     </p>
                     {saved.event.step?.logPath && (
-                      <code>日志：{saved.event.step.logPath}</code>
+                      <code>Log: {saved.event.step.logPath}</code>
                     )}
                   </div>
                 </li>
@@ -231,7 +231,7 @@ export function OpsRuns({
             </ol>
             <p>
               {selected.message ||
-                "尚未上报结束；若执行进程中断，请核实后补报失败或取消。"}
+                "No finish reported yet. If the executor was interrupted, check and then report failed or cancelled."}
             </p>
             <p className="ops-muted">
               {at(selected.startedAt)} → {at(selected.finishedAt)}

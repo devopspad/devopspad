@@ -16,22 +16,22 @@ test("a newer release prompts to download and can be postponed or skipped", asyn
 }) => {
   const bridge = await installWorkspace(page, { update });
   await page.goto("/");
-  const prompt = page.getByRole("dialog", { name: "DevOpsPad 更新" });
-  await expect(prompt).toContainText("发现新版本 v0.1.2");
-  await expect(prompt).toContainText("当前版本 v0.1.1");
+  const prompt = page.getByRole("dialog", { name: "DevOpsPad update" });
+  await expect(prompt).toContainText("DevOpsPad v0.1.2 is available");
+  await expect(prompt).toContainText("You have v0.1.1");
 
-  await prompt.getByRole("button", { name: "下载更新" }).click();
-  await prompt.getByRole("button", { name: "查看更新说明" }).click();
+  await prompt.getByRole("button", { name: "Download update" }).click();
+  await prompt.getByRole("button", { name: "Release notes" }).click();
   await expect
     .poll(() => bridge.opened)
     .toEqual([update.downloadUrl, update.url]);
 
-  await prompt.getByRole("button", { name: "稍后提醒" }).first().click();
+  await prompt.getByRole("button", { name: "Remind me later" }).first().click();
   await expect(prompt).toBeHidden();
   await page.reload();
   await expect(prompt).toBeVisible();
 
-  await prompt.getByRole("button", { name: "跳过此版本" }).click();
+  await prompt.getByRole("button", { name: "Skip this version" }).click();
   await expect(prompt).toBeHidden();
   await page.reload();
   await expect(
@@ -47,6 +47,6 @@ test("no prompt when the running version is current", async ({ page }) => {
     page.getByRole("button", { name: "orders", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("dialog", { name: "DevOpsPad 更新" }),
+    page.getByRole("dialog", { name: "DevOpsPad update" }),
   ).toHaveCount(0);
 });

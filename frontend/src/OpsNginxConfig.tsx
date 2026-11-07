@@ -50,7 +50,7 @@ export function OpsNginxConfig({
           setEditing(!!saved);
           if (saved && saved.base.revision !== value.revision)
             setError(
-              "源站配置已变化，草稿已保留；请复制所需修改后取消编辑并刷新。",
+              "The config on the host changed. Your draft is kept; copy what you need, cancel editing and refresh.",
             );
         }
       })
@@ -78,7 +78,7 @@ export function OpsNginxConfig({
       setConfig(updated);
       setDraft(updated.text);
       setEditing(false);
-      setNotice(updated.message || "Nginx 配置已保存并重载");
+      setNotice(updated.message || "Nginx config saved and reloaded");
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -87,11 +87,11 @@ export function OpsNginxConfig({
   }
   return (
     <section className="ops-config-card">
-      <h3>Nginx · 宿主机</h3>
+      <h3>Nginx · host</h3>
       {!path ? (
         <p className="ops-muted">
-          在项目映射的应用中设置 nginxPath，例如
-          /etc/nginx/conf.d/app.conf；通过所选环境的 SSH 连接读取。
+          Set nginxPath on the application in Project mapping, e.g.
+          /etc/nginx/conf.d/app.conf. It is read over the selected environment’s SSH connection.
         </p>
       ) : (
         <>
@@ -99,7 +99,7 @@ export function OpsNginxConfig({
             <code>{path}</code>
           </p>
           <p className="ops-muted">
-            保存时校验当前文件版本，执行 nginx -t 后重载；校验失败会恢复原配置。
+            Saving checks the file revision, runs nginx -t and reloads. If the test fails, the previous config is restored.
           </p>
           {error && (
             <div className="ops-error" role="alert">
@@ -117,7 +117,7 @@ export function OpsNginxConfig({
               disabled={saving || loading || editing}
               onClick={() => setVersion((v) => v + 1)}
             >
-              刷新 Nginx
+              Refresh Nginx
             </button>
             {config &&
               (editing ? (
@@ -127,7 +127,7 @@ export function OpsNginxConfig({
                     disabled={saving || draft === config.text}
                     onClick={() => void save()}
                   >
-                    保存并重载 Nginx
+                    Save and reload Nginx
                   </button>
                   <button
                     className="ops-btn"
@@ -140,7 +140,7 @@ export function OpsNginxConfig({
                       setVersion((v) => v + 1);
                     }}
                   >
-                    取消
+                    Cancel
                   </button>
                 </>
               ) : (
@@ -152,15 +152,15 @@ export function OpsNginxConfig({
                     setNotice("");
                   }}
                 >
-                  编辑 Nginx
+                  Edit Nginx
                 </button>
               ))}
           </div>
-          {loading && <p role="status">正在读取宿主机 Nginx 配置…</p>}
+          {loading && <p role="status">Loading host Nginx config…</p>}
           {config && (
             <ConfigCodeEditor
               filename="nginx.conf"
-              label="Nginx 配置内容"
+              label="Nginx config content"
               value={editing ? draft : config.text}
               editable={editing && !saving}
               onChange={(value) => {

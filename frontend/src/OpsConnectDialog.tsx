@@ -112,8 +112,8 @@ export function OpsConnectDialog({
     );
   return (
     <Modal
-      title="接入 K3s 应用"
-      subtitle="读取集群负载，建立本地环境与应用映射"
+      title="Connect a K3s app"
+      subtitle="Read cluster workloads and map them to a local environment and application"
       onClose={() => {
         if (!busy) onClose();
       }}
@@ -131,9 +131,9 @@ export function OpsConnectDialog({
             </div>
           )}
           <label>
-            集群连接
+            Cluster connection
             <select
-              aria-label="接入集群"
+              aria-label="Cluster to connect"
               disabled={!!busy}
               value={connectionId}
               onChange={(e) => {
@@ -152,7 +152,7 @@ export function OpsConnectDialog({
                 );
               }}
             >
-              {!clusters.length && <option value="">还没有集群连接</option>}
+              {!clusters.length && <option value="">No cluster connections yet</option>}
               {clusters.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} · {c.kind.toUpperCase()}
@@ -167,20 +167,20 @@ export function OpsConnectDialog({
             onClick={() => setAdd(true)}
           >
             <Plus size={15} />
-            新建 K3s 连接
+            New K3s connection
           </button>
           {connection && (
             <p className="ops-muted">
-              Context：{connection.context || "当前上下文"} ·{" "}
+              Context: {connection.context || "current context"} ·{" "}
               {connection.ssh?.enabled
-                ? "通过已保存的 SSH 隧道"
-                : "直接连接 Kubernetes API"}
+                ? "through the saved SSH tunnel"
+                : "direct to the Kubernetes API"}
             </p>
           )}
           <label>
-            命名空间
+            Namespace
             <input
-              aria-label="接入命名空间"
+              aria-label="Namespace to connect"
               required
               value={namespace}
               disabled={!!busy}
@@ -202,7 +202,7 @@ export function OpsConnectDialog({
             ) : (
               <PlugZap size={15} />
             )}
-            读取负载
+            Read workloads
           </button>
           {cluster && (
             <>
@@ -212,16 +212,16 @@ export function OpsConnectDialog({
                 </div>
               ))}
               {cluster.truncated && (
-                <p className="ops-notice">列表已截断，仅展示前 500 条资源。</p>
+                <p className="ops-notice">List truncated: showing the first 500 resources only.</p>
               )}
               <p role="status">
-                已连接：{cluster.workloads.length} 个负载 ·{" "}
-                {cluster.pods.length} 个 Pod
+                Connected: {cluster.workloads.length} {cluster.workloads.length === 1 ? "workload" : "workloads"} ·{" "}
+                {cluster.pods.length} {cluster.pods.length === 1 ? "Pod" : "Pods"}
               </p>
               <label>
-                工作负载
+                Workload
                 <select
-                  aria-label="接入负载"
+                  aria-label="Workload to connect"
                   value={workload?.uid || ""}
                   disabled={!!busy}
                   onChange={(e) =>
@@ -231,7 +231,7 @@ export function OpsConnectDialog({
                   }
                 >
                   {!cluster.workloads.length && (
-                    <option value="">此命名空间暂无可接入负载</option>
+                    <option value="">No workloads to connect in this namespace</option>
                   )}
                   {cluster.workloads.map((w) => (
                     <option key={w.uid} value={w.uid}>
@@ -243,24 +243,24 @@ export function OpsConnectDialog({
               {workload && (
                 <>
                   <label>
-                    环境名称
+                    Environment name
                     <input
                       required
                       maxLength={63}
                       pattern="[a-z0-9][a-z0-9-]*"
-                      aria-label="接入环境名称"
+                      aria-label="Environment name"
                       value={environment}
                       disabled={!!busy}
                       onChange={(e) => setEnvironment(e.target.value)}
                     />
                   </label>
                   <label>
-                    应用名称
+                    Application name
                     <input
                       required
                       maxLength={63}
                       pattern="[a-z0-9][a-z0-9-]*"
-                      aria-label="接入应用名称"
+                      aria-label="Application name"
                       value={application}
                       disabled={!!busy}
                       onChange={(e) => setApplication(e.target.value)}
@@ -268,8 +268,8 @@ export function OpsConnectDialog({
                   </label>
                   <div className="ops-release-images">
                     <label>
-                      应用选择器
-                      <code>{workload.selector || "没有可用选择器"}</code>
+                      Application selector
+                      <code>{workload.selector || "No selector available"}</code>
                     </label>
                   </div>
                 </>
@@ -277,9 +277,9 @@ export function OpsConnectDialog({
             </>
           )}
           <p className="ops-muted">
-            接入只保存本地
-            project.yaml，不会更改集群负载。凭据继续保存在本机，AI
-            可使用应用名称上报构建和发布记录。
+            Connecting only writes the local
+            project.yaml and never changes cluster workloads. Credentials stay on this device; AI
+            agents can report builds and releases by application name.
           </p>
         </div>
         <div className="ops-dialog-footer">
@@ -289,14 +289,14 @@ export function OpsConnectDialog({
             disabled={!!busy}
             onClick={onClose}
           >
-            取消
+            Cancel
           </button>
           <button
             className="ops-btn primary"
             disabled={!!busy || !workload?.selector}
           >
             {busy === "save" && <LoaderCircle size={15} className="spin" />}
-            接入应用
+            Connect app
           </button>
         </div>
       </form>

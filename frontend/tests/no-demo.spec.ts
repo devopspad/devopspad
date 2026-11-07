@@ -37,7 +37,7 @@ test("first launch has no seeded connections or demo entry, including old stored
   });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "还没有打开的连接" }),
+    page.getByRole("heading", { name: "No open connections yet" }),
   ).toBeVisible();
   await expect(page.locator(".tree-connection")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Query editor" })).toHaveCount(
@@ -45,21 +45,21 @@ test("first launch has no seeded connections or demo entry, including old stored
   );
   await expect(
     page.getByText(
-      /Demo workspace|Sample connections|查看演示|切换本地项目|Fake orders|Olivia/,
+      /Demo workspace|Sample connections|View demo|Switch local project|查看演示|Fake orders|Olivia/,
     ),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("group", { name: "工作区导航" }).getByRole("button"),
+    page.getByRole("group", { name: "Workspace navigation" }).getByRole("button"),
   ).toHaveCount(2);
   await page
-    .getByRole("group", { name: "工作区导航" })
+    .getByRole("group", { name: "Workspace navigation" })
     .getByRole("button", { name: "Infra", exact: true })
     .click();
   await expect(
-    page.getByText("连接你的基础设施", { exact: true }),
+    page.getByText("Connect your infrastructure", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText(/Old fake project|fake-version|查看演示|演示项目/),
+    page.getByText(/Old fake project|fake-version|View demo|Demo project|查看演示|演示项目/),
   ).toHaveCount(0);
 });
 
@@ -70,15 +70,15 @@ test("old application service routes reopen Infra without an extra history entry
   await expect(page).toHaveURL(/#infra$/);
   await expect(
     page
-      .getByRole("group", { name: "工作区导航" })
+      .getByRole("group", { name: "Workspace navigation" })
       .getByRole("button", { name: "Infra", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expect(
-    page.getByRole("button", { name: "应用服务", exact: true }),
+    page.getByRole("button", { name: "Application services", exact: true }),
   ).toHaveCount(0);
   await page.reload();
   await expect(page).toHaveURL(/#infra$/);
   await expect(
-    page.getByText("连接你的基础设施", { exact: true }),
+    page.getByText("Connect your infrastructure", { exact: true }),
   ).toBeVisible();
 });

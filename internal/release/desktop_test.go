@@ -48,7 +48,7 @@ func TestDesktopPlanIsDryRunAndRejectsStaleApply(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = ApplyDesktop(context.Background(), cl, p, func(string) error { return nil })
-	if err == nil || !strings.Contains(err.Error(), "已变化") {
+	if err == nil || !strings.Contains(err.Error(), "changed") {
 		t.Fatalf("stale apply: %v", err)
 	}
 	if updates != 1 {

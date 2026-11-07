@@ -8,10 +8,10 @@ export function WorkspaceNavigation({
   disabled?: boolean;
 }) {
   return (
-    <div className="workspace-navigation" role="group" aria-label="工作区导航">
+    <div className="workspace-navigation" role="group" aria-label="Workspace navigation">
       {(
         [
-          { id: "workbench", label: "中间件", icon: Database },
+          { id: "workbench", label: "Data", icon: Database },
           { id: "infra", label: "Infra", icon: Server },
         ] as const
       ).map(({ id, label, icon: Icon }) => (

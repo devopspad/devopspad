@@ -100,10 +100,10 @@ func TestSaveConfigMap(t *testing.T) {
 			if writes != expectedWrites {
 				t.Fatalf("writes=%d want=%d", writes, expectedWrites)
 			}
-			if scenario == "race" && !strings.Contains(err.Error(), "集群配置已变化") {
+			if scenario == "race" && !strings.Contains(err.Error(), "cluster config changed") {
 				t.Fatal(err)
 			}
-			if scenario == "forbidden" && !strings.Contains(err.Error(), "权限") {
+			if scenario == "forbidden" && !strings.Contains(err.Error(), "No permission") {
 				t.Fatal(err)
 			}
 		})

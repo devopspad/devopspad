@@ -39,7 +39,7 @@ func ReadNginx(ctx context.Context, c Connection, path string) (NginxConfig, err
 
 func SaveNginx(ctx context.Context, c Connection, path string, update NginxUpdate) (NginxConfig, error) {
 	if !nginxRevisionPattern.MatchString(update.Revision) || len(update.Text) > 1<<20 || !utf8.ValidString(update.Text) || strings.ContainsRune(update.Text, 0) {
-		return NginxConfig{}, errors.New("Nginx 配置或版本无效，请保留修改并刷新后重试")
+		return NginxConfig{}, errors.New("Invalid Nginx config or revision; keep your edits, refresh and try again")
 	}
 	return nginxOperation(ctx, c, path, &update)
 }
@@ -48,7 +48,7 @@ type nginxOutput struct{ bytes.Buffer }
 
 func (b *nginxOutput) Write(p []byte) (int, error) {
 	if b.Len()+len(p) > 8<<20 {
-		return 0, errors.New("Nginx 响应超过大小限制")
+		return 0, errors.New("The Nginx response exceeds the size limit")
 	}
 	return b.Buffer.Write(p)
 }
@@ -56,10 +56,10 @@ func (b *nginxOutput) Write(p []byte) (int, error) {
 func nginxOperation(ctx context.Context, c Connection, path string, update *NginxUpdate) (NginxConfig, error) {
 	var result NginxConfig
 	if len(path) > 240 || !nginxPathPattern.MatchString(path) {
-		return result, errors.New("仅支持 /etc/nginx/conf.d/ 下的 .conf 文件")
+		return result, errors.New("Only .conf files under /etc/nginx/conf.d/ are supported")
 	}
 	if !c.SSH.Enabled {
-		return result, errors.New("宿主机 Nginx 需要为所选环境的集群连接配置 SSH")
+		return result, errors.New("Host Nginx needs SSH configured on the selected environment's cluster connection")
 	}
 	c, closeTransport, err := prepareTransport(ctx, c)
 	if err != nil {
@@ -83,16 +83,16 @@ func nginxOperation(ctx context.Context, c Connection, path string, update *Ngin
 	session.Stderr = io.Discard // Never return diagnostics containing configuration values.
 	command := "python3 -c '" + strings.ReplaceAll(nginxRemoteScript, "'", "'\"'\"'") + "'"
 	if err = session.Run(command); err != nil {
-		return result, errors.New("Nginx 操作未确认，请刷新核对；远端需要 Python 3 及配置文件访问权限")
+		return result, errors.New("The Nginx operation was not confirmed; refresh to check. The host needs Python 3 and access to the config file")
 	}
 	if err = json.Unmarshal(out.Bytes(), &result); err != nil {
-		return result, errors.New("无法读取远端 Nginx 结果，请刷新核对")
+		return result, errors.New("Cannot read the remote Nginx result; refresh to check")
 	}
 	if result.Error != "" {
 		return result, errors.New(result.Error)
 	}
 	if result.Path != path || !nginxRevisionPattern.MatchString(result.Revision) {
-		return result, errors.New("远端 Nginx 文件身份无效")
+		return result, errors.New("Invalid remote Nginx file identity")
 	}
 	return result, nil
 }

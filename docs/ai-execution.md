@@ -71,7 +71,7 @@ build/bin/devopspadctl cluster attach --connection heartie-pro --namespace defau
 
 记录发布步骤后，必须记录 `rollout` 与 `image-check` 两个成功步骤。实际读取集群确认就绪和镜像摘要与构建一致后，才能发送成功 finish；finish 的 image 必须等于构建摘要。失败或不确定的发布结果不得按成功上报。
 
-这些步骤是执行端提交的证据，CLI 不伪装成独立集群验证。外部 release 同时显示在“AI 执行记录”和对应环境、应用的“制品发布”页，标记“外部执行 / 上报成功”，详情可回到该次发布执行记录。桌面自身控制 Kubernetes 的记录保留原有状态和回退功能；外部记录不提供未验证的直接回退按钮，可从制品库重新发布已知版本。上报外部 release 事件本身不会执行一次额外发布。
+这些步骤是执行端提交的证据，CLI 不伪装成独立集群验证。外部 release 同时显示在“AI runs”和对应环境、应用的“Releases”页，标记“External release / Reported”，详情可回到该次发布执行记录。桌面自身控制 Kubernetes 的记录保留原有状态和回退功能；外部记录不提供未验证的直接回退按钮，可从制品库重新发布已知版本。上报外部 release 事件本身不会执行一次额外发布。
 
 ## 存储、共享与日志
 

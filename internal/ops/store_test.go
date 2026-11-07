@@ -99,14 +99,14 @@ func TestGitRefusesDirtyPullAndParentRepository(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.Git(context.Background(), "pull"); err == nil || !strings.Contains(err.Error(), "未提交") {
+	if _, err = s.Git(context.Background(), "pull"); err == nil || !strings.Contains(err.Error(), "uncommitted") {
 		t.Fatalf("dirty pull: %v", err)
 	}
 	nested, err := New(filepath.Join(root, "nested"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = nested.Git(context.Background(), "push"); err == nil || !strings.Contains(err.Error(), "根目录") {
+	if _, err = nested.Git(context.Background(), "push"); err == nil || !strings.Contains(err.Error(), "repository root") {
 		t.Fatalf("nested git: %v", err)
 	}
 }

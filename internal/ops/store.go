@@ -122,7 +122,7 @@ func New(root string) (*Store, error) {
 			return nil, e
 		}
 		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-			return nil, errors.New("项目目录不能是符号链接")
+			return nil, errors.New("The project directory cannot be a symbolic link")
 		}
 	}
 	if _, err = s.Read(); err != nil {
@@ -132,7 +132,7 @@ func New(root string) (*Store, error) {
 }
 func decode(b []byte, out any) error {
 	if len(b) > 1<<20 {
-		return errors.New("文件超过 1 MiB")
+		return errors.New("File exceeds 1 MiB")
 	}
 	d := yaml.NewDecoder(bytes.NewReader(b))
 	d.KnownFields(true)
@@ -141,7 +141,7 @@ func decode(b []byte, out any) error {
 	}
 	var extra any
 	if err := d.Decode(&extra); err != io.EOF {
-		return errors.New("仅允许一个 YAML 文档")
+		return errors.New("Only one YAML document is allowed")
 	}
 	return nil
 }
@@ -151,28 +151,28 @@ func Validate(text string) (Project, error) {
 		return p, err
 	}
 	if p.APIVersion != "devopspad.project/v1" || strings.TrimSpace(p.Name) == "" || len(p.Name) > 120 {
-		return p, errors.New("需要 apiVersion: devopspad.project/v1 和项目名称")
+		return p, errors.New("apiVersion: devopspad.project/v1 and a project name are required")
 	}
 	if len(p.Environments) > 32 || len(p.Applications) > 500 {
-		return p, errors.New("项目最多 32 个环境、500 个应用")
+		return p, errors.New("A project can have at most 32 environments and 500 applications")
 	}
 	seen := map[string]bool{}
 	for _, e := range p.Environments {
 		if !ValidName(e.Name) || !ValidName(e.Namespace) || strings.TrimSpace(e.Connection) == "" || len(e.Connection) > 200 || seen[e.Name] {
-			return p, errors.New("环境名称需唯一，并指定连接名称和具体命名空间")
+			return p, errors.New("Environment names must be unique and set a connection name and a specific namespace")
 		}
 		seen[e.Name] = true
 	}
 	seen = map[string]bool{}
 	for _, a := range p.Applications {
 		if !ValidName(a.Name) || seen[a.Name] || strings.TrimSpace(a.Selector) == "" {
-			return p, errors.New("应用名称需唯一，并指定标签选择器")
+			return p, errors.New("Application names must be unique and set a label selector")
 		}
 		if _, err := labels.Parse(a.Selector); err != nil {
-			return p, fmt.Errorf("应用 %s 的标签选择器无效: %w", a.Name, err)
+			return p, fmt.Errorf("Invalid label selector for application %s: %w", a.Name, err)
 		}
 		if a.NginxPath != "" && (len(a.NginxPath) > 240 || !regexp.MustCompile(`^/etc/nginx/conf\.d/[a-zA-Z0-9][a-zA-Z0-9._-]*\.conf$`).MatchString(a.NginxPath)) {
-			return p, fmt.Errorf("应用 %s 的 nginxPath 必须是 /etc/nginx/conf.d/ 下的 .conf 文件", a.Name)
+			return p, fmt.Errorf("nginxPath of application %s must be a .conf file under /etc/nginx/conf.d/", a.Name)
 		}
 		seen[a.Name] = true
 	}
@@ -212,7 +212,7 @@ func (s *Store) read() (Snapshot, error) {
 			return out, err
 		}
 		if len(entries) > 10000 {
-			return out, errors.New("项目记录超过 10000 条，请归档历史记录")
+			return out, errors.New("The project has more than 10000 records; archive older records")
 		}
 		for _, entry := range entries {
 			ext := ".yaml"
@@ -223,7 +223,7 @@ func (s *Store) read() (Snapshot, error) {
 				continue
 			}
 			if _, e := uuid.Parse(strings.TrimSuffix(entry.Name(), ext)); e != nil {
-				return out, fmt.Errorf("无效记录文件名: %s", entry.Name())
+				return out, fmt.Errorf("Invalid record file name: %s", entry.Name())
 			}
 			b, err := readBounded(filepath.Join(s.Root, kind, entry.Name()))
 			if err != nil {
@@ -235,7 +235,7 @@ func (s *Store) read() (Snapshot, error) {
 					return out, fmt.Errorf("%s: %w", entry.Name(), err)
 				}
 				if !ValidImage(a.Image) || !ValidName(a.Application) || a.ID != strings.TrimSuffix(entry.Name(), ext) {
-					return out, fmt.Errorf("无效制品: %s", entry.Name())
+					return out, fmt.Errorf("Invalid artifact: %s", entry.Name())
 				}
 				out.Artifacts = append(out.Artifacts, a)
 			} else {
@@ -246,7 +246,7 @@ func (s *Store) read() (Snapshot, error) {
 					return out, fmt.Errorf("%s: %w", entry.Name(), err)
 				}
 				if r.ID != strings.TrimSuffix(entry.Name(), ext) || !ValidName(r.Application) || !ValidName(r.Environment) || (r.Status != "running" && r.Status != "succeeded" && r.Status != "failed") {
-					return out, fmt.Errorf("无效发布记录: %s", entry.Name())
+					return out, fmt.Errorf("Invalid release record: %s", entry.Name())
 				}
 				if r.Steps == nil {
 					r.Steps = []string{}
@@ -276,7 +276,7 @@ func (s *Store) Save(text, expected string) (Snapshot, error) {
 	defer s.mu.Unlock()
 	lock, err := os.OpenFile(filepath.Join(s.Root, ".devopspad-write.lock"), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
-		return Snapshot{}, errors.New("项目正在写入；若上次进程异常退出，请检查后移除 .devopspad-write.lock")
+		return Snapshot{}, errors.New("The project is being written; if a previous process crashed, check and remove .devopspad-write.lock")
 	}
 	lock.Close()
 	defer os.Remove(lock.Name())
@@ -285,7 +285,7 @@ func (s *Store) Save(text, expected string) (Snapshot, error) {
 		return old, err
 	}
 	if old.Revision != expected {
-		return old, errors.New("配置已被修改，请刷新并合并改动后再保存")
+		return old, errors.New("The project was modified; refresh and merge the changes before saving")
 	}
 	if err = writeAtomic(filepath.Join(s.Root, "project.yaml"), []byte(text)); err != nil {
 		return old, err
@@ -294,7 +294,7 @@ func (s *Store) Save(text, expected string) (Snapshot, error) {
 }
 func (s *Store) AddArtifact(a Artifact) (Snapshot, error) {
 	if !ValidImage(a.Image) || !ValidName(a.Application) || strings.TrimSpace(a.Version) == "" || len(a.Version) > 120 || len(a.Source) > 500 {
-		return Snapshot{}, errors.New("请填写应用、版本及带 sha256 摘要的镜像地址")
+		return Snapshot{}, errors.New("Enter the application, version and an image with a sha256 digest")
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -307,7 +307,7 @@ func (s *Store) AddArtifact(a Artifact) (Snapshot, error) {
 		found = found || app.Name == a.Application
 	}
 	if !found {
-		return p, errors.New("应用不存在")
+		return p, errors.New("Application not found")
 	}
 	a.RunID = ""
 	a.ID = uuid.NewString()
@@ -339,7 +339,7 @@ func readBounded(path string) ([]byte, error) {
 		return nil, err
 	}
 	if !info.Mode().IsRegular() {
-		return nil, errors.New("项目文件必须为普通文件，不能是符号链接")
+		return nil, errors.New("Project files must be regular files, not symbolic links")
 	}
 	f, err := os.Open(path)
 	if err != nil {
@@ -348,7 +348,7 @@ func readBounded(path string) ([]byte, error) {
 	defer f.Close()
 	b, err := io.ReadAll(io.LimitReader(f, (1<<20)+1))
 	if len(b) > 1<<20 {
-		return nil, errors.New("文件超过 1 MiB")
+		return nil, errors.New("File exceeds 1 MiB")
 	}
 	return b, err
 }

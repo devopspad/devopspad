@@ -101,7 +101,7 @@ test.beforeEach(async ({ page }) => {
               path: "/etc/nginx/conf.d/portal.conf",
               text: update.text,
               revision: "b".repeat(64),
-              message: "配置已保存，nginx -t 通过并已重载",
+              message: "Config saved, nginx -t passed and Nginx reloaded",
             };
           },
         },
@@ -114,31 +114,31 @@ test("Nginx config reads, preserves failed draft and saves in selected environme
   page,
 }) => {
   await page.goto("/#infra");
-  await expect(page.getByText("Nginx · 宿主机", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "编辑 Nginx", exact: true }).click();
+  await expect(page.getByText("Nginx · host", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Edit Nginx", exact: true }).click();
   const editor = page.getByRole("textbox", {
-    name: "Nginx 配置内容",
+    name: "Nginx config content",
     exact: true,
   });
   await editor.fill("server { listen 8080; }\n");
-  await page.getByRole("button", { name: "Nginx 配置", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Nginx 配置", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Nginx config", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Nginx config", exact: true })).toBeVisible();
   await expect(editor).toContainText("8080");
   await page.evaluate(() => {
-    (window as any).__nginxError = "Nginx 配置校验失败，已恢复原文件";
+    (window as any).__nginxError = "Nginx config test failed; the original file was restored";
   });
   await page
-    .getByRole("button", { name: "保存并重载 Nginx", exact: true })
+    .getByRole("button", { name: "Save and reload Nginx", exact: true })
     .click();
-  await expect(page.getByRole("alert")).toContainText("已恢复原文件");
+  await expect(page.getByRole("alert")).toContainText("the original file was restored");
   await expect(editor).toContainText("8080");
   await page.evaluate(() => {
     (window as any).__nginxError = "";
   });
   await page
-    .getByRole("button", { name: "保存并重载 Nginx", exact: true })
+    .getByRole("button", { name: "Save and reload Nginx", exact: true })
     .click();
-  await expect(page.getByRole("status")).toContainText("nginx -t 通过并已重载");
+  await expect(page.getByRole("status")).toContainText("nginx -t passed and Nginx reloaded");
   expect(
     await page.evaluate(() => (window as any).__nginxSaves[1]),
   ).toMatchObject({
@@ -152,18 +152,18 @@ test("external release appears in releases with provenance and execution details
   page,
 }) => {
   await page.goto("/#infra");
-  await page.getByRole("button", { name: "制品发布", exact: true }).click();
-  await expect(page.locator(".ops-release-time")).toContainText("外部发布");
-  await expect(page.getByText("上报成功", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Releases", exact: true }).click();
+  await expect(page.locator(".ops-release-time")).toContainText("External release");
+  await expect(page.getByText("Reported", { exact: true })).toBeVisible();
   await page.locator(".ops-release-row").click();
   await expect(
     page.getByText("Public HTTPS verified", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "回退到此版本", exact: true }),
+    page.getByRole("button", { name: "Roll back to this version", exact: true }),
   ).toHaveCount(0);
   await page
-    .getByRole("button", { name: "查看发布执行记录", exact: true })
+    .getByRole("button", { name: "View release record", exact: true })
     .click();
   await expect(
     page.getByText("Public HTTPS verified", { exact: true }),

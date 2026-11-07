@@ -33,23 +33,23 @@ export function UpdatePrompt() {
   const open = (url: string) =>
     void api.OpenUpdate(url).catch((e) => setError(errorText(e)));
   return (
-    <div className="update-prompt" role="dialog" aria-label="DevOpsPad 更新">
+    <div className="update-prompt" role="dialog" aria-label="DevOpsPad update">
       <div className="update-prompt-head">
         <Download size={16} />
-        <strong>发现新版本 v{update.latest}</strong>
+        <strong>DevOpsPad v{update.latest} is available</strong>
         <button
           className="update-prompt-close"
-          aria-label="稍后提醒"
+          aria-label="Remind me later"
           onClick={() => setHidden(update.latest)}
         >
           <X size={14} />
         </button>
       </div>
       <p>
-        当前版本 v{update.current}。下载后打开 DMG，把 DevOpsPad
-        拖入“应用程序”替换旧版本，连接和项目配置会保留。
+        You have v{update.current}. Open the downloaded DMG and drag DevOpsPad
+        into Applications to replace it. Connections and project settings are kept.
         <button className="update-prompt-link" onClick={() => open(update.url)}>
-          查看更新说明
+          Release notes
         </button>
       </p>
       {error && (
@@ -65,19 +65,19 @@ export function UpdatePrompt() {
             setUpdate(undefined);
           }}
         >
-          跳过此版本
+          Skip this version
         </button>
         <button
           className="update-prompt-secondary"
           onClick={() => setHidden(update.latest)}
         >
-          稍后提醒
+          Remind me later
         </button>
         <button
           className="update-prompt-primary"
           onClick={() => open(update.downloadUrl || update.url)}
         >
-          下载更新
+          Download update
         </button>
       </div>
     </div>

@@ -54,7 +54,7 @@ func OpenCluster(ctx context.Context, c Connection) (dynamic.Interface, func(), 
 
 func openClusterConnection(ctx context.Context, c Connection) (Connection, dynamic.Interface, func(), error) {
 	if c.Kind != "k8s" && c.Kind != "k3s" {
-		return c, nil, func() {}, errors.New("请选择 Kubernetes 或 K3s 连接")
+		return c, nil, func() {}, errors.New("Choose a Kubernetes or K3s connection")
 	}
 	c, close, err := prepareTransport(ctx, c)
 	if err != nil {
@@ -69,7 +69,7 @@ func openClusterConnection(ctx context.Context, c Connection) (Connection, dynam
 }
 func opsScope(namespace, selector string) error {
 	if namespace == "" || namespace == "*" {
-		return errors.New("请选择具体命名空间")
+		return errors.New("Choose a specific namespace")
 	}
 	if _, err := labels.Parse(selector); err != nil {
 		return err
@@ -199,7 +199,7 @@ func ReadOpsMetrics(ctx context.Context, c Connection, namespace, selector strin
 		return nil, err
 	}
 	if pods.GetContinue() != "" {
-		return nil, errors.New("Pod 超过 500 个，请缩小应用选择器")
+		return nil, errors.New("More than 500 Pods; narrow the application selector")
 	}
 	allowed := map[string]bool{}
 	for _, p := range pods.Items {
@@ -207,7 +207,7 @@ func ReadOpsMetrics(ctx context.Context, c Connection, namespace, selector strin
 	}
 	list, err := cl.Resource(schema.GroupVersionResource{Group: "metrics.k8s.io", Version: "v1beta1", Resource: "pods"}).Namespace(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("无法读取 CPU / 内存指标；需要 metrics-server 及 metrics.k8s.io 的读取权限: %w", err)
+		return nil, fmt.Errorf("Cannot read CPU / memory metrics; metrics-server and read access to metrics.k8s.io are required: %w", err)
 	}
 	out := []OpsMetric{}
 	for _, obj := range list.Items {
@@ -224,7 +224,7 @@ func ReadOpsMetrics(ctx context.Context, c Connection, namespace, selector strin
 			cpu, e1 := resource.ParseQuantity(objectString(c, "usage", "cpu"))
 			mem, e2 := resource.ParseQuantity(objectString(c, "usage", "memory"))
 			if e1 != nil || e2 != nil {
-				return nil, errors.New("指标包含无效资源用量")
+				return nil, errors.New("The metrics contain invalid resource usage")
 			}
 			m.CPU += float64(cpu.MilliValue())
 			m.Memory += float64(mem.Value()) / (1024 * 1024)

@@ -170,7 +170,7 @@ test("application config reads references directly and isolates applications, na
 }) => {
   await installBridge(page);
   await page.goto("/#apps");
-  await page.getByRole("button", { name: "应用配置", exact: true }).click();
+  await page.getByRole("button", { name: "App config", exact: true }).click();
   await expect(
     page.getByLabel("portal-config / application.yaml"),
   ).toContainText("namespace: team");
@@ -178,7 +178,7 @@ test("application config reads references directly and isolates applications, na
   await expect(page.getByLabel("shared / application.yaml")).toBeVisible();
   await expect(
     page.getByRole("cell", {
-      name: "Secret（仅引用） / credentials / token",
+      name: "Secret (reference only) / credentials / token",
       exact: true,
     }),
   ).toBeVisible();
@@ -192,25 +192,25 @@ test("application config reads references directly and isolates applications, na
   expect(
     calls.every((c: any) => c.namespace === "team" && c.context === "local"),
   ).toBe(true);
-  await page.getByLabel("应用", { exact: true }).selectOption("api");
+  await page.getByLabel("Application", { exact: true }).selectOption("api");
   await expect(page.getByLabel("api-config / application.yaml")).toBeVisible();
   await expect(page.getByLabel("portal-config / application.yaml")).toHaveCount(
     0,
   );
-  await page.getByLabel("环境", { exact: true }).selectOption("dev");
+  await page.getByLabel("Environment", { exact: true }).selectOption("dev");
   await expect(page.getByLabel("api-config / application.yaml")).toContainText(
     "namespace: dev",
   );
   await page.evaluate(() => {
     (window as any).__denyConfig = true;
   });
-  await page.getByRole("button", { name: "刷新", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(page.getByRole("alert").first()).toContainText("Access denied");
   await expect(page.getByLabel("api-config / application.yaml")).toHaveCount(0);
   await page.evaluate(() => {
     (window as any).__denyConfig = false;
   });
-  await page.getByRole("button", { name: "刷新", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(page.getByLabel("api-config / application.yaml")).toBeVisible();
 });
 
@@ -222,15 +222,15 @@ test("pending reads cannot replace the selected application's config", async ({
   await page.evaluate(() => {
     (window as any).__holdWorkloads = true;
   });
-  await page.getByRole("button", { name: "应用配置", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("正在读取应用配置");
+  await page.getByRole("button", { name: "App config", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Loading app config");
   await expect
     .poll(() => page.evaluate(() => typeof (window as any).__finishWorkloads))
     .toBe("function");
   await page.evaluate(() => {
     (window as any).__holdWorkloads = false;
   });
-  await page.getByLabel("应用", { exact: true }).selectOption("api");
+  await page.getByLabel("Application", { exact: true }).selectOption("api");
   await expect(page.getByLabel("api-config / application.yaml")).toBeVisible();
   await page.evaluate(() => (window as any).__finishWorkloads());
   await expect(page.getByLabel("portal-config / application.yaml")).toHaveCount(
@@ -248,19 +248,19 @@ test("config fits the window and restores the selected page without a workbench 
 }, testInfo) => {
   await installBridge(page);
   await page.goto("/#apps");
-  await page.getByLabel("应用", { exact: true }).selectOption("api");
-  await page.getByRole("button", { name: "应用配置", exact: true }).click();
+  await page.getByLabel("Application", { exact: true }).selectOption("api");
+  await page.getByRole("button", { name: "App config", exact: true }).click();
   await expect(page.getByLabel("api-config / application.yaml")).toBeVisible();
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "应用配置", exact: true }),
+    page.getByRole("heading", { name: "App config", exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("应用", { exact: true })).toHaveValue("api");
+  await expect(page.getByLabel("Application", { exact: true })).toHaveValue("api");
   await expect(page.locator(".app-shell")).toHaveCount(0);
   for (const width of [1228, 1000]) {
     await page.setViewportSize({ width, height: 761 });
     await expect(
-      page.getByRole("button", { name: "刷新", exact: true }),
+      page.getByRole("button", { name: "Refresh", exact: true }),
     ).toBeInViewport();
     expect(
       await page
@@ -271,25 +271,25 @@ test("config fits the window and restores the selected page without a workbench 
   await page.screenshot({
     path: testInfo.outputPath("ops-application-config.png"),
   });
-  await page.getByRole("button", { name: "项目映射", exact: true }).click();
-  await expect(page.getByLabel("项目 YAML")).toContainText(
+  await page.getByRole("button", { name: "Project mapping", exact: true }).click();
+  await expect(page.getByLabel("Project YAML")).toContainText(
     "# retained comment",
   );
-  const original = await page.getByLabel("项目 YAML").inputValue();
+  const original = await page.getByLabel("Project YAML").inputValue();
   expect(
     await page
       .locator(".ops-main")
       .evaluate((el) => el.scrollWidth <= el.clientWidth),
   ).toBe(true);
-  await page.getByRole("button", { name: "格式化 YAML" }).click();
-  const yaml = await page.getByLabel("项目 YAML").inputValue();
+  await page.getByRole("button", { name: "Format YAML" }).click();
+  const yaml = await page.getByLabel("Project YAML").inputValue();
   expect(yaml).toContain("# retained comment");
   expect(yaml).toContain("applications:\n  - ");
   expect(parse(yaml)).toEqual(parse(original));
   for (const width of [1228, 1000]) {
     await page.setViewportSize({ width, height: 761 });
     await expect(
-      page.getByRole("button", { name: "保存配置" }),
+      page.getByRole("button", { name: "Save config" }),
     ).toBeInViewport();
     expect(
       await page
@@ -305,7 +305,7 @@ test("all configuration content remains reachable by scrolling at minimum window
   await installBridge(page);
   await page.setViewportSize({ width: 1000, height: 680 });
   await page.goto("/#apps");
-  await page.getByRole("button", { name: "应用配置", exact: true }).click();
+  await page.getByRole("button", { name: "App config", exact: true }).click();
   await expect(
     page.getByLabel("portal-config / application.yaml"),
   ).toBeVisible();
@@ -321,18 +321,18 @@ test("all configuration content remains reachable by scrolling at minimum window
   await expect(last).toBeInViewport();
   await expect(
     page
-      .getByRole("group", { name: "工作区导航" })
+      .getByRole("group", { name: "Workspace navigation" })
       .getByRole("button", { name: "Infra", exact: true }),
   ).toBeInViewport();
   await page.screenshot({
     path: testInfo.outputPath("ops-config-scrolled.png"),
   });
-  await page.getByRole("button", { name: "共享与同步", exact: true }).click();
+  await page.getByRole("button", { name: "Sharing & sync", exact: true }).click();
   await page
-    .getByRole("heading", { name: "每台设备独立保管凭据" })
+    .getByRole("heading", { name: "Credentials stay on each device" })
     .scrollIntoViewIfNeeded();
   await expect(
-    page.getByRole("heading", { name: "每台设备独立保管凭据" }),
+    page.getByRole("heading", { name: "Credentials stay on each device" }),
   ).toBeInViewport();
 });
 
@@ -341,7 +341,7 @@ test("config files highlight, retain drafts across applications, and save to the
 }, testInfo) => {
   await installBridge(page);
   await page.goto("/#infra");
-  await page.getByRole("button", { name: "应用配置", exact: true }).click();
+  await page.getByRole("button", { name: "App config", exact: true }).click();
   const card = page.getByRole("region", {
     name: "ConfigMap portal-config",
     exact: true,
@@ -358,18 +358,18 @@ test("config files highlight, retain drafts across applications, and save to the
       .first()
       .evaluate((el) => getComputedStyle(el).color),
   ).not.toBe(await editor.evaluate((el) => getComputedStyle(el).color));
-  await card.getByRole("button", { name: "编辑配置", exact: true }).click();
+  await card.getByRole("button", { name: "Edit config", exact: true }).click();
   await editor.fill("# keep comment\napplication: edited\nport: 8080\n");
-  await expect(card.getByText("未保存", { exact: true })).toBeVisible();
-  await page.getByLabel("应用", { exact: true }).selectOption("api");
+  await expect(card.getByText("Unsaved", { exact: true })).toBeVisible();
+  await page.getByLabel("Application", { exact: true }).selectOption("api");
   await expect(
     page.getByLabel("api-config / application.yaml", { exact: true }),
   ).not.toContainText("application: edited");
-  await page.getByLabel("应用", { exact: true }).selectOption("portal");
+  await page.getByLabel("Application", { exact: true }).selectOption("portal");
   await expect(editor).toContainText("application: edited");
   await page.screenshot({ path: testInfo.outputPath("config-editor.png") });
-  await card.getByRole("button", { name: "保存到集群", exact: true }).click();
-  await expect(card.getByRole("status")).toContainText("已保存到集群");
+  await card.getByRole("button", { name: "Save to cluster", exact: true }).click();
+  await expect(card.getByRole("status")).toContainText("Saved to the cluster");
   await expect(editor).toHaveAttribute("contenteditable", "false");
   const saves = await page.evaluate(() => (window as any).__configSaves);
   expect(saves).toHaveLength(1);
@@ -388,17 +388,17 @@ test("config files highlight, retain drafts across applications, and save to the
     "# keep comment\napplication: edited\nport: 8080\n",
   );
   expect(saves[0].data["settings.json"]).toBe('{"enabled":true}');
-  await page.getByRole("button", { name: "刷新", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(editor).toContainText("application: edited");
-  await card.getByRole("button", { name: "编辑配置", exact: true }).click();
+  await card.getByRole("button", { name: "Edit config", exact: true }).click();
   await editor.fill("application: cancelled");
-  await card.getByRole("button", { name: "取消编辑", exact: true }).click();
+  await card.getByRole("button", { name: "Cancel editing", exact: true }).click();
   await expect(editor).toContainText("application: edited");
   await expect(editor).not.toContainText("cancelled");
-  await card.getByRole("button", { name: "编辑配置", exact: true }).click();
+  await card.getByRole("button", { name: "Edit config", exact: true }).click();
   await editor.fill("application: second");
-  await card.getByRole("button", { name: "保存到集群", exact: true }).click();
-  await expect(card.getByRole("status")).toContainText("已保存到集群");
+  await card.getByRole("button", { name: "Save to cluster", exact: true }).click();
+  await expect(card.getByRole("status")).toContainText("Saved to the cluster");
   expect(
     await page.evaluate(() => (window as any).__configSaves[1].resourceVersion),
   ).toBe("2");
@@ -409,7 +409,7 @@ test("invalid YAML, JSON and TOML stay editable without writing to the cluster",
 }) => {
   await installBridge(page);
   await page.goto("/#infra");
-  await page.getByRole("button", { name: "应用配置", exact: true }).click();
+  await page.getByRole("button", { name: "App config", exact: true }).click();
   const card = page.getByRole("region", {
     name: "ConfigMap portal-config",
     exact: true,
@@ -419,16 +419,16 @@ test("invalid YAML, JSON and TOML stay editable without writing to the cluster",
     ["settings.json", '{"key":'],
     ["settings.toml", 'key = "broken'],
   ]) {
-    await card.getByRole("button", { name: "编辑配置", exact: true }).click();
+    await card.getByRole("button", { name: "Edit config", exact: true }).click();
     const editor = page.getByRole("textbox", {
       name: `portal-config / ${filename}`,
       exact: true,
     });
     await editor.fill(invalid);
-    await card.getByRole("button", { name: "保存到集群", exact: true }).click();
+    await card.getByRole("button", { name: "Save to cluster", exact: true }).click();
     await expect(card.getByRole("alert")).toContainText(filename);
     await expect(editor).toContainText(invalid);
-    await card.getByRole("button", { name: "取消编辑", exact: true }).click();
+    await card.getByRole("button", { name: "Cancel editing", exact: true }).click();
   }
   expect(await page.evaluate(() => (window as any).__configSaves)).toHaveLength(
     0,
@@ -438,8 +438,8 @@ test("invalid YAML, JSON and TOML stay editable without writing to the cluster",
 test("save errors preserve edits and never claim success", async ({ page }) => {
   await installBridge(page);
   await page.goto("/#infra");
-  await page.getByRole("button", { name: "应用配置", exact: true }).click();
-  await page.getByLabel("环境", { exact: true }).selectOption("dev");
+  await page.getByRole("button", { name: "App config", exact: true }).click();
+  await page.getByLabel("Environment", { exact: true }).selectOption("dev");
   const card = page.getByRole("region", {
     name: "ConfigMap portal-config",
     exact: true,
@@ -448,25 +448,25 @@ test("save errors preserve edits and never claim success", async ({ page }) => {
     name: "portal-config / application.yaml",
     exact: true,
   });
-  await card.getByRole("button", { name: "编辑配置", exact: true }).click();
+  await card.getByRole("button", { name: "Edit config", exact: true }).click();
   await editor.fill("application: retained");
   for (const error of [
-    "集群配置已变化，请刷新后重试",
-    "没有更新此 ConfigMap 的权限",
+    "The cluster config changed; refresh and try again",
+    "No permission to update this ConfigMap",
   ]) {
     await page.evaluate((error) => {
       (window as any).__saveError = error;
     }, error);
-    await card.getByRole("button", { name: "保存到集群", exact: true }).click();
+    await card.getByRole("button", { name: "Save to cluster", exact: true }).click();
     await expect(card.getByRole("alert")).toHaveText(error);
     await expect(editor).toContainText("application: retained");
     await expect(editor).toHaveAttribute("contenteditable", "true");
     await expect(card.getByRole("status")).toHaveCount(0);
-    await expect(page.getByLabel("应用", { exact: true })).toBeEnabled();
+    await expect(page.getByLabel("Application", { exact: true })).toBeEnabled();
   }
   const saves = await page.evaluate(() => (window as any).__configSaves);
   expect(saves.every((call: any) => call.ref.namespace === "dev")).toBe(true);
-  await card.getByRole("button", { name: "取消编辑", exact: true }).click();
+  await card.getByRole("button", { name: "Cancel editing", exact: true }).click();
 });
 
 test("immutable ConfigMaps remain highlighted and read-only", async ({
@@ -477,15 +477,15 @@ test("immutable ConfigMaps remain highlighted and read-only", async ({
   await page.evaluate(() => {
     (window as any).__immutable = true;
   });
-  await page.getByRole("button", { name: "应用配置", exact: true }).click();
+  await page.getByRole("button", { name: "App config", exact: true }).click();
   const card = page.getByRole("region", {
     name: "ConfigMap portal-config",
     exact: true,
   });
   await expect(
-    card.getByRole("button", { name: "编辑配置", exact: true }),
+    card.getByRole("button", { name: "Edit config", exact: true }),
   ).toBeDisabled();
   await expect(
-    card.getByText("此 ConfigMap 为不可修改配置（immutable）。"),
+    card.getByText("This ConfigMap is immutable."),
   ).toBeVisible();
 });

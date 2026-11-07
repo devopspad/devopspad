@@ -13,7 +13,7 @@ func (s *Store) Attach(env Environment, app Application, expected string) (Snaps
 		return snapshot, err
 	}
 	if snapshot.Revision != expected {
-		return snapshot, errors.New("配置已被修改，请刷新后重新接入")
+		return snapshot, errors.New("The project was modified; refresh and connect again")
 	}
 	var doc yaml.Node
 	if err = yaml.Unmarshal([]byte(snapshot.YAML), &doc); err != nil {
@@ -29,7 +29,7 @@ func (s *Store) Attach(env Environment, app Application, expected string) (Snaps
 			if root.Content[i].Value == key {
 				sequence := root.Content[i+1]
 				if sequence.Kind != yaml.SequenceNode {
-					return errors.New("配置字段必须是列表: " + key)
+					return errors.New("Project field must be a list: " + key)
 				}
 				sequence.Content = append(sequence.Content, &item)
 				return nil
@@ -42,7 +42,7 @@ func (s *Store) Attach(env Environment, app Application, expected string) (Snaps
 	for _, existing := range snapshot.Project.Environments {
 		if existing.Name == env.Name {
 			if existing != env {
-				return snapshot, errors.New("同名环境已指向其他集群或命名空间，请使用新名称")
+				return snapshot, errors.New("An environment with this name points to another cluster or namespace; use a new name")
 			}
 			exists = true
 		}
@@ -56,7 +56,7 @@ func (s *Store) Attach(env Environment, app Application, expected string) (Snaps
 	for _, existing := range snapshot.Project.Applications {
 		if existing.Name == app.Name {
 			if existing.Name != app.Name || existing.Selector != app.Selector {
-				return snapshot, errors.New("同名应用已使用其他选择器，请使用新名称")
+				return snapshot, errors.New("An application with this name uses another selector; use a new name")
 			}
 			exists = true
 		}

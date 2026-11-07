@@ -53,7 +53,7 @@ func (a *App) SaveOpsProject(text, revision string) (ops.Snapshot, error) {
 	return s.Save(text, revision)
 }
 func (a *App) SelectOpsProject() (ops.Snapshot, error) {
-	root, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{Title: "选择本地项目 / Git 仓库目录"})
+	root, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{Title: "Choose a local project / Git repository directory"})
 	if err != nil {
 		return ops.Snapshot{}, err
 	}
@@ -163,19 +163,19 @@ func (a *App) opsTarget(environment, application string) (*ops.Store, ops.Snapsh
 		}
 	}
 	if env.Name == "" || app.Name == "" {
-		return s, snapshot, env, app, c, errors.New("环境或应用不存在，请刷新项目")
+		return s, snapshot, env, app, c, errors.New("Environment or application not found; reload the project")
 	}
 	id := ""
 	for _, conn := range a.store.List() {
 		if conn.Name == env.Connection && (conn.Kind == "k8s" || conn.Kind == "k3s") {
 			if id != "" {
-				return s, snapshot, env, app, c, errors.New("连接名称重复，请为集群连接设置唯一名称")
+				return s, snapshot, env, app, c, errors.New("Duplicate connection name; give each cluster connection a unique name")
 			}
 			id = conn.ID
 		}
 	}
 	if id == "" {
-		return s, snapshot, env, app, c, errors.New("请先在资源中心配置与环境同名的集群连接")
+		return s, snapshot, env, app, c, errors.New("Add a cluster connection named after this environment in Cluster resources first")
 	}
 	c, err = a.store.Get(id)
 	if err == nil {
@@ -202,7 +202,7 @@ func (a *App) queueOpsPlan(s *ops.Store, c workspace.Connection, env ops.Environ
 		}
 	}
 	if len(a.opsPlans) >= 100 {
-		return plan, errors.New("待执行计划过多，请等待过期后重试")
+		return plan, errors.New("Too many pending plans; wait for them to expire and try again")
 	}
 	a.opsPlans[plan.ID] = pendingOpsRelease{plan: plan, connection: c, store: s, record: record}
 	return plan, nil
@@ -220,7 +220,7 @@ func (a *App) PlanOpsRelease(environment, application, workload, container, arti
 		}
 	}
 	if artifact.ID == "" {
-		return release.DesktopPlan{}, errors.New("制品不存在，请刷新项目")
+		return release.DesktopPlan{}, errors.New("Artifact not found; reload the project")
 	}
 	ctx, cancel := context.WithTimeout(a.ctx, 20*time.Second)
 	defer cancel()
@@ -267,7 +267,7 @@ func (a *App) PlanOpsRollback(environment, application, recordID string) (releas
 		}
 	}
 	if record.ID == "" {
-		return release.DesktopPlan{}, errors.New("没有找到当前环境的成功镜像发布记录")
+		return release.DesktopPlan{}, errors.New("No successful image release found for this environment")
 	}
 	ctx, cancel := context.WithTimeout(a.ctx, 20*time.Second)
 	defer cancel()
@@ -290,7 +290,7 @@ func (a *App) ApplyOpsRelease(planID string) (ops.Record, error) {
 	delete(a.opsPlans, planID)
 	a.opsMu.Unlock()
 	if !ok {
-		return ops.Record{}, errors.New("发布计划不存在或已经使用，请重新生成")
+		return ops.Record{}, errors.New("The plan does not exist or was already used; create a new one")
 	}
 	r := pending.record
 	r.StartedAt = time.Now().UTC().Format(time.RFC3339Nano)
@@ -311,10 +311,10 @@ func (a *App) ApplyOpsRelease(planID string) (ops.Record, error) {
 		r.Message = err.Error()
 	} else {
 		r.Status = "succeeded"
-		r.Message = "Deployment 已就绪"
+		r.Message = "Deployment is ready"
 	}
 	if saveErr := pending.store.WriteRecord(r); saveErr != nil {
-		return r, fmt.Errorf("发布结果 %s，但保存记录失败: %w", r.Status, saveErr)
+		return r, fmt.Errorf("Release %s, but saving the record failed: %w", r.Status, saveErr)
 	}
 	return r, nil
 }
@@ -343,11 +343,11 @@ func (a *App) AttachOpsWorkload(request OpsAttachRequest) (ops.Snapshot, error) 
 	}
 	for _, other := range a.store.List() {
 		if other.ID != c.ID && other.Name == c.Name && (other.Kind == "k3s" || other.Kind == "k8s") {
-			return ops.Snapshot{}, errors.New("集群连接名称重复，请先重命名")
+			return ops.Snapshot{}, errors.New("Duplicate cluster connection name; rename it first")
 		}
 	}
 	if request.Namespace == "" || request.Namespace == "*" || request.UID == "" {
-		return ops.Snapshot{}, errors.New("请选择具体命名空间及负载")
+		return ops.Snapshot{}, errors.New("Choose a specific namespace and workload")
 	}
 	ctx, cancel := context.WithTimeout(a.ctx, 25*time.Second)
 	defer cancel()
@@ -358,10 +358,10 @@ func (a *App) AttachOpsWorkload(request OpsAttachRequest) (ops.Snapshot, error) 
 	for _, w := range cluster.Workloads {
 		if w.Name == request.Workload && w.UID == request.UID && w.Resource == request.Resource {
 			if w.Selector == "" {
-				return ops.Snapshot{}, errors.New("负载没有可用选择器，请在应用配置中指定")
+				return ops.Snapshot{}, errors.New("The workload has no usable selector; set one in the application config")
 			}
 			return s.Attach(ops.Environment{Name: request.Environment, Connection: c.Name, Namespace: request.Namespace}, ops.Application{Name: request.Application, Selector: w.Selector}, request.Revision)
 		}
 	}
-	return ops.Snapshot{}, errors.New("负载已变化或不在读取范围，请刷新列表后重试")
+	return ops.Snapshot{}, errors.New("The workload changed or is out of range; refresh the list and try again")
 }

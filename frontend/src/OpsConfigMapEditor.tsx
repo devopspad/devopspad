@@ -77,7 +77,7 @@ export function OpsConfigMapEditor({
       try {
         validateConfig(filename, value);
       } catch (e) {
-        setError(`${filename}：${errorText(e)}`);
+        setError(`${filename}: ${errorText(e)}`);
         return;
       }
     }
@@ -98,7 +98,7 @@ export function OpsConfigMapEditor({
       onSaved({ ...updated, name: map.name });
       edit(undefined);
       setNotice(
-        "已保存到集群。环境变量和 subPath 挂载需重启应用后生效，其他挂载取决于应用的重新加载方式。",
+        "Saved to the cluster. Environment variables and subPath mounts take effect after a restart; other mounts depend on how the app reloads.",
       );
     } catch (e) {
       setError(errorText(e));
@@ -115,21 +115,21 @@ export function OpsConfigMapEditor({
             {draft ? (
               <>
                 <span className="ops-muted">
-                  {changed ? "未保存" : "编辑中"}
+                  {changed ? "Unsaved" : "Editing"}
                 </span>
                 <button
                   className="ops-btn"
                   disabled={saving}
                   onClick={() => edit(undefined)}
                 >
-                  取消编辑
+                  Cancel editing
                 </button>
                 <button
                   className="ops-btn primary"
                   disabled={saving || !changed || !connection}
                   onClick={() => void save()}
                 >
-                  {saving ? "保存中…" : "保存到集群"}
+                  {saving ? "Saving…" : "Save to cluster"}
                 </button>
               </>
             ) : (
@@ -151,14 +151,14 @@ export function OpsConfigMapEditor({
                   })
                 }
               >
-                编辑配置
+                Edit config
               </button>
             )}
           </div>
         )}
       </div>
       {map.immutable && (
-        <p className="ops-muted">此 ConfigMap 为不可修改配置（immutable）。</p>
+        <p className="ops-muted">This ConfigMap is immutable.</p>
       )}
       {(map.error || error) && (
         <div className="ops-error" role="alert">
@@ -191,12 +191,12 @@ export function OpsConfigMapEditor({
           ))}
           {Object.keys(map.binaryData || {}).map((key) => (
             <p className="ops-muted" key={key}>
-              {key} · 二进制配置（只读）
+              {key} · binary data (read-only)
             </p>
           ))}
           {!Object.keys(data).length &&
             !Object.keys(map.binaryData || {}).length && (
-              <p className="ops-muted">ConfigMap 无数据。</p>
+              <p className="ops-muted">This ConfigMap has no data.</p>
             )}
         </>
       )}

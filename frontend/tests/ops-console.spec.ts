@@ -120,23 +120,23 @@ test("desktop application bridge requires a reviewed plan and reports rollout fa
               status: "failed",
               startedAt: "2026-10-23T00:00:00Z",
               finishedAt: "2026-10-23T00:03:00Z",
-              message: "等待就绪超时；请核对实际状态",
-              steps: ["镜像已更新"],
+              message: "Timed out waiting for the rollout; check the actual state",
+              steps: ["Image updated"],
             };
             snap.releases = [r];
             return r;
           },
           SaveOpsProject: async () => {
-            throw new Error("配置已被修改，请刷新并合并改动后再保存");
+            throw new Error("The project was modified; refresh and merge the changes before saving");
           },
         },
       },
     };
   });
   await page.goto("/#apps");
-  await page.getByRole("button", { name: "发布", exact: true }).click();
-  await expect(page.getByLabel("发布容器")).toHaveValue("web");
-  await page.getByRole("button", { name: "生成发布计划" }).click();
+  await page.getByRole("button", { name: "Release", exact: true }).click();
+  await expect(page.getByLabel("Release container")).toHaveValue("web");
+  await page.getByRole("button", { name: "Create release plan" }).click();
   expect(
     await page.evaluate(
       () =>
@@ -144,8 +144,8 @@ test("desktop application bridge requires a reviewed plan and reports rollout fa
           .length,
     ),
   ).toBe(0);
-  await page.getByRole("button", { name: "确认发布", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("等待就绪超时");
+  await page.getByRole("button", { name: "Confirm release", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Timed out waiting for the rollout");
   const calls = await page.evaluate(() => (window as any).__opsCalls);
   expect(calls).toContainEqual(["cluster", "k1", "default", "app=svc-user"]);
   expect(calls).toContainEqual([
@@ -158,17 +158,17 @@ test("desktop application bridge requires a reviewed plan and reports rollout fa
   ]);
   expect(calls).toContainEqual(["apply", "p1"]);
   await page.getByRole("button", { name: "Close dialog" }).click();
-  await expect(page.locator(".ops-release-row")).toContainText("发布未完成");
-  await page.getByRole("button", { name: "项目映射", exact: true }).click();
-  await page.getByLabel("项目 YAML").fill("my unsaved draft");
-  await page.getByRole("button", { name: "保存配置" }).click();
-  await expect(page.getByRole("alert")).toContainText("配置已被修改");
-  await expect(page.getByLabel("项目 YAML")).toHaveValue("my unsaved draft");
+  await expect(page.locator(".ops-release-row")).toContainText("Release incomplete");
+  await page.getByRole("button", { name: "Project mapping", exact: true }).click();
+  await page.getByLabel("Project YAML").fill("my unsaved draft");
+  await page.getByRole("button", { name: "Save config" }).click();
+  await expect(page.getByRole("alert")).toContainText("The project was modified");
+  await expect(page.getByLabel("Project YAML")).toHaveValue("my unsaved draft");
   await page.getByRole("button", { name: "Deployment", exact: true }).click();
-  await page.getByRole("button", { name: "扩缩容", exact: true }).click();
-  await page.getByLabel("目标副本数").fill("0");
-  await page.getByRole("button", { name: "生成操作计划" }).click();
-  await expect(page.getByRole("dialog")).toContainText("副本数：1 → 0");
+  await page.getByRole("button", { name: "Scale", exact: true }).click();
+  await page.getByLabel("Target replicas").fill("0");
+  await page.getByRole("button", { name: "Create plan" }).click();
+  await expect(page.getByRole("dialog")).toContainText("Replicas: 1 → 0");
   expect(
     await page.evaluate(
       () =>
@@ -176,8 +176,8 @@ test("desktop application bridge requires a reviewed plan and reports rollout fa
           .length,
     ),
   ).toBe(1);
-  await page.getByRole("button", { name: "确认扩缩容", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("等待就绪超时");
+  await page.getByRole("button", { name: "Confirm scale", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Timed out waiting for the rollout");
   expect(await page.evaluate(() => (window as any).__opsCalls)).toContainEqual([
     "action",
     "pro",

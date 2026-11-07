@@ -41,11 +41,11 @@ function memory(value?: string) {
 }
 function nodesFrom(result: QueryResult): NodeObject[] {
   const index = result.columns.indexOf("resource");
-  if (index < 0) throw new Error("节点响应缺少资源定义，请刷新重试。");
+  if (index < 0) throw new Error("The node response has no resource definition. Refresh and try again.");
   return result.rows.map((row) => {
     const node = row[index] as NodeObject | null;
     if (!node || typeof node !== "object" || !node.metadata?.name)
-      throw new Error("节点响应格式不完整，请刷新重试。");
+      throw new Error("The node response is incomplete. Refresh and try again.");
     return node;
   });
 }
@@ -123,29 +123,29 @@ export function InfraCluster({
         <div>
           <h1>{connection.name}</h1>
           <p>
-            {connection.environment || "未分组"} ·{" "}
+            {connection.environment || "Ungrouped"} ·{" "}
             {connection.kind === "k3s" ? "K3s" : "Kubernetes"} ·{" "}
-            {connection.context || "默认 context"}
+            {connection.context || "default context"}
             {""}
           </p>
         </div>
       </header>
       {!nodesOnly && (
         <>
-          <div className="infra-tabs" role="tablist" aria-label="集群视图">
+          <div className="infra-tabs" role="tablist" aria-label="Cluster view">
             <button
               role="tab"
               aria-selected={tab === "nodes"}
               onClick={() => setTab("nodes")}
             >
-              节点 / 机器
+              Nodes
             </button>
             <button
               role="tab"
               aria-selected={tab === "workloads"}
               onClick={() => setTab("workloads")}
             >
-              工作负载
+              Workloads
             </button>
           </div>
         </>
@@ -164,32 +164,32 @@ export function InfraCluster({
             <span>
               <Server size={16} />
               {loading
-                ? "读取节点中…"
-                : `${nodes.length} 台机器${truncated ? "（列表不完整）" : ""}`}
+                ? "Loading nodes…"
+                : `${nodes.length} ${nodes.length === 1 ? "node" : "nodes"}${truncated ? " (incomplete list)" : ""}`}
             </span>
             <label>
               <Search size={14} />
               <input
-                aria-label="搜索节点"
-                placeholder="搜索节点名称或 IP"
+                aria-label="Search nodes"
+                placeholder="Search node name or IP"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </label>
             <button
               className="button"
-              aria-label="刷新节点"
+              aria-label="Refresh nodes"
               disabled={loading}
               onClick={() => setVersion((v) => v + 1)}
             >
               <RefreshCw size={15} />
-              刷新
+              Refresh
             </button>
           </div>
           {loading ? (
             <div className="infra-message" role="status">
               <LoaderCircle size={18} className="spin" />
-              正在读取集群的所有节点…
+              Loading all nodes in the cluster…
             </div>
           ) : error ? (
             <div className="error-box" role="alert">
@@ -199,19 +199,19 @@ export function InfraCluster({
             <>
               {truncated && (
                 <p className="infra-message" role="status">
-                  返回结果达到读取上限，以下不是集群的全部节点。
+                  The response hit the read limit. This is not every node in the cluster.
                 </p>
               )}
               <div className="infra-node-table">
                 <table>
                   <thead>
                     <tr>
-                      <th>节点</th>
-                      <th>状态</th>
-                      <th>角色</th>
-                      <th>IP 地址</th>
-                      <th>CPU / 内存</th>
-                      <th>系统 / Kubernetes</th>
+                      <th>Node</th>
+                      <th>Status</th>
+                      <th>Role</th>
+                      <th>IP address</th>
+                      <th>CPU / memory</th>
+                      <th>OS / Kubernetes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -255,7 +255,7 @@ export function InfraCluster({
                                   ? "NotReady"
                                   : "Unknown"}
                             </span>
-                            {spec.unschedulable && <small>已禁止调度</small>}
+                            {spec.unschedulable && <small>Cordoned</small>}
                           </td>
                           <td>
                             {roles.join(", ") ||
@@ -295,7 +295,7 @@ export function InfraCluster({
               </div>
               {!filtered.length && (
                 <p className="infra-message">
-                  {nodes.length ? "没有匹配的节点。" : "集群未返回节点。"}
+                  {nodes.length ? "No matching nodes." : "The cluster returned no nodes."}
                 </p>
               )}
             </>
