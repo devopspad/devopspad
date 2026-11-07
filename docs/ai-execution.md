@@ -22,7 +22,35 @@ build/bin/devopspadctl cluster attach --connection heartie-pro --namespace defau
 
 `--application` 和 `--selector` 必须同时提供，且只能用于 `attach`。此模式验证已保存的集群连接及本地项目配置，复用配置版本校验和写入锁，只登记映射，不连接集群、创建或修改工作负载。省略两个参数时仍从集群发现已有工作负载。
 
-成功时 stdout 为完整 JSON 执行记录，退出码 0；记录失败退出码 1，stderr 为 JSON `error`。参数错误退出码 2。CLI 不执行 Docker、推送镜像或变更 Kubernetes。现有的 AI/构建工具/发布工具继续负责实际执行；上报成功只表示记录已落盘。
+`runs` 成功时 stdout 为完整 JSON 执行记录，退出码 0；记录失败退出码 1，stderr 为 JSON `error`。参数错误退出码 2。`runs` 不执行 Docker、推送镜像或变更 Kubernetes。现有的 AI/构建工具/发布工具继续负责实际执行；上报成功只表示记录已落盘。
+
+## 修改应用配置与重启
+
+修改应用 ConfigMap、滚动重启 Deployment 时使用下面的命令，不要直接 `ssh` + `kubectl`。它们和桌面“应用配置”“重启”走同一套检查：按项目环境和应用解析本机同名集群连接，只允许读写该应用工作负载引用的 ConfigMap，重启前做服务端 dry-run，执行时取 Deployment 发布锁并核对 resourceVersion，等待 rollout 就绪，每次变更写入一条操作记录（桌面“发布记录”可见）。
+
+```sh
+# 读取一个键，写入 0600 文件；stdout 打印 resourceVersion 和 sha256
+devopspadctl config get --environment heartie-pro --application thumbspark \
+  --configmap thumbspark-config-toml --key config.toml -o config.toml
+
+# 写回：先打印 diff；ConfigMap 自 get 之后被改过则拒绝写入
+devopspadctl config set --environment heartie-pro --application thumbspark \
+  --configmap thumbspark-config-toml --key config.toml -f config.toml \
+  --expect-revision <resourceVersion> [--dry-run]
+
+# 写入后在同一条记录里滚动重启（需要 --yes）
+devopspadctl config set ... --expect-revision <resourceVersion> --restart --yes [--workload thumbspark]
+
+# 只重启：不带 --yes 只打印计划，带 --yes 执行并等待就绪
+devopspadctl workload restart --environment heartie-pro --application thumbspark \
+  --workload thumbspark [--yes] [--timeout 180s]
+```
+
+- `config get` 必须指定 `-o <文件>` 或 `-o -`（输出到 stdout，元数据改到 stderr），避免把可能含密钥的内容意外打到终端或日志。
+- `config set` 只修改已存在的文本键，保留其他键、binaryData 和元数据；不可变 ConfigMap 拒绝修改。内容不变时不写入、不记录。`--dry-run` 只打印 diff；带 `--restart` 时还会验证重启计划。
+- 记录只保存 ConfigMap/键名、增删行数、修改前后 sha256 前缀和 resourceVersion，不保存内容。diff 只打印到执行端 stdout，执行端自行决定是否保留。
+- `--workload` 默认等于应用名。`--timeout` 最长 180 秒（发布锁有效期 300 秒）。超时或失败时变更可能已生效，先核对集群状态，不要直接重试。
+- 退出码：成功 0；读取、校验或执行失败 1（stdout 仍输出最终记录 JSON）；参数错误 2。修改配置不会自动重启，环境变量和 subPath 挂载需要重启后生效。
 
 ## 数据契约
 

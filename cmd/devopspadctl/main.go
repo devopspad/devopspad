@@ -44,6 +44,10 @@ func dispatch(args []string, stdout, stderr io.Writer) int {
 		return cmdCluster(args[1:], stdout, stderr)
 	case "fleet":
 		return cmdFleet(args[1:], stdout, stderr)
+	case "config":
+		return cmdConfig(args[1:], stdout, stderr)
+	case "workload":
+		return cmdWorkload(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n\n%s", args[0], usage)
 		return 2
@@ -141,10 +145,27 @@ Usage:
   devopspadctl cluster inspect --connection <name> --namespace <namespace>
   devopspadctl cluster attach --connection <name> --namespace <namespace> --environment <name> [--project <dir>]
   devopspadctl cluster attach --connection <name> --namespace <namespace> --environment <name> --application <name> --selector <labels> [--project <dir>]
+  devopspadctl config get --environment <name> --application <name> --configmap <name> --key <key> -o <file|->
+  devopspadctl config set --environment <name> --application <name> --configmap <name> --key <key> -f <file|->
+                          --expect-revision <resourceVersion> [--dry-run] [--restart --yes [--workload <name>] [--timeout 180s]]
+  devopspadctl workload restart --environment <name> --application <name> [--workload <name>] [--yes] [--timeout 180s]
 
 Config:
   DEVOPSPAD_CONFIG_DIR  directory containing fleet.json
                        (default: the DevOpsPad OS config directory)
 
 validate reads only the spec file. It does not open SSH or write a release record.
+
+config and workload resolve the environment and application from the local
+project (--project, DEVOPSPAD_PROJECT_DIR, or the desktop's project directory)
+and the cluster connection of the same name saved in DevOpsPad. Only ConfigMaps
+referenced by the application's workloads can be read or written.
+  config get   writes the value to a 0600 file, or to stdout with -o -, and
+               prints its resourceVersion and sha256.
+  config set   prints a diff, refuses to write if the ConfigMap changed since
+               --expect-revision, and records the change (key, line counts and
+               hashes only, never the contents). --dry-run prints the diff only.
+               --restart rolls the Deployment in the same record.
+  workload restart  plans a rolling restart (server dry-run); --yes applies it,
+               waits for the rollout and records the result.
 `

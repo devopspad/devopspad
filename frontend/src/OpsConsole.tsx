@@ -127,6 +127,7 @@ const titles: Record<Page, string> = {
 };
 function operationName(record: Pick<OpsRecord, "action">) {
   if (record.action === "nginx") return "Nginx config";
+  if (record.action === "config") return "Config update";
   return record.action === "scale"
     ? "Scale"
     : record.action === "restart"
@@ -1001,7 +1002,11 @@ function OpsScope({
                         <span>
                           {r.action === "scale" || r.action === "restart"
                             ? `Replicas ${r.beforeReplicas} → ${r.replicas}`
-                            : r.image.split("@")[0]}
+                            : r.action === "config"
+                              ? r.replicas != null
+                                ? `ConfigMap · restarted ${r.workload}`
+                                : "ConfigMap"
+                              : r.image.split("@")[0]}
                         </span>
                         <Boxes size={13} />
                         {r.namespace}
@@ -1244,7 +1249,15 @@ function OpsScope({
               {record.message ||
                 "If the client was interrupted, refresh the cluster to check the actual state. Do not just retry."}
             </p>
-            {record.action === "nginx" ? <p>Host Nginx config test and reload record</p> : record.action === "scale" || record.action === "restart" ? (
+            {record.action === "nginx" ? <p>Host Nginx config test and reload record</p> : record.action === "config" ? (
+              <p>
+                ConfigMap key {record.version}
+                {record.replicas != null
+                  ? ` · Deployment ${record.workload} restarted`
+                  : ""}
+                . Contents are not recorded; see the steps for line counts and hashes.
+              </p>
+            ) : record.action === "scale" || record.action === "restart" ? (
               <p>
                 Replicas: {record.beforeReplicas} → {record.replicas}
                 {record.action === "restart"

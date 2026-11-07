@@ -66,7 +66,7 @@ export type OpsArtifact = {
 export type OpsRecord = {
   origin?: "external";
   runId?: string;
-  action?: "release" | "rollback" | "scale" | "restart" | "nginx";
+  action?: "release" | "rollback" | "scale" | "restart" | "nginx" | "config";
   beforeReplicas?: number;
   replicas?: number;
   id: string;

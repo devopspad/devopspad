@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
 	"devopspad/internal/ops"
+	"devopspad/internal/opsrun"
 	"devopspad/internal/release"
 	"devopspad/internal/workspace"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -137,59 +137,19 @@ func (a *App) SaveConfigMap(id string, request workspace.ConfigMapUpdate) (strin
 // opsTarget resolves the shared project against local credentials and pins the
 // endpoint before planning. No credential enters a shared record.
 func (a *App) opsTarget(environment, application string) (*ops.Store, ops.Snapshot, ops.Environment, ops.Application, workspace.Connection, error) {
-	var snapshot ops.Snapshot
-	var env ops.Environment
-	var app ops.Application
-	var c workspace.Connection
 	if err := a.ready(); err != nil {
-		return nil, snapshot, env, app, c, err
+		return nil, ops.Snapshot{}, ops.Environment{}, ops.Application{}, workspace.Connection{}, err
 	}
 	s, err := a.opsStore()
 	if err != nil {
-		return nil, snapshot, env, app, c, err
+		return nil, ops.Snapshot{}, ops.Environment{}, ops.Application{}, workspace.Connection{}, err
 	}
-	snapshot, err = s.Read()
-	if err != nil {
-		return s, snapshot, env, app, c, err
-	}
-	for _, e := range snapshot.Project.Environments {
-		if e.Name == environment {
-			env = e
-		}
-	}
-	for _, v := range snapshot.Project.Applications {
-		if v.Name == application {
-			app = v
-		}
-	}
-	if env.Name == "" || app.Name == "" {
-		return s, snapshot, env, app, c, errors.New("Environment or application not found; reload the project")
-	}
-	id := ""
-	for _, conn := range a.store.List() {
-		if conn.Name == env.Connection && (conn.Kind == "k8s" || conn.Kind == "k3s") {
-			if id != "" {
-				return s, snapshot, env, app, c, errors.New("Duplicate connection name; give each cluster connection a unique name")
-			}
-			id = conn.ID
-		}
-	}
-	if id == "" {
-		return s, snapshot, env, app, c, errors.New("Add a cluster connection named after this environment in Cluster resources first")
-	}
-	c, err = a.store.Get(id)
-	if err == nil {
-		c, err = workspace.PinClusterConnection(c)
-	}
-	return s, snapshot, env, app, c, err
+	t, err := opsrun.Resolve(s, a.store, environment, application)
+	return s, t.Snapshot, t.Environment, t.Application, t.Connection, err
 }
 
 func (a *App) queueOpsPlan(s *ops.Store, c workspace.Connection, env ops.Environment, app ops.Application, plan release.DesktopPlan, version, runID string) (release.DesktopPlan, error) {
-	record := ops.Record{RunID: runID, ID: plan.ID, Action: plan.Action, Application: app.Name, Environment: env.Name, Connection: env.Connection, Namespace: env.Namespace, Workload: plan.Workload, Container: plan.Container, Image: plan.Image, BeforeImage: plan.BeforeImage, Version: version, Steps: []string{}}
-	if plan.Action == "scale" || plan.Action == "restart" {
-		record.BeforeReplicas = &plan.BeforeReplicas
-		record.Replicas = &plan.Replicas
-	}
+	record := opsrun.PlanRecord(opsrun.Target{Environment: env, Application: app}, plan, version, runID)
 	a.opsMu.Lock()
 	defer a.opsMu.Unlock()
 	if a.opsPlans == nil {
@@ -292,31 +252,9 @@ func (a *App) ApplyOpsRelease(planID string) (ops.Record, error) {
 	if !ok {
 		return ops.Record{}, errors.New("The plan does not exist or was already used; create a new one")
 	}
-	r := pending.record
-	r.StartedAt = time.Now().UTC().Format(time.RFC3339Nano)
-	r.Status = "running"
-	if err := pending.store.WriteRecord(r); err != nil {
-		return r, err
-	}
 	ctx, cancel := context.WithTimeout(a.ctx, 180*time.Second)
 	defer cancel()
-	cl, close, err := workspace.OpenCluster(ctx, pending.connection)
-	if err == nil {
-		defer close()
-		err = release.ApplyDesktop(ctx, cl, pending.plan, func(step string) error { r.Steps = append(r.Steps, step); return pending.store.WriteRecord(r) })
-	}
-	r.FinishedAt = time.Now().UTC().Format(time.RFC3339Nano)
-	if err != nil {
-		r.Status = "failed"
-		r.Message = err.Error()
-	} else {
-		r.Status = "succeeded"
-		r.Message = "Deployment is ready"
-	}
-	if saveErr := pending.store.WriteRecord(r); saveErr != nil {
-		return r, fmt.Errorf("Release %s, but saving the record failed: %w", r.Status, saveErr)
-	}
-	return r, nil
+	return opsrun.Apply(ctx, pending.store, pending.connection, pending.plan, pending.record, nil)
 }
 
 // AttachOpsWorkload discovers selectors from the live resource, never from
