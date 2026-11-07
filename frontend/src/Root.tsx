@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import App from "./App";
 import { OpsConsole } from "./OpsConsole";
+import { UpdatePrompt } from "./UpdatePrompt";
 import "./workspace-navigation.css";
 
 type Route = "workbench" | "infra" | "infra/resources";
@@ -46,6 +47,7 @@ export default function Root() {
           }}
         />
       )}
+      <UpdatePrompt />
     </>
   );
 }

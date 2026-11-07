@@ -8,8 +8,20 @@ import {
 } from "./engine";
 import { demoClusterDetails, demoClusterEvents, demoPodLogs } from "./cluster";
 
-export async function installWorkspace(page: Page) {
+const noUpdate = {
+  current: "0.1.1",
+  latest: "0.1.1",
+  available: false,
+  url: "",
+  downloadUrl: "",
+  notes: "",
+};
+export async function installWorkspace(
+  page: Page,
+  options: { update?: typeof noUpdate } = {},
+) {
   let connections = structuredClone(fixtureConnections);
+  const opened: string[] = [];
   await page.exposeFunction(
     "__fixtureBridge",
     async (method: string, ...args: any[]) => {
@@ -69,6 +81,11 @@ export async function installWorkspace(page: Page) {
           return;
         case "TestConnection":
           return 5;
+        case "CheckForUpdate":
+          return options.update ?? noUpdate;
+        case "OpenUpdate":
+          opened.push(args[0]);
+          return;
         case "GetOpsProject":
           return {
             root: "/fixture/project",
@@ -111,6 +128,7 @@ export async function installWorkspace(page: Page) {
       },
     };
   });
+  return { opened };
 }
 export async function openWorkbench(page: Page) {
   await page.getByRole("button", { name: "orders", exact: true }).click();

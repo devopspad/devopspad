@@ -185,3 +185,76 @@
 .infra-node-table .text-button { color: inherit; font-size: 12px; }
 .ops-console .infra-node-table table { color: var(--ops-fg); }
 .ops-console .infra-node-table tbody tr:hover td { background: var(--ops-hover); }
+.update-prompt {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 200;
+  width: 340px;
+  padding: 14px 16px;
+  border: 1px solid #ffffff1f;
+  border-radius: 10px;
+  background: #171717;
+  color: #fafafa;
+  box-shadow: 0 12px 32px #00000080;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.update-prompt-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #86efac;
+}
+.update-prompt-head strong {
+  flex: 1;
+  color: #fafafa;
+  font-size: 13px;
+}
+.update-prompt p {
+  margin: 8px 0 0;
+  color: #a1a1a1;
+}
+.update-prompt .update-prompt-error {
+  color: #ff6568;
+}
+.update-prompt-close,
+.update-prompt-link {
+  color: #a1a1a1;
+}
+.update-prompt-close:hover,
+.update-prompt-link:hover {
+  color: #fafafa;
+}
+.update-prompt-link {
+  margin-left: 4px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.update-prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.update-prompt-actions button {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.update-prompt-secondary {
+  border: 1px solid #ffffff1f;
+  color: #e5e5e5;
+}
+.update-prompt-secondary:hover {
+  background: #ffffff12;
+}
+.update-prompt-primary {
+  background: #e5e5e5;
+  color: #171717;
+  font-weight: 500;
+}
+.update-prompt-primary:hover {
+  background: #fafafa;
+}

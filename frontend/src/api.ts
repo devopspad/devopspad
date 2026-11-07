@@ -13,6 +13,7 @@ import type {
   ResourcePage,
   ResourceDetails,
   BrowseRequest,
+  UpdateInfo,
 } from "./types";
 type Bridge = OpsBridge & {
   SaveConfigMap(id: string, request: { ref: ClusterRef; resourceVersion: string; data: Record<string, string> }): Promise<string>;
@@ -54,6 +55,8 @@ type Bridge = OpsBridge & {
     requestID: string,
   ): Promise<QueryResult>;
   ExportCSV(content: string): Promise<boolean>;
+  CheckForUpdate(): Promise<UpdateInfo>;
+  OpenUpdate(url: string): Promise<void>;
 };
 declare global {
   interface Window {

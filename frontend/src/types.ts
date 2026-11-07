@@ -219,3 +219,11 @@ export type PodLogRequest = {
   previous: boolean;
 };
 export type PodLogs = { text: string; truncated: boolean };
+export type UpdateInfo = {
+  current: string;
+  latest: string;
+  available: boolean;
+  url: string;
+  downloadUrl: string;
+  notes: string;
+};
