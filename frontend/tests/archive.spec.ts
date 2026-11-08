@@ -56,6 +56,9 @@ async function install(page: Page, opts: { empty?: boolean } = {}) {
             },
             text: "apiVersion: devopspad.io/v1alpha1\nkind: Service\n",
             revision: "rev1",
+            observation: ref.startsWith("domain:")
+              ? { observedAt: "2026-11-07T09:00:00Z", domain: { workerRoutes: [{ pattern: "heartie.example/api*" }, { pattern: "heartie.example/*", script: "site" }], records: [{ name: "@", type: "A", content: "203.0.113.10", proxied: true }] } }
+              : undefined,
           }),
           SaveArchiveFile: async (file: string, text: string, revision: string) => {
             record("SaveArchiveFile", [file, text, revision]);
@@ -129,6 +132,17 @@ test("archive overview, products, search and editing", async ({ page }) => {
   const save = (await calls(page)).find((c) => c[0] === "SaveArchiveFile")!;
   expect(save[1]).toBe("products/heartie/services/admin.yaml");
   expect(save[3]).toBe("rev1");
+});
+
+test("domain detail shows Cloudflare routes and DNS from the last scan", async ({ page }) => {
+  await install(page);
+  await page.goto("/#archive");
+  await page.getByRole("button", { name: /^Domains/ }).click();
+  await page.getByRole("cell", { name: "heartie.example", exact: true }).first().click();
+  const routes = page.getByRole("table", { name: "Workers routes" });
+  await expect(routes.getByRole("row", { name: "heartie.example/api* none (origin)" })).toBeVisible();
+  await expect(routes.getByRole("row", { name: "heartie.example/* site" })).toBeVisible();
+  await expect(page.getByRole("table", { name: "DNS records" }).getByRole("cell", { name: "203.0.113.10" })).toBeVisible();
 });
 
 test("archive git, scan and connection sync", async ({ page }) => {

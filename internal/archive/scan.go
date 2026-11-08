@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -40,6 +41,7 @@ type DomainFacts struct {
 	DNS          string           `json:"dns,omitempty"`       // provider ref when the zone is on Cloudflare
 	ZoneStatus   string           `json:"zoneStatus,omitempty"`
 	NameServers  []string         `json:"nameServers,omitempty"`
+	Routes       []WorkerRoute    `json:"workerRoutes,omitempty"` // empty script: no Worker (origin)
 	Records      []ObservedRecord `json:"records"`
 	Certificates []ObservedCert   `json:"certificates"`
 	Errors       []string         `json:"errors"`
@@ -266,11 +268,25 @@ func (a *Archive) scanDomains(ctx context.Context, in ScanInput, domains []*Reso
 		}
 	}
 	obs := make([]*Observation, len(domains))
+	var routesDenied atomic.Bool
+	var notesMu sync.Mutex
 	parallel(len(domains), 8, func(i int) {
 		d := domains[i]
 		facts := DomainFacts{Records: []ObservedRecord{}, Certificates: []ObservedCert{}, Errors: []string{}}
 		if z, ok := zones[d.Name]; ok {
 			facts.DNS, facts.ZoneStatus, facts.NameServers = in.Provider, z.Status, z.NameServers
+			if !routesDenied.Load() {
+				if routes, err := cf.workerRoutes(ctx, z.ID); err != nil {
+					if routesDenied.CompareAndSwap(false, true) {
+						notesMu.Lock()
+						res.Notes = append(res.Notes, "Workers routes not read (the token needs Workers Routes Read): "+err.Error())
+						notesMu.Unlock()
+					}
+				} else {
+					sortRoutes(routes)
+					facts.Routes = routes
+				}
+			}
 			if recs, err := cf.records(ctx, z.ID); err != nil {
 				facts.Errors = append(facts.Errors, err.Error())
 			} else {

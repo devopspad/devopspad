@@ -645,6 +645,7 @@ function ResourceDetail({ refName, summary, open, onSaved, back }: { refName: st
           </table>
         </section>
       )}
+      {detail.observation && <DomainEdge observation={detail.observation} />}
       {detail.observation && (
         <section className="ops-panel">
           <div className="ops-panel-head"><div><h2>Last scan</h2><p>{detail.observation.observedAt} · local only, not committed</p></div></div>
@@ -652,6 +653,46 @@ function ResourceDetail({ refName, summary, open, onSaved, back }: { refName: st
         </section>
       )}
     </>
+  );
+}
+
+type ObservedDomain = {
+  workerRoutes?: { pattern: string; script?: string }[];
+  records?: { name: string; type: string; content: string; proxied?: boolean }[];
+};
+
+function DomainEdge({ observation }: { observation: Record<string, unknown> }) {
+  const domain = observation.domain as ObservedDomain | undefined;
+  if (!domain || (!domain.workerRoutes?.length && !domain.records?.length)) return null;
+  return (
+    <section className="ops-panel">
+      <div className="ops-panel-head">
+        <div>
+          <h2>Cloudflare</h2>
+          <p>Workers routes and DNS records from the last scan. Change them with devopspadcli edge routes|dns (recorded).</p>
+        </div>
+      </div>
+      {domain.workerRoutes && domain.workerRoutes.length > 0 && (
+        <table className="ops-table" aria-label="Workers routes">
+          <thead><tr><th>Route pattern</th><th>Worker</th></tr></thead>
+          <tbody>
+            {domain.workerRoutes.map((r) => (
+              <tr key={r.pattern}><td>{r.pattern}</td><td>{r.script || "none (origin)"}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {domain.records && domain.records.length > 0 && (
+        <table className="ops-table" aria-label="DNS records">
+          <thead><tr><th>Name</th><th>Type</th><th>Content</th><th>Proxied</th></tr></thead>
+          <tbody>
+            {domain.records.map((r, i) => (
+              <tr key={i}><td>{r.name}</td><td>{r.type}</td><td>{r.content}</td><td>{r.proxied ? "yes" : "no"}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
 

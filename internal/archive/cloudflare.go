@@ -1,6 +1,7 @@
 package archive
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -73,13 +74,32 @@ type cfEnvelope struct {
 }
 
 func (c cloudflare) get(ctx context.Context, path string, query url.Values) (cfEnvelope, error) {
+	return c.send(ctx, http.MethodGet, path, query, nil)
+}
+
+func (c cloudflare) send(ctx context.Context, method, path string, query url.Values, body any) (cfEnvelope, error) {
 	var env cfEnvelope
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cloudflareAPI+path+"?"+query.Encode(), nil)
+	var reader io.Reader
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
+			return env, err
+		}
+		reader = bytes.NewReader(b)
+	}
+	target := cloudflareAPI + path
+	if len(query) > 0 {
+		target += "?" + query.Encode()
+	}
+	req, err := http.NewRequestWithContext(ctx, method, target, reader)
 	if err != nil {
 		return env, err
 	}
 	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Accept", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	res, err := httpClient.Do(req)
 	if err != nil {
 		return env, fmt.Errorf("cloudflare %s: %w", path, err)
@@ -191,4 +211,60 @@ func dateOf(ts string) string {
 		return ts[:10]
 	}
 	return ""
+}
+
+// WorkerRoute is a Workers route; an empty Script means "no Worker" (origin).
+type WorkerRoute struct {
+	ID      string `json:"id"`
+	Pattern string `json:"pattern"`
+	Script  string `json:"script,omitempty"`
+}
+
+func (c cloudflare) workerRoutes(ctx context.Context, zoneID string) ([]WorkerRoute, error) {
+	env, err := c.get(ctx, "/zones/"+url.PathEscape(zoneID)+"/workers/routes", nil)
+	if err != nil {
+		return nil, err
+	}
+	var routes []WorkerRoute
+	if err := json.Unmarshal(env.Result, &routes); err != nil {
+		return nil, err
+	}
+	return routes, nil
+}
+
+func (c cloudflare) createRoute(ctx context.Context, zoneID, pattern, script string) error {
+	body := map[string]any{"pattern": pattern}
+	if script != "" {
+		body["script"] = script
+	}
+	_, err := c.send(ctx, http.MethodPost, "/zones/"+url.PathEscape(zoneID)+"/workers/routes", nil, body)
+	return err
+}
+
+func (c cloudflare) deleteRoute(ctx context.Context, zoneID, routeID string) error {
+	_, err := c.send(ctx, http.MethodDelete, "/zones/"+url.PathEscape(zoneID)+"/workers/routes/"+url.PathEscape(routeID), nil, nil)
+	return err
+}
+
+type CloudflareRecord struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Content string `json:"content"`
+	Proxied bool   `json:"proxied"`
+	TTL     int    `json:"ttl"`
+}
+
+func (c cloudflare) recordsFull(ctx context.Context, zoneID string) ([]CloudflareRecord, error) {
+	return pages[CloudflareRecord](ctx, c, "/zones/"+url.PathEscape(zoneID)+"/dns_records", 100)
+}
+
+func (c cloudflare) upsertRecord(ctx context.Context, zoneID, recordID string, rec CloudflareRecord) error {
+	body := map[string]any{"type": rec.Type, "name": rec.Name, "content": rec.Content, "ttl": rec.TTL, "proxied": rec.Proxied}
+	if recordID == "" {
+		_, err := c.send(ctx, http.MethodPost, "/zones/"+url.PathEscape(zoneID)+"/dns_records", nil, body)
+		return err
+	}
+	_, err := c.send(ctx, http.MethodPut, "/zones/"+url.PathEscape(zoneID)+"/dns_records/"+url.PathEscape(recordID), nil, body)
+	return err
 }

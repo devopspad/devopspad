@@ -114,6 +114,21 @@ devopspadcli report renewals --observed # 到期清单，合并扫描到的证�
 
 `scan` 结果只存本机 `.devopspad/observed/`，不进 Git；按 `diff` 更新档案后再提交。没有 token 时 `scan` 仍会用 RDAP 查到期日并检查证书。
 
+### Workers 路由和 DNS 变更
+
+`scan` 会读取每个 zone 的 Workers 路由（需要 Workers Routes Read），在桌面域名详情里显示。修改通过计划 → 确认 → 记录：
+
+```sh
+devopspadcli edge routes list --zone example.com
+devopspadcli edge routes add --zone example.com --pattern 'example.com/admx*' --script none   # 打印前后路由列表
+devopspadcli edge routes add --zone example.com --pattern 'example.com/admx*' --script none --yes
+devopspadcli edge routes remove --zone example.com --pattern 'example.com/admx*' --yes
+devopspadcli edge dns set --zone example.com --name admx --type CNAME --content example.com --proxied --yes
+devopspadcli edge dns set --zone example.com --name @ --type A --target host:hk-1 --proxied --yes
+```
+
+`--script none` 表示该路径不经过 Worker、直接到源站。执行前会重新读取路由 / 记录，和计划时不一致就拒绝。每次变更写一条档案库操作记录（`edge.route.add|remove`、`edge.dns.set`），包含变更前后的路由列表或记录值，之后用 `archive commit` 提交。修改需要 token 有 Workers Routes Edit / DNS Edit；只读扫描用的 token 可以保持只读，修改时用 `--token-ref` 指定另一个。
+
 ## 集群和机器
 
 `devopspadcli scan --kind cluster` 读取每个集群的节点和全部命名空间的工作负载（`source: remote` 的 kubeconfig 经 SSH 临时读到系统临时目录，用完删除）；`--kind host` 在每台机器上执行一段固定的只读命令，读取系统、规格、运行中的 systemd 服务和 `/etc/nginx/conf.d/*.conf` 的哈希。`diff` 会列出：

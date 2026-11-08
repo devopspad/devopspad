@@ -86,6 +86,8 @@ func dispatch(args []string, stdout, stderr io.Writer) int {
 		return cmdJob(args[1:], stdout, stderr)
 	case "nginx":
 		return cmdNginx(args[1:], stdout, stderr)
+	case "edge":
+		return cmdEdge(args[1:], stdout, stderr)
 	case "app":
 		return cmdApp(args[1:], stdout, stderr)
 	default:
@@ -198,6 +200,9 @@ Archive (a Git repository describing every product, service, host, domain and ac
                     domains: Cloudflare zone/DNS/expiry, RDAP, TLS certificates; clusters: nodes and
                     workloads; hosts: OS, size, services, Nginx config hashes (all read-only)
   devopspadcli diff [<ref> ...]                        archive vs last scan
+  devopspadcli edge routes list|add|remove --zone <zone> [--pattern '<zone>/path*'] [--script <worker>|none] [--yes]
+  devopspadcli edge dns list|set --zone <zone> [--name <n> --type A --content <v>|--target host:<h>] [--proxied] [--yes]
+                                                       Cloudflare Workers routes and DNS, recorded in the archive
   devopspadcli connect sync [--dry-run]                create/update desktop connections from clusters and datastores
                                                        (close the desktop app first, or use its Archive page)
   devopspadcli secrets check                           which secret references resolve on this machine

@@ -11,3 +11,11 @@
 5. 改的是档案库里登记的配置文件（`configs[].source`）时：先改档案库文件并提交，再把同样内容下发到线上，保持两边一致。
 6. 线上操作不是由 DevOpsPad 记录的（manual、ci、手工 ssh）→ `devopspadcli note add --refs service:<p>/<s>@<env> -m "<做了什么、结果>" --actor ai/<名字>`，然后 `archive commit -m "record(service:<p>/<s>): …"`。
 7. 汇报：做了什么、结果、验证方式（健康检查 URL 见 endpoints）。
+
+## Cloudflare 路由和 DNS
+
+暴露新的路径前缀（例如 `/admx`）通常要同时改 Nginx 和 Cloudflare：
+
+1. `devopspadcli edge routes list --zone <zone>` 看现有路由；需要绕过 Worker 时 `edge routes add --zone <zone> --pattern '<zone>/admx*' --script none`（不带 --yes 先给用户看前后对比）。
+2. 用户确认后加 `--yes` 执行；DNS 用 `edge dns set`。不要让用户去 Cloudflare 控制台手改。
+3. 生成的记录用 `devopspadcli archive commit -m "record(domain:<zone>): add route …" --actor ai/<名字>` 提交。
