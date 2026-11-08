@@ -222,6 +222,9 @@ func (a *App) PlanOpsRollback(environment, application, recordID string) (releas
 	}
 	var record ops.Record
 	for _, r := range snapshot.Releases {
+		if r.ID == recordID && len(r.Targets) > 1 {
+			return release.DesktopPlan{}, errors.New("This release updated several workloads; roll each back with devopspadcli release image --image <previous digest>")
+		}
 		if r.ID == recordID && r.Application == application && r.Environment == environment && r.Namespace == env.Namespace && r.Connection == env.Connection && r.Status == "succeeded" && ops.ValidImage(r.Image) {
 			record = r
 		}

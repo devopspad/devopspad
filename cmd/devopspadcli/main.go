@@ -76,6 +76,8 @@ func dispatch(args []string, stdout, stderr io.Writer) int {
 		return cmdDiff(args[1:], stdout, stderr)
 	case "connect":
 		return cmdConnect(args[1:], stdout, stderr)
+	case "job":
+		return cmdJob(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n\n%s", args[0], usage)
 		return 2
@@ -83,6 +85,9 @@ func dispatch(args []string, stdout, stderr io.Writer) int {
 }
 
 func cmdRelease(args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && (args[0] == "plan" || args[0] == "apply" || args[0] == "image") {
+		return cmdReleaseOps(args[0], args[1:], stdout, stderr)
+	}
 	if len(args) == 0 || args[0] != "validate" {
 		fmt.Fprint(stderr, usage)
 		return 2
@@ -196,6 +201,11 @@ Archive (a Git repository describing every product, service, host, domain and ac
   calls; scan results stay in .devopspad/observed and are never committed.
 
 Desktop project, releases and records:
+  devopspadcli release plan --environment <env> (--application <app> --container <c> [--workload <w>] | --target <app>:<workload>:<container> ...)
+                            (--artifact <id|run id> | --image <ref@sha256:...>) [--migrate job.yaml [--migrate-timeout 180s]]
+  devopspadcli release apply --plan <plan id> [--timeout 180s]
+  devopspadcli release image <same flags as plan> --yes [--timeout 180s]
+  devopspadcli job run --environment <env> --application <app> -f job.yaml --image <ref@sha256:...> [--wait 180s] [--yes]
   devopspadcli release validate -f <spec.yaml>
   devopspadcli runs record --project <dir> -f <event.json|->
   devopspadcli runs list --project <dir>

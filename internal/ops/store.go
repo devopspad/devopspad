@@ -68,6 +68,17 @@ type Record struct {
 	FinishedAt     string   `json:"finishedAt"`
 	Message        string   `json:"message"`
 	Steps          []string `json:"steps"`
+	// Targets lists every workload of a multi-workload release; Workload and
+	// Container then join their names for display.
+	Targets []RecordTarget `json:"targets,omitempty"`
+}
+
+type RecordTarget struct {
+	Application string `json:"application"`
+	Workload    string `json:"workload"`
+	Container   string `json:"container"`
+	BeforeImage string `json:"beforeImage"`
+	Status      string `json:"status"` // succeeded | failed | not-started
 }
 type Snapshot struct {
 	Runs      []Run      `json:"runs"`

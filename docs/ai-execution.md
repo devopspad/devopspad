@@ -80,7 +80,30 @@ devopspadcli workload restart --environment heartie-pro --application thumbspark
 
 [示例事件](../examples/ai-integration/)仅供字段结构参考。提交 SHA、会话、版本、镜像摘要和事件 ID 必须替换为实际值，不得将示例伪装成真实执行记录。分支或镜像 tag 不能代替完整提交 SHA / digest。
 
-## AI 直接发布的协议
+## 用 DevOpsPad 发版（推荐）
+
+AI 不要用 `kubectl set image`。下面的命令和桌面发布走同一个引擎：服务端 dry-run、按 Deployment 取发布锁、核对 UID/resourceVersion、等待 rollout，并核对新 Pod 实际运行的镜像摘要（`image-check`），每次写一条发布记录（桌面“Releases”可见，不是 External/Reported）。
+
+```sh
+# 计划：dry-run 每个工作负载，打印计划 JSON（含 planId），计划存在本机 10 分钟、只能执行一次
+devopspadcli release plan --environment heartie-pro --artifact <构建 runId 或制品 id> \
+  --target sitemoment-api:sitemoment-api:api --target sitemoment-worker:sitemoment-worker:worker
+
+# 执行：重新核对 Deployment 未变，依次发布，失败即停（后面的工作负载记为 not-started）
+devopspadcli release apply --plan <planId> [--timeout 180s]
+
+# 一步完成（脚本用）；单个工作负载可用 --application/--container [--workload]
+devopspadcli release image --environment heartie-pro --application sitemoment-api --container api \
+  --artifact <runId> --yes
+```
+
+- `--target 应用:工作负载:容器` 可重复，共用同一镜像的工作负载进同一条发布记录（`targets` 列出每个工作负载的状态）。也可用 `--image <ref@sha256:…>` 代替 `--artifact`。
+- 迁移：`--migrate job.yaml [--migrate-timeout 180s]`。Job 中的 `${DEVOPSPAD_IMAGE}`，或与发布镜像同仓库的容器镜像，会被替换为本次摘要；名字加上计划 ID 前缀以保证唯一。计划阶段 dry-run，执行时先创建 Job 并等待完成，**失败则不改任何镜像**。记录只保存 Job 名、耗时和结果，最后几行日志只打印在执行端。服务的 `service.release.yaml` 里的 `migrate.jobFile` 可直接传给 `--migrate`。
+- 单独运行一次性 Job：`devopspadcli job run --environment … --application … -f job.yaml --image <ref@sha256:…> [--wait 180s] --yes`。
+- 成功时 stdout 是最终记录 JSON、退出码 0；失败退出码 1（stdout 仍有记录，stderr 有原因）；参数错误 2。`image-check` 不通过时发布记为失败，不自动回滚。
+- 多工作负载的发布不能在桌面一键回退；用 `release image --image <之前的摘要>` 逐个发布。
+
+## AI 直接发布的协议（外部发布系统）
 
 外部 AI 通过已有发布系统执行时，新建 `kind: release` 的 start，额外提供：
 

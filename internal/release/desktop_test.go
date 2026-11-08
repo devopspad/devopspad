@@ -243,3 +243,22 @@ func TestVerifyReleasedDigest(t *testing.T) {
 		t.Fatalf("tag image: %q", msg)
 	}
 }
+
+func TestDesktopPlanIdentityAndRebind(t *testing.T) {
+	cl := fake.NewSimpleDynamicClient(runtime.NewScheme(), desktopObject())
+	cl.PrependReactor("update", "deployments", func(action ktesting.Action) (bool, runtime.Object, error) {
+		return true, action.(ktesting.UpdateActionImpl).GetObject(), nil
+	})
+	p, err := PrepareDesktop(context.Background(), cl, "default", "svc-user", "app", "registry.local/app@sha256:"+strings.Repeat("a", 64), "app=svc-user")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.UID != "uid-1" || p.ResourceVersion != "17" {
+		t.Fatalf("identity: %q %q", p.UID, p.ResourceVersion)
+	}
+	p.Rebind("saved-plan")
+	ann, _, _ := unstructured.NestedStringMap(p.candidate.Object, "spec", "template", "metadata", "annotations")
+	if p.ID != "saved-plan" || ann["devopspad.io/release"] != "saved-plan" {
+		t.Fatalf("rebind: %s %v", p.ID, ann)
+	}
+}

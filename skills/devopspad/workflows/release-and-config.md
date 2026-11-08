@@ -3,7 +3,7 @@
 1. `devopspadcli describe service:<p>/<s> -o json`：确认目标环境的 deployment（集群、命名空间、工作负载）和 `release.method`。
 2. 读 `releaseNotes` 文件；有前置步骤（先发 api、先跑迁移）按它执行，有疑问先问用户。
 3. 按 method 执行：
-   - `devopspad`：用 DevOpsPad 桌面发版，或 `devopspadcli config get/set`、`devopspadcli workload restart`（需要 DevOpsPad 应用项目里登记过该应用；见 `devopspadcli --help`）。
+   - `devopspad`：镜像用 `devopspadcli release plan … --artifact <runId>` 给用户看计划，确认后 `devopspadcli release apply --plan <id>`；有迁移时加 `--migrate <job.yaml>`。配置用 `devopspadcli config get/set`，重启用 `devopspadcli workload restart`（都需要 DevOpsPad 应用项目里登记过该应用；见 `devopspadcli --help`）。
    - `devopspad-spec`：`devopspadcli release validate -f <代码仓库中的 spec>`。
    - `ci`：触发代码仓库的 CI，不要手工部署。
    - `manual`：按 release notes 执行，执行前把计划给用户确认。

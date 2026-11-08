@@ -18,6 +18,8 @@
 7. 对日志/错误摘要脱敏；不要上报密码、token、私钥、kubeconfig 或带认证参数的命令。原始日志保留本机 logs 目录，Git 同步只同步项目索引与执行记录。
 8. 只有 finish 被接受且状态符合实际结果后，才报告记录完成。进程中断留下 running 时，先核实，不擅自改成 succeeded。
 
+发布镜像时使用 `devopspadcli release plan` → `release apply --plan <id>`（或 `release image … --yes`），带迁移时加 `--migrate <job.yaml>`；不要用 `kubectl set image`。它会自动写发布记录并核对运行中的镜像摘要，此时不需要再用 `runs record` 上报 release。
+
 修改应用 ConfigMap 或重启 Deployment 时，使用 `devopspadcli config get/set` 和 `devopspadcli workload restart`（见 docs/ai-execution.md“修改应用配置与重启”），不要直接 `ssh` + `kubectl`。`config set` 必须带 `config get` 输出的 `--expect-revision`；不要把 ConfigMap 内容写进日志或上报内容。
 
 本约定针对发布相关构建和部署；纯代码检查、单元测试、浏览器测试不自动创建制品记录。不要向生产项目写入测试样例。

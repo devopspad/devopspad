@@ -34,7 +34,26 @@ type DesktopPlan struct {
 	BeforeImage    string `json:"beforeImage"`
 	Image          string `json:"image"`
 	ExpiresAt      string `json:"expiresAt"`
-	candidate      *unstructured.Unstructured
+	// UID and ResourceVersion identify the Deployment the plan was made against.
+	UID             string `json:"uid"`
+	ResourceVersion string `json:"resourceVersion"`
+	candidate       *unstructured.Unstructured
+}
+
+// Rebind gives a freshly prepared plan an earlier plan's ID, so a plan saved
+// by one process and re-prepared by another keeps one ID in its record and in
+// the Pod template annotation.
+func (p *DesktopPlan) Rebind(id string) {
+	p.ID = id
+	if p.candidate == nil || p.Action == "scale" {
+		return
+	}
+	annotations, _, _ := unstructured.NestedStringMap(p.candidate.Object, "spec", "template", "metadata", "annotations")
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+	annotations["devopspad.io/release"] = id
+	_ = unstructured.SetNestedStringMap(p.candidate.Object, annotations, "spec", "template", "metadata", "annotations")
 }
 
 func PrepareDesktop(ctx context.Context, cl dynamic.Interface, namespace, workload, container, image, selector string) (DesktopPlan, error) {
@@ -79,6 +98,7 @@ func prepareDesktop(ctx context.Context, cl dynamic.Interface, namespace, worklo
 	if obj.GetResourceVersion() == "" || obj.GetUID() == "" {
 		return p, errors.New("The Deployment has no resource version or UID")
 	}
+	p.UID, p.ResourceVersion = string(obj.GetUID()), obj.GetResourceVersion()
 	p.BeforeReplicas, _, _ = unstructured.NestedInt64(obj.Object, "spec", "replicas")
 	if _, found, _ := unstructured.NestedInt64(obj.Object, "spec", "replicas"); !found {
 		p.BeforeReplicas = 1
