@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
-	"devopspad/internal/ops"
-	"devopspad/internal/workspace"
 	"errors"
-	"fmt"
-	"github.com/google/uuid"
 	"time"
+
+	"devopspad/internal/opsrun"
+	"devopspad/internal/workspace"
 )
 
 func (a *App) ReadOpsNginx(environment, application string) (workspace.NginxConfig, error) {
@@ -24,31 +23,12 @@ func (a *App) ReadOpsNginx(environment, application string) (workspace.NginxConf
 }
 
 func (a *App) SaveOpsNginx(environment, application string, update workspace.NginxUpdate) (workspace.NginxConfig, error) {
-	store, _, env, app, c, err := a.opsTarget(environment, application)
+	store, snapshot, env, app, c, err := a.opsTarget(environment, application)
 	if err != nil {
-		return workspace.NginxConfig{}, err
-	}
-	if app.NginxPath == "" {
-		return workspace.NginxConfig{}, errors.New("This application has no nginxPath configured")
-	}
-	record := ops.Record{ID: uuid.NewString(), Action: "nginx", Application: app.Name, Environment: env.Name, Connection: env.Connection, Namespace: env.Namespace, Workload: app.Name, Version: "Nginx", Status: "running", StartedAt: time.Now().UTC().Format(time.RFC3339Nano), Steps: []string{"Read current config and check revision"}}
-	if err = store.WriteRecord(record); err != nil {
 		return workspace.NginxConfig{}, err
 	}
 	ctx, cancel := context.WithTimeout(a.ctx, 90*time.Second)
 	defer cancel()
-	result, err := workspace.SaveNginx(ctx, c, app.NginxPath, update)
-	record.FinishedAt = time.Now().UTC().Format(time.RFC3339Nano)
-	record.Status = "succeeded"
-	record.Message = result.Message
-	if err != nil {
-		record.Status = "failed"
-		record.Message = err.Error()
-	} else {
-		record.Steps = append(record.Steps, result.Message)
-	}
-	if saveErr := store.WriteRecord(record); saveErr != nil {
-		return result, fmt.Errorf("Nginx operation %s, but saving the record failed; refresh to check", record.Status)
-	}
+	_, result, err := opsrun.SaveNginx(ctx, opsrun.Target{Store: store, Snapshot: snapshot, Environment: env, Application: app, Connection: c}, update, "")
 	return result, err
 }

@@ -78,6 +78,10 @@ func dispatch(args []string, stdout, stderr io.Writer) int {
 		return cmdConnect(args[1:], stdout, stderr)
 	case "job":
 		return cmdJob(args[1:], stdout, stderr)
+	case "nginx":
+		return cmdNginx(args[1:], stdout, stderr)
+	case "app":
+		return cmdApp(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n\n%s", args[0], usage)
 		return 2
@@ -217,6 +221,9 @@ Desktop project, releases and records:
   devopspadcli config get --environment <name> --application <name> --configmap <name> --key <key> -o <file|->
   devopspadcli config set --environment <name> --application <name> --configmap <name> --key <key> -f <file|->
                           --expect-revision <resourceVersion> [--dry-run] [--restart --yes [--workload <name>] [--timeout 180s]]
+  devopspadcli nginx get --environment <name> --application <name> -o <file|->
+  devopspadcli nginx set --environment <name> --application <name> -f <file|-> --expect-revision <sha256> [--dry-run]
+  devopspadcli app set --application <name> --nginx-path </etc/nginx/conf.d/site.conf | "">
   devopspadcli workload restart --environment <name> --application <name> [--workload <name>] [--yes] [--timeout 180s]
 
 Config:

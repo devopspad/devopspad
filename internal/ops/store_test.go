@@ -178,3 +178,31 @@ func TestGitPushAndFastForwardShareProject(t *testing.T) {
 		t.Fatalf("not synced: %+v %v", synced, err)
 	}
 }
+
+func TestSetNginxPathKeepsComments(t *testing.T) {
+	s, err := New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	snap, _ := s.Read()
+	text := "apiVersion: devopspad.project/v1\nname: demo # keep me\nenvironments: []\napplications:\n  # the admin site\n  - name: admin\n    selector: app=admin\n  - {name: api, selector: app=api}\n"
+	if _, err := s.Save(text, snap.Revision); err != nil {
+		t.Fatal(err)
+	}
+	snap, err = s.SetNginxPath("api", "/etc/nginx/conf.d/api.conf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.Project.Applications[1].NginxPath != "/etc/nginx/conf.d/api.conf" || !strings.Contains(snap.YAML, "# keep me") || !strings.Contains(snap.YAML, "# the admin site") {
+		t.Fatalf("yaml:\n%s", snap.YAML)
+	}
+	if _, err := s.SetNginxPath("api", "/etc/passwd"); err == nil {
+		t.Fatal("path outside conf.d accepted")
+	}
+	if snap, err = s.SetNginxPath("api", ""); err != nil || snap.Project.Applications[1].NginxPath != "" {
+		t.Fatalf("remove: %v", err)
+	}
+	if _, err := s.SetNginxPath("missing", "/etc/nginx/conf.d/x.conf"); err == nil {
+		t.Fatal("unknown application accepted")
+	}
+}

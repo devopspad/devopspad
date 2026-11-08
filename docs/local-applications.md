@@ -111,6 +111,6 @@ Go 测试覆盖 YAML 校验、陈旧配置保存、并发保存锁、Git 两个�
 
 应用映射可配置 `nginxPath: /etc/nginx/conf.d/thumbnailsnap.conf`。在「Nginx config」或「App config」中读取、编辑并保存。环境必须使用已保存的 SSH 连接；远端需要 Python 3、Nginx 和 systemd，SSH 用户须有配置与 reload 权限。
 
-仅允许 `/etc/nginx/conf.d/` 下的普通 `.conf` 文件，拒绝符号链接。读取返回内容摘要，保存校验摘要并加锁，原子替换后执行 `nginx -t` 和 `systemctl reload nginx`，失败恢复原文件。错误时保留编辑草稿，切换项目、环境或应用分别隔离草稿。草稿仅在当前窗口内存中保存。操作结果写入发布记录，记录中不包含配置正文。
+仅允许 `/etc/nginx/conf.d/` 下的普通 `.conf` 文件，拒绝符号链接。读取返回内容摘要，保存校验摘要并加锁，原子替换后执行 `nginx -t` 和 `systemctl reload nginx`，失败恢复原文件。错误时保留编辑草稿，切换项目、环境或应用分别隔离草稿。草稿仅在当前窗口内存中保存。操作结果写入发布记录，记录中不包含配置正文。命令行等价操作：`devopspadcli nginx get/set` 与 `devopspadcli app set --nginx-path`（见 [AI 接入规范](ai-execution.md)）。
 
 外部 AI 上报的 release 记录也显示在「Releases」，按应用与目标环境筛选，保留“External release / Reported”的来源区分，详情可查看发布步骤和对应执行记录。

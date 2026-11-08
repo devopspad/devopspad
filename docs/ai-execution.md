@@ -52,6 +52,17 @@ devopspadcli workload restart --environment heartie-pro --application thumbspark
 - `--workload` 默认等于应用名。`--timeout` 最长 180 秒（发布锁有效期 300 秒）。超时或失败时变更可能已生效，先核对集群状态，不要直接重试。
 - 退出码：成功 0；读取、校验或执行失败 1（stdout 仍输出最终记录 JSON）；参数错误 2。修改配置不会自动重启，环境变量和 subPath 挂载需要重启后生效。
 
+## 修改宿主机 Nginx 配置
+
+```sh
+devopspadcli app set --application <app> --nginx-path /etc/nginx/conf.d/<site>.conf   # 登记应用的 Nginx 文件（写 project.yaml，保留注释）
+devopspadcli nginx get --environment heartie-pro --application <app> -o site.conf        # stdout 打印 path、revision
+devopspadcli nginx set --environment heartie-pro --application <app> -f site.conf \
+  --expect-revision <revision> [--dry-run]                                               # 打印 diff；--dry-run 只看 diff
+```
+
+和桌面“Nginx config”同一套远端流程：只允许 `/etc/nginx/conf.d/` 下已有的普通 `.conf` 文件，加锁、核对 revision、原子替换、`nginx -t` 后 reload，失败自动恢复原文件。每次修改写一条 `action: nginx` 记录，只含增删行数和哈希前缀，不含文件内容。环境的集群连接需要配置 SSH，远端需要 Python 3。
+
 ## 数据契约
 
 机器可读结构见 [run-event.schema.json](integration/run-event.schema.json)。CLI 还执行跨事件和项目关联校验；JSON Schema 单独校验不代表记录可接受。

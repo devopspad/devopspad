@@ -72,3 +72,63 @@ func (s *Store) Attach(env Environment, app Application, expected string) (Snaps
 	}
 	return s.Save(string(b), expected)
 }
+
+// SetNginxPath sets (or with an empty path removes) an application's host
+// Nginx file, keeping the rest of project.yaml and its comments unchanged.
+func (s *Store) SetNginxPath(application, path string) (Snapshot, error) {
+	snapshot, err := s.Read()
+	if err != nil {
+		return snapshot, err
+	}
+	var doc yaml.Node
+	if err = yaml.Unmarshal([]byte(snapshot.YAML), &doc); err != nil {
+		return snapshot, err
+	}
+	root := doc.Content[0]
+	var apps *yaml.Node
+	for i := 0; i+1 < len(root.Content); i += 2 {
+		if root.Content[i].Value == "applications" {
+			apps = root.Content[i+1]
+		}
+	}
+	if apps == nil || apps.Kind != yaml.SequenceNode {
+		return snapshot, errors.New("The project has no applications")
+	}
+	found := false
+	for _, item := range apps.Content {
+		if item.Kind != yaml.MappingNode {
+			continue
+		}
+		name := ""
+		for i := 0; i+1 < len(item.Content); i += 2 {
+			if item.Content[i].Value == "name" {
+				name = item.Content[i+1].Value
+			}
+		}
+		if name != application {
+			continue
+		}
+		found = true
+		kept := item.Content[:0]
+		for i := 0; i+1 < len(item.Content); i += 2 {
+			if item.Content[i].Value != "nginxPath" {
+				kept = append(kept, item.Content[i], item.Content[i+1])
+			}
+		}
+		item.Content = kept
+		if path != "" {
+			item.Content = append(item.Content, &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: "nginxPath"}, &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: path})
+		}
+		if item.Style == yaml.FlowStyle {
+			item.Style = 0
+		}
+	}
+	if !found {
+		return snapshot, errors.New("Application not found: " + application)
+	}
+	b, err := yaml.Marshal(&doc)
+	if err != nil {
+		return snapshot, err
+	}
+	return s.Save(string(b), snapshot.Revision)
+}

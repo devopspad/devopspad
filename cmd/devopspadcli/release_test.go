@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -34,3 +36,25 @@ func TestReleaseCommandArguments(t *testing.T) {
 }
 
 func hex64() string { return strings.Repeat("a", 64) }
+
+func TestNginxAndAppArguments(t *testing.T) {
+	t.Setenv("DEVOPSPAD_CONFIG_DIR", t.TempDir())
+	for _, args := range [][]string{
+		{"nginx", "get", "--environment", "pro", "--application", "api"},
+		{"nginx", "set", "--environment", "pro", "--application", "api", "-f", "x.conf"},
+		{"app", "set", "--application", "api"},
+	} {
+		if code, _, _ := run(args); code != 2 {
+			t.Errorf("%v: code=%d, want 2", args, code)
+		}
+	}
+	dir := t.TempDir()
+	t.Setenv("DEVOPSPAD_PROJECT_DIR", dir)
+	if err := os.WriteFile(filepath.Join(dir, "project.yaml"), []byte("apiVersion: devopspad.project/v1\nname: demo\nenvironments: []\napplications:\n  - {name: api, selector: app=api}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	code, out, errOut := run([]string{"app", "set", "--application", "api", "--nginx-path", "/etc/nginx/conf.d/api.conf"})
+	if code != 0 || !strings.Contains(out, `"nginxPath":"/etc/nginx/conf.d/api.conf"`) {
+		t.Fatalf("app set: code=%d out=%s err=%s", code, out, errOut)
+	}
+}
