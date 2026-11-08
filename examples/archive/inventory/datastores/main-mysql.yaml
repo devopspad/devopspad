@@ -1,0 +1,16 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Datastore
+metadata:
+  name: main-mysql
+spec:
+  engine: mysql
+  runtime: { host: host:hk-1 }
+  endpoint: 10.0.0.2:3306
+  parts: [heartie, thumbsnap]
+  credentials:
+    - { name: admin, ref: keychain:archive/datastores/main-mysql/admin }
+  backup:
+    method: mysqldump cron on hk-1
+    schedule: "0 3 * * *"
+    target: provider:cloudflare
+    retentionDays: 14

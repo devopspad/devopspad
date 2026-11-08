@@ -1,0 +1,24 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Product
+metadata:
+  name: heartie
+  title: Heartie
+  labels: { line: consumer }
+spec:
+  stage: live
+  launchedAt: 2026-03-01
+  links:
+    site: https://heartie.example
+    repo: https://github.com/example-opc/heartie
+  domains: [domain:heartie.example]
+  providers:
+    - { ref: provider:stripe, purpose: payments }
+    - { ref: provider:resend, purpose: transactional email }
+  environments:
+    - name: pro
+      cluster: cluster:hk-k3s
+      namespace: default
+      hosts: [host:hk-1]
+    - name: dev
+      cluster: cluster:hk-k3s
+      namespace: heartie-dev

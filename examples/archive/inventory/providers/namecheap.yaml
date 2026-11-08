@@ -1,0 +1,8 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Provider
+metadata:
+  name: namecheap
+spec:
+  categories: [registrar]
+  console: https://ap.www.namecheap.com
+  account: ops@example.com

@@ -1,0 +1,9 @@
+[server]
+listen = ":8080"
+timeout = "15s"
+
+[database]
+host = "10.0.0.2"
+name = "heartie"
+user = "heartie"
+password = "${secret:keychain:archive/heartie/api/db-password}"

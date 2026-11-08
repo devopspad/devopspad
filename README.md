@@ -148,7 +148,7 @@ Ego supplies component configuration/logging; Wails owns the desktop lifecycle. 
 
 ## Local application services
 
-The **Infra** rail entry opens the application console with environments, cluster nodes, configuration, and release workflows using the original Orca dark theme (with an optional light theme). The rail contains only **Data** and **Infra**. `/#infra` opens Infra, and older `/#apps` links redirect to it. Cluster resource queries and connection management remain available through **Cluster resources**.
+The **Infra** rail entry opens the application console with environments, cluster nodes, configuration, and release workflows using the original Orca dark theme (with an optional light theme). The rail contains **Data**, **Infra** and **Archive** (`/#archive`, the OPC archive browser). `/#infra` opens Infra, and older `/#apps` links redirect to it. Cluster resource queries and connection management remain available through **Cluster resources**.
 
 - Local YAML project, immutable-digest artifact registration, independent release records, and manual Git sharing between local checkouts.
 - Deployment / Pod views, Pod container log snapshots, events, and CPU/memory snapshots via metrics-server.
@@ -156,17 +156,30 @@ The **Infra** rail entry opens the application console with environments, cluste
 
 Deployment rows also support scaling and restart, and successful image release records can prepare a rollback to that version. All three actions reuse dry-run, version checks, deployment leases, rollout verification, and local operation records.
 
-AI executors can report versioned, idempotent start/step/finish events through `devopspadctl runs record`. Successful builds appear in the artifact library; external release reports retain build/source/actor linkage. See [AI integration contract](docs/ai-execution.md) and its JSON Schema. The **Connect K3s** action discovers workloads using saved local connections and adds their selectors to the project.
+AI executors can report versioned, idempotent start/step/finish events through `devopspadcli runs record`. Successful builds appear in the artifact library; external release reports retain build/source/actor linkage. See [AI integration contract](docs/ai-execution.md) and its JSON Schema. The **Connect K3s** action discovers workloads using saved local connections and adds their selectors to the project.
 
 Setup, project example, permissions, synchronization behavior, and current limits: [Local application services](docs/local-applications.md). This adds an explicit write path in `internal/release`; the database/query workspace remains read-only. CRDT editing, image builds/uploads, historical monitoring, streaming logs, and full fleet release execution are not included in this version.
 
-## OPC release checks
+## OPC archive
 
-`devopspadctl` validates a service release spec locally. It does not open SSH, write a release record, or change the read-only query workbench.
+`devopspadcli` also manages an **OPC archive**: a private Git repository that records every product, service, environment, host, cluster, domain, datastore, registry and third-party account of a product matrix, with configuration files, notes and append-only operation records. It stores secret references (`keychain:`, `env:`, `file:`), never values, and a pre-commit hook rejects literal secrets. A bundled AI skill (`devopspadcli skill install`) teaches Claude Code to query and maintain it through the CLI.
 
 ```sh
-go run ./cmd/devopspadctl release validate -f service.release.yaml
-DEVOPSPAD_CONFIG_DIR="$HOME/Library/Application Support/DevOpsPad" go run ./cmd/devopspadctl fleet list
+devopspadcli archive init ~/opc-archive
+devopspadcli archive import --workspace --fleet --dry-run
+devopspadcli report matrix
+devopspadcli describe service:heartie/admin
+```
+
+Guide (Chinese): [docs/archive.md](docs/archive.md). Protocol and plan: [docs/plan/opc-archive](docs/plan/opc-archive/README.md). Example: [examples/archive](examples/archive/).
+
+## OPC release checks
+
+`devopspadcli` validates a service release spec locally. It does not open SSH, write a release record, or change the read-only query workbench.
+
+```sh
+go run ./cmd/devopspadcli release validate -f service.release.yaml
+DEVOPSPAD_CONFIG_DIR="$HOME/Library/Application Support/DevOpsPad" go run ./cmd/devopspadcli fleet list
 ```
 
 Rules, fleet file format, and later apply order: [OPC release spec](docs/superpowers/specs/2026-10-21-opc-release-design.md).

@@ -1,0 +1,17 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Domain
+metadata:
+  name: heartie.example
+spec:
+  registrar: provider:namecheap
+  dns: provider:cloudflare
+  cost: { amount: "14.00", currency: USD, period: year }
+  renewal: { expiresAt: 2027-05-01, autoRenew: true }
+  records:
+    - { name: "@", type: A, target: host:hk-1, proxied: true }
+    - { name: admin, type: CNAME, value: heartie.example }
+  certificates:
+    - names: [heartie.example, "*.heartie.example"]
+      issuer: letsencrypt
+      managedBy: host:hk-1
+      method: acme.sh dns-01

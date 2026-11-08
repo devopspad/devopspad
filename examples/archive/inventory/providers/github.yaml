@@ -1,0 +1,10 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Provider
+metadata:
+  name: github
+spec:
+  categories: [ci, registry]
+  console: https://github.com
+  account: example-opc
+  plan: team
+  cost: { amount: "4.00", currency: USD, period: month }

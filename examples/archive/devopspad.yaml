@@ -1,0 +1,8 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Archive
+metadata:
+  name: example-opc
+  title: Example OPC product matrix
+spec:
+  defaults:
+    renewalWarningDays: 30

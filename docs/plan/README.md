@@ -12,6 +12,7 @@
 | [04-roadmap-draft.md](04-roadmap-draft.md) | 路线草案 M0–M5 |
 | [05-open-questions.md](05-open-questions.md) | 决策清单（已决定 / 待决定） |
 | [06-ai-devops-control-plane.md](06-ai-devops-control-plane.md) | AI 驱动的 DevOps 控制面架构草案：Action 引擎、群控、CI、MCP、策略审批 |
+| [opc-archive/](opc-archive/README.md) | OPC 产品矩阵档案库（2026-11-07）：Git 管理的资产与配置档案、协议 v1alpha1、AI Skill、分期 A0–A4 |
 
 ## 方向
 

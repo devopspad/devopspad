@@ -1,0 +1,22 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Host
+metadata:
+  name: hk-1
+  title: Hong Kong 1
+  description: Main edge node; runs K3s, Nginx and MySQL.
+  labels: { region: hk, env: pro }
+spec:
+  provider: provider:aliyun
+  state: active
+  addresses: { public: 203.0.113.10, private: 10.0.0.2 }
+  ssh:
+    host: 203.0.113.10
+    port: 22
+    user: root
+    auth: key
+    keyRef: file:~/.ssh/id_ed25519
+  os: ubuntu-22.04
+  size: { cpu: 2, memoryGiB: 4, diskGiB: 60 }
+  roles: [k3s-server, nginx, mysql]
+  cost: { amount: "34.00", currency: CNY, period: month }
+  renewal: { expiresAt: 2027-01-10, autoRenew: false }

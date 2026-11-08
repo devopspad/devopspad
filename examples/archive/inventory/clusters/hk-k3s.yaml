@@ -1,0 +1,12 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Cluster
+metadata:
+  name: hk-k3s
+spec:
+  distribution: k3s
+  hosts: [host:hk-1]
+  kubeconfig:
+    source: remote
+    host: host:hk-1
+    path: /etc/rancher/k3s/k3s.yaml
+    context: default

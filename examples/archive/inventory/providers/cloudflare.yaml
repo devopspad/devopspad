@@ -1,0 +1,13 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Provider
+metadata:
+  name: cloudflare
+spec:
+  categories: [dns, cdn]
+  console: https://dash.cloudflare.com
+  account: ops@example.com
+  plan: free
+  credentials:
+    - name: dns-token
+      ref: keychain:archive/providers/cloudflare/dns-token
+      scope: Zone.DNS edit, all zones

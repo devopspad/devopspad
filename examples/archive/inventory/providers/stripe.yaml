@@ -1,0 +1,11 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Provider
+metadata:
+  name: stripe
+spec:
+  categories: [payment]
+  console: https://dashboard.stripe.com
+  account: billing@example.com
+  credentials:
+    - name: live-secret-key
+      ref: keychain:archive/providers/stripe/live-secret-key

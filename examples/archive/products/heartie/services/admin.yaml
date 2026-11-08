@@ -1,0 +1,35 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Service
+metadata:
+  name: admin
+  product: heartie
+spec:
+  type: web
+  repo: { url: git@github.com:example-opc/heartie.git, path: admin, defaultBranch: main }
+  build:
+    method: ci
+    ci: { provider: provider:github, workflow: .github/workflows/admin.yml }
+    image: registry:ghcr#heartie-admin
+  release: { method: devopspad, notes: notes/release-admin.md }
+  deployments:
+    - environment: pro
+      runtime: k8s
+      selector: app=heartie-admin
+      workload: { kind: Deployment, name: heartie-admin, container: app }
+    - environment: dev
+      runtime: k8s
+      selector: app=heartie-admin
+  endpoints:
+    - { url: https://admin.heartie.example, health: /healthz }
+  configs:
+    - name: nginx
+      type: nginx
+      environment: pro
+      source: configs/admin/pro/heartie-admin.conf
+      target: { host: host:hk-1, path: /etc/nginx/conf.d/heartie-admin.conf }
+    - name: app
+      type: configmap
+      environment: pro
+      source: configs/admin/pro/config.toml
+      target: { configMap: heartie-admin-config, key: config.toml }
+  dependsOn: [service:heartie/api]

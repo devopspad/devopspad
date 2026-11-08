@@ -1,0 +1,14 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Service
+metadata:
+  name: web
+  product: thumbsnap
+spec:
+  type: static
+  repo: { url: git@github.com:example-opc/thumbsnap.git, path: web }
+  build: { method: ci, ci: { provider: provider:github } }
+  release: { method: ci }
+  deployments:
+    - { environment: pro, runtime: static, provider: provider:cloudflare }
+  endpoints:
+    - { url: https://thumbsnap.example }

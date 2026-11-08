@@ -1,0 +1,9 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Registry
+metadata:
+  name: ghcr
+spec:
+  url: ghcr.io/example-opc
+  provider: provider:github
+  credentials:
+    - { name: push, ref: env:GHCR_TOKEN }

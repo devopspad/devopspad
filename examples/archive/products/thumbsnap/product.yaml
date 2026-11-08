@@ -1,0 +1,11 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Product
+metadata:
+  name: thumbsnap
+  title: ThumbSnap
+spec:
+  stage: building
+  domains: [domain:thumbsnap.example]
+  environments:
+    - name: pro
+      hosts: [host:sg-1]

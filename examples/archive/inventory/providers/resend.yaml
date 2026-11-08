@@ -1,0 +1,14 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Provider
+metadata:
+  name: resend
+spec:
+  categories: [email]
+  console: https://resend.com
+  account: ops@example.com
+  plan: pro
+  cost: { amount: "20.00", currency: USD, period: month }
+  renewal: { expiresAt: 2026-12-01, autoRenew: true }
+  credentials:
+    - name: api-key
+      ref: keychain:archive/providers/resend/api-key

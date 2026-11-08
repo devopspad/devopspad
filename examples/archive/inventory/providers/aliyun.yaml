@@ -1,0 +1,10 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Provider
+metadata:
+  name: aliyun
+  title: Alibaba Cloud
+spec:
+  categories: [cloud]
+  console: https://ecs.console.aliyun.com
+  account: ops@example.com
+  mfa: phone authenticator

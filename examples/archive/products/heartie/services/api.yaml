@@ -1,0 +1,21 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Service
+metadata:
+  name: api
+  product: heartie
+spec:
+  type: api
+  repo: { url: git@github.com:example-opc/heartie.git, path: api, defaultBranch: main }
+  build: { method: ci, ci: { provider: provider:github }, image: registry:ghcr#heartie-api }
+  release: { method: devopspad }
+  deployments:
+    - environment: pro
+      runtime: k8s
+      selector: app=heartie-api
+      workload: { kind: Deployment, name: heartie-api, container: app }
+  endpoints:
+    - { url: https://heartie.example/api, health: /api/healthz }
+  dependsOn: [datastore:main-mysql#heartie, provider:stripe, provider:resend]
+  secrets:
+    - { name: DB_PASSWORD, ref: keychain:archive/heartie/api/db-password }
+    - { name: STRIPE_SECRET_KEY, ref: keychain:archive/providers/stripe/live-secret-key }

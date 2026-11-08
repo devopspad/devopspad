@@ -1,0 +1,13 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Service
+metadata:
+  name: worker
+  product: thumbsnap
+spec:
+  type: worker
+  repo: { url: git@github.com:example-opc/thumbsnap.git, path: worker }
+  build: { method: local, image: registry:ghcr#thumbsnap-worker }
+  release: { method: manual }
+  deployments:
+    - { environment: pro, runtime: host, unit: /opt/thumbsnap/docker-compose.yml }
+  dependsOn: [datastore:main-mysql#thumbsnap]

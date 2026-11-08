@@ -1,0 +1,11 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Domain
+metadata:
+  name: thumbsnap.example
+spec:
+  registrar: provider:cloudflare
+  dns: provider:cloudflare
+  cost: { amount: "10.44", currency: USD, period: year }
+  renewal: { expiresAt: 2026-12-20, autoRenew: true }
+  records:
+    - { name: "@", type: CNAME, value: thumbsnap.pages.dev, proxied: true }

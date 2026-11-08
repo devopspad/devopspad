@@ -1,0 +1,18 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Host
+metadata:
+  name: sg-1
+  labels: { region: sg, env: pro }
+spec:
+  provider: provider:aliyun
+  state: active
+  addresses: { public: 203.0.113.20 }
+  ssh:
+    host: 203.0.113.20
+    user: deploy
+    auth: agent
+  os: debian-12
+  size: { cpu: 1, memoryGiB: 2, diskGiB: 40 }
+  roles: [docker]
+  cost: { amount: "60.00", currency: CNY, period: year }
+  renewal: { expiresAt: 2027-03-01, autoRenew: true }

@@ -1,0 +1,8 @@
+apiVersion: devopspad.io/v1alpha1
+kind: Host
+metadata:
+  name: old-1
+  description: Retired 2026-10; kept for history.
+spec:
+  provider: provider:aliyun
+  state: retired

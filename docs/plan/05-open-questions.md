@@ -22,6 +22,8 @@ GitHub Actions / GitLab CI / Gitea Actions / Woodpecker / Jenkins / 目前没有
 
 ### Q12 有多少台机器，是什么形态？
 
+**已回答（2026-11-07）**：2 台机器，上百个产品。机群（M4）优先级降到最低，见 [opc-archive/06](opc-archive/06-open-questions.md)。
+
 - 机器数量，是否都跑 K3s，是否都有 Nginx。
 - 是否有不跑 K3s、只用 docker / systemd 的机器。
 
@@ -35,7 +37,7 @@ GitHub Actions / GitLab CI / Gitea Actions / Woodpecker / Jenkins / 目前没有
 
 ### Q14 AI 接入方式
 
-- MCP Server（`devopspadctl mcp`，stdio）作为主接口，CLI JSON 作为备用（建议）。
+- MCP Server（`devopspadcli mcp`，stdio）作为主接口，CLI JSON 作为备用（建议）。
 - 主要用哪个 AI 代理：Claude Code、Codex、Cursor，还是桌面内置助手？
 
 ### Q15 是否需要常驻服务 `devopspadd`？
