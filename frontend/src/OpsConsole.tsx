@@ -130,6 +130,10 @@ const titles: Record<Page, string> = {
   project: "Project mapping",
   sharing: "Sharing & sync",
 };
+// configLabel names a config change; older records kept it in version.
+function configLabel(r: Pick<OpsRecord, "configMap" | "key" | "version">) {
+  return r.configMap ? `${r.configMap}/${r.key}` : r.version;
+}
 // PlanWarnings lists preflight findings; confirming the plan acknowledges them.
 function PlanWarnings({ plan }: { plan?: OpsPlan }) {
   if (!plan?.warnings?.length) return null;
@@ -1017,9 +1021,9 @@ function OpsScope({
                     <div className="ops-release-main">
                       <strong>
                         <span className="ops-muted">#{r.id.slice(0, 8)}</span>{" "}
-                        {r.workload}{" "}
+                        {r.action === "config" ? configLabel(r) : r.workload}{" "}
                         <span className="ops-version">
-                          {operationName(r)} {r.version}
+                          {operationName(r)} {r.action === "config" ? "" : r.version}
                         </span>
                       </strong>
                       <small>
@@ -1028,7 +1032,7 @@ function OpsScope({
                           {r.action === "scale" || r.action === "restart"
                             ? `Replicas ${r.beforeReplicas} → ${r.replicas}`
                             : r.action === "config"
-                              ? r.replicas != null
+                              ? r.replicas != null && r.workload && r.workload !== r.configMap
                                 ? `ConfigMap · restarted ${r.workload}`
                                 : "ConfigMap"
                               : r.image.split("@")[0]}
@@ -1262,8 +1266,8 @@ function OpsScope({
       )}
       {record && (
         <Modal
-          title={`${operationName(record)} ${record.version}`}
-          subtitle={`${record.workload} · ${record.environment} / ${record.namespace}`}
+          title={`${operationName(record)} ${record.action === "config" ? configLabel(record) : record.version}`}
+          subtitle={`${record.workload || record.configMap || ""} · ${record.environment} / ${record.namespace}`}
           onClose={() => setRecord(undefined)}
         >
           <div className="ops-dialog-body">
@@ -1276,8 +1280,8 @@ function OpsScope({
             </p>
             {record.action === "nginx" ? <p>Host Nginx config test and reload record</p> : record.action === "config" ? (
               <p>
-                ConfigMap key {record.version}
-                {record.replicas != null
+                ConfigMap key {configLabel(record)}
+                {record.replicas != null && record.workload && record.workload !== record.configMap
                   ? ` · Deployment ${record.workload} restarted`
                   : ""}
                 . Contents are not recorded; see the steps for line counts and hashes.

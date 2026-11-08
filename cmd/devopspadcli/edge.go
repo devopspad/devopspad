@@ -16,7 +16,11 @@ const edgeUsage = `usage: devopspadcli edge routes list --zone <zone>
        devopspadcli edge dns list --zone <zone>
        devopspadcli edge dns set --zone <zone> --name <name|@> --type A|AAAA|CNAME|TXT|MX|CAA (--content <value> | --target host:<name>) [--proxied] [--ttl 1] [--yes]
   Uses the archive's provider:cloudflare token, or --token-ref; changes need Workers Routes Edit / DNS Edit.
-  Changes are recorded in the archive (records/actions) with the state before and after.`
+  Changes are recorded in the archive (records/actions) with the state before and after.
+  First time on this machine (no archive yet):
+    devopspadcli archive init ~/opc-archive
+    devopspadcli secrets set keychain:archive/providers/cloudflare/api-token
+    devopspadcli archive import --cloudflare`
 
 func cmdEdge(args []string, stdout, stderr io.Writer) int {
 	if len(args) < 2 || (args[0] != "routes" && args[0] != "dns") {

@@ -180,7 +180,12 @@ func Find(explicit, configDir string) (string, error) {
 			return check(strings.TrimSpace(string(b)))
 		}
 	}
-	return "", errors.New("no archive found: run inside an archive, pass --archive <dir>, or set DEVOPSPAD_ARCHIVE")
+	return "", errors.New(`no archive found: run inside an archive, pass --archive <dir>, or set DEVOPSPAD_ARCHIVE.
+Archive, edge (Cloudflare) and secrets check commands need one. To start:
+  devopspadcli archive init ~/opc-archive                                     # creates it and makes it the default
+  devopspadcli secrets set keychain:archive/providers/cloudflare/api-token   # Cloudflare API token (stdin, kept in the OS keychain)
+  devopspadcli archive import --cloudflare                                    # adds provider:cloudflare and your zones
+Then for example: devopspadcli edge routes list --zone example.com`)
 }
 
 // Load reads and validates every file of the archive. The returned error is

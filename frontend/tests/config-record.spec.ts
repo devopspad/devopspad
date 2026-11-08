@@ -23,7 +23,9 @@ test("CLI config updates show in releases without contents or rollback", async (
       container: "",
       image: "",
       beforeImage: "",
-      version: "thumbspark-config-toml/config.toml",
+      version: "",
+      configMap: "thumbspark-config-toml",
+      key: "config.toml",
       beforeReplicas: 1,
       replicas: 1,
       status: "succeeded",
@@ -69,9 +71,7 @@ test("CLI config updates show in releases without contents or rollback", async (
   await page.goto("/#infra");
   await page.getByRole("button", { name: "Releases", exact: true }).click();
   const row = page.locator(".ops-release-row");
-  await expect(row).toContainText(
-    "Config update thumbspark-config-toml/config.toml",
-  );
+  await expect(row).toContainText("thumbspark-config-toml/config.toml Config update");
   await expect(row).toContainText("ConfigMap · restarted thumbspark");
   await row.click();
   await expect(

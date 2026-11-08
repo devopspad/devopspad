@@ -118,7 +118,7 @@ func (a *Archive) MirrorRecord(r ops.Record, app ops.Application, actor string) 
 	machine, _ := os.Hostname()
 	rec := &ActionRecord{APIVersion: APIVersion, Kind: "ActionRecord", ID: stableULID(started, "ops:"+r.ID), Action: opsActions[r.Action],
 		Targets: []string{ref + "@" + env}, Actor: Actor{Type: typ, Name: name, Machine: machine}, Status: status,
-		Message: strings.TrimSpace(r.Workload + " " + r.Version + ": " + r.Message), Steps: steps,
+		Message: strings.TrimSpace(recordSubject(r) + ": " + r.Message), Steps: steps,
 		StartedAt: started.Format(time.RFC3339), FinishedAt: finished.Format(time.RFC3339), Links: Links{Run: r.RunID}}
 	if rec.Action == "" {
 		rec.Action = "ops." + r.Action
@@ -163,4 +163,16 @@ func (a *Archive) ImportRecords(store *ops.Store, actor string) (imported, skipp
 		}
 	}
 	return imported, skipped, nil
+}
+
+// recordSubject names what a record changed, for the archive message.
+func recordSubject(r ops.Record) string {
+	if r.ConfigMap != "" {
+		s := "configmap " + r.ConfigMap + "/" + r.Key
+		if r.Workload != "" {
+			s += ", restarted " + r.Workload
+		}
+		return s
+	}
+	return strings.TrimSpace(r.Workload + " " + r.Version)
 }

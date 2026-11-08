@@ -84,3 +84,16 @@ func TestStoreHookOnlyOnFinal(t *testing.T) {
 		t.Fatalf("hook calls: %v", seen)
 	}
 }
+
+func TestMirrorConfigRecordSubject(t *testing.T) {
+	a := load(t, copyExample(t))
+	r := ops.Record{ID: uuid.NewString(), Action: "config", Application: "heartie-admin", Connection: "hk-k3s", Namespace: "default",
+		ConfigMap: "heartie-admin-config", Key: "config.toml", Status: "succeeded", StartedAt: "2026-11-07T10:00:00Z", Steps: []string{"Updated key"}}
+	if ok, err := a.MirrorRecord(r, ops.Application{Name: "heartie-admin", Selector: "app=heartie-admin"}, "human/me"); err != nil || !ok {
+		t.Fatalf("mirror: %v %v", ok, err)
+	}
+	b := load(t, a.Dir)
+	if len(b.Records) != 1 || b.Records[0].Action != "config.set" || !strings.HasPrefix(b.Records[0].Message, "configmap heartie-admin-config/config.toml") {
+		t.Fatalf("record: %+v", b.Records)
+	}
+}

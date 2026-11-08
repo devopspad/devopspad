@@ -71,6 +71,10 @@ type Record struct {
 	// Targets lists every workload of a multi-workload release; Workload and
 	// Container then join their names for display.
 	Targets []RecordTarget `json:"targets,omitempty"`
+	// ConfigMap and Key identify a config change (action config); Workload is
+	// then set only when the change also restarted a Deployment.
+	ConfigMap string `json:"configMap,omitempty"`
+	Key       string `json:"key,omitempty"`
 }
 
 type RecordTarget struct {

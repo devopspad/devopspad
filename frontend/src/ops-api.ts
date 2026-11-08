@@ -67,6 +67,8 @@ export type OpsRecord = {
   origin?: "external";
   runId?: string;
   action?: "release" | "rollback" | "scale" | "restart" | "nginx" | "config" | "secret" | "patch" | "job";
+  configMap?: string;
+  key?: string;
   beforeReplicas?: number;
   replicas?: number;
   id: string;

@@ -210,12 +210,12 @@ func configSet(ch configChange, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "Dry run: nothing was written")
 		return 0
 	}
-	r := ops.Record{ID: uuid.NewString(), Application: t.Application.Name, Environment: t.Environment.Name, Connection: t.Environment.Connection, Namespace: t.Environment.Namespace, Workload: ch.configMap, Steps: []string{}}
+	r := ops.Record{ID: uuid.NewString(), Application: t.Application.Name, Environment: t.Environment.Name, Connection: t.Environment.Connection, Namespace: t.Environment.Namespace, Steps: []string{}}
 	if ch.restart {
-		r = opsrun.PlanRecord(t, plan, "", "")
+		r = opsrun.PlanRecord(t, plan, "", "") // Workload is the restarted Deployment
 	}
 	r.Action = "config"
-	r.Version = ch.configMap + "/" + ch.key
+	r.ConfigMap, r.Key = ch.configMap, ch.key
 	r.Status = "running"
 	r.StartedAt = time.Now().UTC().Format(time.RFC3339Nano)
 	r.Steps = append(r.Steps, "Checked ConfigMap revision "+cm.ResourceVersion)
