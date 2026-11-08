@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"devopspad/internal/ops"
 	"devopspad/internal/opsrun"
 	"devopspad/internal/release"
 	"devopspad/internal/workspace"
@@ -137,14 +136,7 @@ func cmdSecretK8s(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "Plan only; re-run with --yes to apply")
 		return 0
 	}
-	r := ops.Record{ID: plan.ID, Action: "secret", Application: t.Application.Name, Environment: t.Environment.Name, Connection: t.Environment.Connection,
-		Namespace: t.Environment.Namespace, Workload: plan.Name, Version: "Secret", Status: "running", StartedAt: time.Now().UTC().Format(time.RFC3339Nano),
-		Steps: []string{verb + " " + plan.Type + ": " + strings.Join(keys, ", "), "content sha256 " + plan.ContentSHA256}}
-	if err := t.Store.WriteRecord(r); err != nil {
-		return jsonFail(stderr, err)
-	}
-	applyErr := release.ApplySecret(ctx, cl, plan)
-	r, err = opsrun.Finish(t.Store, r, applyErr, "Secret "+verb+"d")
+	r, err := opsrun.ApplySecret(ctx, t, plan)
 	return printRecord(r, err, stdout, stderr)
 }
 
@@ -211,9 +203,6 @@ func cmdWorkloadPatch(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 	record := opsrun.PlanRecord(t, plan, "", "")
-	for _, c := range plan.Changes {
-		record.Steps = append(record.Steps, "plan: "+c)
-	}
 	applyCtx, cancelApply := context.WithTimeout(context.Background(), *timeout)
 	defer cancelApply()
 	r, err := opsrun.Apply(applyCtx, t.Store, t.Connection, plan, record, func(step string) { fmt.Fprintln(stderr, step) })

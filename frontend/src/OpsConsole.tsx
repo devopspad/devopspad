@@ -19,6 +19,7 @@ import {
   CircleAlert,
   Database,
   FileCode2,
+  KeyRound,
   FileText,
   FolderOpen,
   GitBranch,
@@ -59,6 +60,7 @@ import type { ClusterRef } from "./types";
 import { WorkspaceNavigation } from "./WorkspaceNavigation";
 import { OpsApplicationConfig } from "./OpsApplicationConfig";
 import { OpsNginxConfig } from "./OpsNginxConfig";
+import { OpsSecrets } from "./OpsSecrets";
 import { parseDocument } from "yaml";
 import { OpsRuns } from "./OpsRuns";
 import { OpsConnectDialog } from "./OpsConnectDialog";
@@ -75,6 +77,7 @@ type Page =
   | "events"
   | "config"
   | "nginx"
+  | "secrets"
   | "project"
   | "sharing";
 const nav = [
@@ -105,6 +108,7 @@ const nav = [
     items: [
       { id: "config", label: "App config", icon: Settings2 },
       { id: "nginx", label: "Nginx config", icon: FileCode2 },
+      { id: "secrets", label: "Secrets", icon: KeyRound },
       { id: "project", label: "Project mapping", icon: FileCode2 },
       { id: "sharing", label: "Sharing & sync", icon: GitBranch },
     ],
@@ -122,12 +126,16 @@ const titles: Record<Page, string> = {
   events: "Events",
   config: "App config",
   nginx: "Nginx config",
+  secrets: "Secrets",
   project: "Project mapping",
   sharing: "Sharing & sync",
 };
 function operationName(record: Pick<OpsRecord, "action">) {
   if (record.action === "nginx") return "Nginx config";
   if (record.action === "config") return "Config update";
+  if (record.action === "secret") return "Secret update";
+  if (record.action === "patch") return "Deployment settings";
+  if (record.action === "job") return "Job";
   return record.action === "scale"
     ? "Scale"
     : record.action === "restart"
@@ -270,6 +278,7 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
       page === "nodes" ||
       page === "config" ||
       page === "nginx" ||
+      page === "secrets" ||
       page === "project" ||
       page === "sharing" ||
       connect
@@ -546,6 +555,11 @@ export function OpsConsole({ onWorkbench }: { onWorkbench: () => void }) {
                   <div className="ops-application-config">
                     <OpsNginxConfig key={`${snapshot.root}:${env.name}:${app.name}:${app.nginxPath || ""}`} projectRoot={snapshot.root} environment={env.name} application={app.name} path={app.nginxPath} saving={busy} onBusy={setBusy} />
                   </div>
+                </section>
+              ) : page === "secrets" && env && app ? (
+                <section className="ops-panel">
+                  <div className="ops-panel-head"><div><h1>Secrets</h1><p>{app.name} · {env.name} · namespace {env.namespace}</p></div></div>
+                  <OpsSecrets key={`${snapshot.root}:${env.name}:${app.name}`} environment={env.name} application={app.name} busy={busy} onBusy={setBusy} />
                 </section>
               ) : env && app ? (
                 <OpsScope

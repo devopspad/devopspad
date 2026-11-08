@@ -18,11 +18,13 @@ type App struct {
 	opsMu    sync.Mutex
 	ops      *ops.Store
 	opsPlans map[string]pendingOpsRelease
-	ctx      context.Context
-	store    *workspace.Store
-	initErr  error
-	mu       sync.Mutex
-	queries  map[string]context.CancelFunc
+	// secretPlans hold Secret values in memory only, for at most ten minutes.
+	secretPlans map[string]pendingSecret
+	ctx         context.Context
+	store       *workspace.Store
+	initErr     error
+	mu          sync.Mutex
+	queries     map[string]context.CancelFunc
 }
 
 func NewApp() *App { return &App{queries: map[string]context.CancelFunc{}} }

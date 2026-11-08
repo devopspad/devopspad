@@ -107,6 +107,12 @@ Go 测试覆盖 YAML 校验、陈旧配置保存、并发保存锁、Git 两个�
 
 这些测试使用临时目录、本地 Git remote、HTTP 协议服务器和模拟集群，不会修改用户的真实环境。真实 Registry 拉取、带工作节点的 Deployment rollout、真实 SSH/集群 RBAC 组合及原生目录选择器仍需要在目标环境验收。
 
+## Secrets
+
+“Secrets”页面（Configure 分组）在当前环境的命名空间里创建或更新 Secret：generic（多个键值）或 docker-registry（镜像拉取凭据）。“Show current keys”只显示键名和最后修改时间。先“Plan”看键名的 added / changed / removed（整体替换，未列出的键会删除），再“Apply”；值只在桌面进程内存中保留到这次计划结束，应用后清空，不会回显或写入磁盘，记录只含键名和内容哈希前缀。
+
+下半部分把 Secret 用到 Deployment：添加 imagePullSecret、envFrom Secret 或某个环境变量的 secretKeyRef。它和镜像发布同一套计划、dry-run、发布锁和 rollout 等待，会滚动 Pod，不会修改明文 value 的环境变量。命令行等价：`devopspadcli secret set|keys`、`devopspadcli workload patch`。
+
 ## 宿主机 Nginx
 
 应用映射可配置 `nginxPath: /etc/nginx/conf.d/thumbnailsnap.conf`。在「Nginx config」或「App config」中读取、编辑并保存。环境必须使用已保存的 SSH 连接；远端需要 Python 3、Nginx 和 systemd，SSH 用户须有配置与 reload 权限。

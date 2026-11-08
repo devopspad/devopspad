@@ -80,6 +80,9 @@ func PlanRecord(t Target, plan release.DesktopPlan, version, runID string) ops.R
 		record.BeforeReplicas = &plan.BeforeReplicas
 		record.Replicas = &plan.Replicas
 	}
+	for _, c := range plan.Changes {
+		record.Steps = append(record.Steps, "plan: "+c)
+	}
 	return record
 }
 

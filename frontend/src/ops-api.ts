@@ -66,7 +66,7 @@ export type OpsArtifact = {
 export type OpsRecord = {
   origin?: "external";
   runId?: string;
-  action?: "release" | "rollback" | "scale" | "restart" | "nginx" | "config";
+  action?: "release" | "rollback" | "scale" | "restart" | "nginx" | "config" | "secret" | "patch" | "job";
   beforeReplicas?: number;
   replicas?: number;
   id: string;
@@ -125,7 +125,7 @@ export type OpsMetric = {
   timestamp: string;
 };
 export type OpsPlan = {
-  action?: "release" | "rollback" | "scale" | "restart";
+  action?: "release" | "rollback" | "scale" | "restart" | "patch";
   beforeReplicas?: number;
   replicas?: number;
   id: string;
