@@ -138,7 +138,7 @@ func TestValidationCodes(t *testing.T) {
 func TestSecretsInInvalidFilesAreReported(t *testing.T) {
 	dir := copyExample(t)
 	p := filepath.Join(dir, "inventory/hosts/sg-1.yaml")
-	if err := os.WriteFile(p, []byte("apiVersion: devopspad.io/v1alpha1\nkind: Host\nnope: [\napi: sk_" + "live_abcdefghijklmnopqrstuvwxyz\n"), 0o644); err != nil {
+	if err := os.WriteFile(p, []byte("apiVersion: devopspad.io/v1alpha1\nkind: Host\nnope: [\napi: sk_"+"live_abcdefghijklmnopqrstuvwxyz\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	a := load(t, dir)
@@ -388,7 +388,7 @@ func TestGitWorkflow(t *testing.T) {
 	gitT(t, dir, "checkout", "--", rec)
 
 	// The staged check sees the index, not the working tree.
-	if err := os.WriteFile(filepath.Join(dir, "notes", "leak.md"), []byte("gh" + "p_abcdefghijklmnopqrstuvwxyz0123456789\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "notes", "leak.md"), []byte("gh"+"p_abcdefghijklmnopqrstuvwxyz0123456789\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if a, _ = Check(dir, true); len(a.Errors) > 0 {
