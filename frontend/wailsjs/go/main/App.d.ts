@@ -4,10 +4,15 @@ import {ops} from '../models';
 import {workspace} from '../models';
 import {main} from '../models';
 import {release} from '../models';
+import {archive} from '../models';
 
 export function AddOpsArtifact(arg1:ops.Artifact):Promise<ops.Snapshot>;
 
 export function ApplyOpsRelease(arg1:string):Promise<ops.Record>;
+
+export function ApplyOpsSecret(arg1:string):Promise<ops.Record>;
+
+export function ArchiveGit(arg1:string,arg2:string):Promise<string>;
 
 export function AskAI(arg1:workspace.AIRequest):Promise<string>;
 
@@ -19,9 +24,15 @@ export function BrowseResources(arg1:string,arg2:workspace.BrowseRequest):Promis
 
 export function CancelQuery(arg1:string):Promise<void>;
 
+export function CheckForUpdate():Promise<main.UpdateInfo>;
+
 export function ClusterEvents(arg1:string,arg2:workspace.ClusterRef):Promise<workspace.Result>;
 
 export function DeleteConnection(arg1:string):Promise<void>;
+
+export function DescribeArchiveResource(arg1:string):Promise<main.ArchiveDetail>;
+
+export function DescribeOpsSecret(arg1:string,arg2:string,arg3:string):Promise<release.SecretInfo>;
 
 export function Execute(arg1:string,arg2:string,arg3:string):Promise<workspace.Result>;
 
@@ -34,6 +45,8 @@ export function ExportCSV(arg1:string):Promise<boolean>;
 export function ExportDiagnostics():Promise<boolean>;
 
 export function GetAISettings():Promise<workspace.AISettings>;
+
+export function GetArchive():Promise<main.ArchiveSummary>;
 
 export function GetDiagnostics():Promise<string>;
 
@@ -51,11 +64,19 @@ export function ListDatabases(arg1:string):Promise<Array<string>>;
 
 export function ListWorkloads(arg1:string,arg2:string):Promise<Array<workspace.Workload>>;
 
+export function NewArchiveResource(arg1:string,arg2:string,arg3:string):Promise<string>;
+
+export function OpenUpdate(arg1:string):Promise<void>;
+
 export function OpsGit(arg1:string):Promise<string>;
+
+export function PlanOpsPatch(arg1:string,arg2:string,arg3:string,arg4:release.WorkloadPatch):Promise<release.DesktopPlan>;
 
 export function PlanOpsRelease(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<release.DesktopPlan>;
 
 export function PlanOpsRollback(arg1:string,arg2:string,arg3:string):Promise<release.DesktopPlan>;
+
+export function PlanOpsSecret(arg1:string,arg2:string,arg3:main.OpsSecretRequest):Promise<release.SecretPlan>;
 
 export function PlanOpsWorkloadAction(arg1:string,arg2:string,arg3:string,arg4:string,arg5:number):Promise<release.DesktopPlan>;
 
@@ -77,6 +98,8 @@ export function RetryWorkspace():Promise<void>;
 
 export function SaveAISettings(arg1:workspace.AISettings):Promise<void>;
 
+export function SaveArchiveFile(arg1:string,arg2:string,arg3:string):Promise<main.ArchiveSaveResult>;
+
 export function SaveConfigMap(arg1:string,arg2:workspace.ConfigMapUpdate):Promise<string>;
 
 export function SaveConnection(arg1:workspace.Connection):Promise<workspace.Connection>;
@@ -85,10 +108,16 @@ export function SaveOpsNginx(arg1:string,arg2:string,arg3:workspace.NginxUpdate)
 
 export function SaveOpsProject(arg1:string,arg2:string):Promise<ops.Snapshot>;
 
+export function ScanArchive(arg1:string):Promise<archive.ScanResult>;
+
+export function SelectArchive(arg1:boolean):Promise<main.ArchiveSummary>;
+
 export function SelectKubeconfig():Promise<string>;
 
 export function SelectOpsProject():Promise<ops.Snapshot>;
 
 export function SelectSSHFile(arg1:string):Promise<string>;
+
+export function SyncArchiveConnections(arg1:boolean):Promise<Array<archive.SyncItem>>;
 
 export function TestConnection(arg1:workspace.Connection):Promise<number>;

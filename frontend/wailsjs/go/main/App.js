@@ -10,6 +10,14 @@ export function ApplyOpsRelease(arg1) {
   return window['go']['main']['App']['ApplyOpsRelease'](arg1);
 }
 
+export function ApplyOpsSecret(arg1) {
+  return window['go']['main']['App']['ApplyOpsSecret'](arg1);
+}
+
+export function ArchiveGit(arg1, arg2) {
+  return window['go']['main']['App']['ArchiveGit'](arg1, arg2);
+}
+
 export function AskAI(arg1) {
   return window['go']['main']['App']['AskAI'](arg1);
 }
@@ -30,12 +38,24 @@ export function CancelQuery(arg1) {
   return window['go']['main']['App']['CancelQuery'](arg1);
 }
 
+export function CheckForUpdate() {
+  return window['go']['main']['App']['CheckForUpdate']();
+}
+
 export function ClusterEvents(arg1, arg2) {
   return window['go']['main']['App']['ClusterEvents'](arg1, arg2);
 }
 
 export function DeleteConnection(arg1) {
   return window['go']['main']['App']['DeleteConnection'](arg1);
+}
+
+export function DescribeArchiveResource(arg1) {
+  return window['go']['main']['App']['DescribeArchiveResource'](arg1);
+}
+
+export function DescribeOpsSecret(arg1, arg2, arg3) {
+  return window['go']['main']['App']['DescribeOpsSecret'](arg1, arg2, arg3);
 }
 
 export function Execute(arg1, arg2, arg3) {
@@ -60,6 +80,10 @@ export function ExportDiagnostics() {
 
 export function GetAISettings() {
   return window['go']['main']['App']['GetAISettings']();
+}
+
+export function GetArchive() {
+  return window['go']['main']['App']['GetArchive']();
 }
 
 export function GetDiagnostics() {
@@ -94,8 +118,20 @@ export function ListWorkloads(arg1, arg2) {
   return window['go']['main']['App']['ListWorkloads'](arg1, arg2);
 }
 
+export function NewArchiveResource(arg1, arg2, arg3) {
+  return window['go']['main']['App']['NewArchiveResource'](arg1, arg2, arg3);
+}
+
+export function OpenUpdate(arg1) {
+  return window['go']['main']['App']['OpenUpdate'](arg1);
+}
+
 export function OpsGit(arg1) {
   return window['go']['main']['App']['OpsGit'](arg1);
+}
+
+export function PlanOpsPatch(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['PlanOpsPatch'](arg1, arg2, arg3, arg4);
 }
 
 export function PlanOpsRelease(arg1, arg2, arg3, arg4, arg5) {
@@ -104,6 +140,10 @@ export function PlanOpsRelease(arg1, arg2, arg3, arg4, arg5) {
 
 export function PlanOpsRollback(arg1, arg2, arg3) {
   return window['go']['main']['App']['PlanOpsRollback'](arg1, arg2, arg3);
+}
+
+export function PlanOpsSecret(arg1, arg2, arg3) {
+  return window['go']['main']['App']['PlanOpsSecret'](arg1, arg2, arg3);
 }
 
 export function PlanOpsWorkloadAction(arg1, arg2, arg3, arg4, arg5) {
@@ -146,6 +186,10 @@ export function SaveAISettings(arg1) {
   return window['go']['main']['App']['SaveAISettings'](arg1);
 }
 
+export function SaveArchiveFile(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveArchiveFile'](arg1, arg2, arg3);
+}
+
 export function SaveConfigMap(arg1, arg2) {
   return window['go']['main']['App']['SaveConfigMap'](arg1, arg2);
 }
@@ -162,6 +206,14 @@ export function SaveOpsProject(arg1, arg2) {
   return window['go']['main']['App']['SaveOpsProject'](arg1, arg2);
 }
 
+export function ScanArchive(arg1) {
+  return window['go']['main']['App']['ScanArchive'](arg1);
+}
+
+export function SelectArchive(arg1) {
+  return window['go']['main']['App']['SelectArchive'](arg1);
+}
+
 export function SelectKubeconfig() {
   return window['go']['main']['App']['SelectKubeconfig']();
 }
@@ -172,6 +224,10 @@ export function SelectOpsProject() {
 
 export function SelectSSHFile(arg1) {
   return window['go']['main']['App']['SelectSSHFile'](arg1);
+}
+
+export function SyncArchiveConnections(arg1) {
+  return window['go']['main']['App']['SyncArchiveConnections'](arg1);
 }
 
 export function TestConnection(arg1) {
