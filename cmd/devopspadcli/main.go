@@ -242,7 +242,9 @@ Desktop project, releases and records:
   devopspadcli secret set ... --type docker-registry --docker-server <host> --docker-username <user> --password-stdin [--yes]
   devopspadcli secret keys --environment <name> --application <name> --name <secret>       (key names only, never values)
   devopspadcli workload patch --environment <name> --application <name> [--workload <name>] [--add-image-pull-secret <s>]
-                          [--container <c> --add-env-from-secret <s> | --set-env-secret NAME=secret:key | --remove-env NAME ...] [--yes]
+                          [--container <c> --add-env-from-secret <s> [--optional] | --set-env-secret NAME=secret:key | --remove-env NAME ...] [--yes]
+                          Referenced Secrets must exist first (create them with secret set); pull secrets must be
+                          docker-registry. --optional envFrom Secrets may be created later.
   devopspadcli workload restart --environment <name> --application <name> [--workload <name>] [--yes] [--timeout 180s]
 
 Config:

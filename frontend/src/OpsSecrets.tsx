@@ -29,6 +29,7 @@ type SecretsBridge = OpsBridge & {
       container?: string;
       addImagePullSecrets?: string[];
       addEnvFromSecrets?: string[];
+      envFromOptional?: boolean;
       setEnvSecretRefs?: { name: string; secret: string; key: string }[];
     },
   ): Promise<OpsPlan & { changes?: string[] }>;
@@ -55,6 +56,7 @@ export function OpsSecrets({ environment, application, busy, onBusy }: { environ
   const [pullSecret, setPullSecret] = useState("");
   const [container, setContainer] = useState("");
   const [envFrom, setEnvFrom] = useState("");
+  const [envFromOptional, setEnvFromOptional] = useState(false);
   const [envRows, setEnvRows] = useState<EnvRow[]>([]);
   const [patchPlan, setPatchPlan] = useState<OpsPlan & { changes?: string[] }>();
   const [patchMessage, setPatchMessage] = useState("");
@@ -172,6 +174,10 @@ export function OpsSecrets({ environment, application, busy, onBusy }: { environ
           <label>Container<input aria-label="Container" placeholder="app" value={container} onChange={(e) => setContainer(e.target.value)} /></label>
           <label>Add envFrom Secret<input aria-label="Add envFrom Secret" placeholder="app-keys" value={envFrom} onChange={(e) => setEnvFrom(e.target.value)} /></label>
         </div>
+        <label className="ops-secrets-check">
+          <input type="checkbox" aria-label="Optional envFrom Secret" checked={envFromOptional} onChange={(e) => setEnvFromOptional(e.target.checked)} />
+          Optional: pods start while this Secret does not exist yet. Otherwise every referenced Secret must already exist.
+        </label>
         <div className="ops-secrets-rows">
           {envRows.map((r, i) => (
             <div key={i} className="ops-secrets-row">
@@ -194,6 +200,7 @@ export function OpsSecrets({ environment, application, busy, onBusy }: { environ
                     container: container || undefined,
                     addImagePullSecrets: pullSecret ? [pullSecret] : [],
                     addEnvFromSecrets: envFrom ? [envFrom] : [],
+                    envFromOptional: envFromOptional || undefined,
                     setEnvSecretRefs: envRows.filter((r) => r.name),
                   }),
                 );

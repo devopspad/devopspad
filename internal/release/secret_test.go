@@ -39,8 +39,24 @@ func patchDeployment() *unstructured.Unstructured {
 	return d
 }
 
+func testSecret(name, typ string, data map[string]string) *unstructured.Unstructured {
+	enc := map[string]any{}
+	for k, v := range data {
+		enc[k] = base64.StdEncoding.EncodeToString([]byte(v))
+	}
+	return &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Secret", "type": typ,
+		"metadata": map[string]any{"name": name, "namespace": "default"}, "data": enc}}
+}
+
+func patchSecrets() []runtime.Object {
+	return []runtime.Object{
+		testSecret("ghcr-pull", dockerConfigType, map[string]string{".dockerconfigjson": `{"auths":{"ghcr.io":{"username":"bot","password":"pat"}}}`}),
+		testSecret("app-keys", "Opaque", map[string]string{"token": "t", "owner": "o"}),
+	}
+}
+
 func TestPrepareDesktopPatch(t *testing.T) {
-	cl := fake.NewSimpleDynamicClient(runtime.NewScheme(), patchDeployment())
+	cl := fake.NewSimpleDynamicClient(runtime.NewScheme(), append(patchSecrets(), patchDeployment())...)
 	cl.PrependReactor("update", "deployments", func(action ktesting.Action) (bool, runtime.Object, error) {
 		return true, action.(ktesting.UpdateActionImpl).GetObject(), nil
 	})
@@ -73,6 +89,10 @@ func TestPrepareDesktopPatch(t *testing.T) {
 		"bad name":       {AddImagePullSecrets: []string{"Bad_Name"}},
 		"missing":        {Container: "nope", AddEnvFromSecrets: []string{"s"}},
 		"already":        {RemoveImagePullSecrets: []string{"never-added"}},
+		"missing pull":   {AddImagePullSecrets: []string{"nope"}},
+		"opaque pull":    {AddImagePullSecrets: []string{"app-keys"}},
+		"missing from":   {Container: "app", AddEnvFromSecrets: []string{"later"}},
+		"missing key":    {Container: "app", SetEnvSecretRefs: []EnvSecretRef{{Name: "X", Secret: "app-keys", Key: "nokey"}}},
 	} {
 		if _, err := PrepareDesktopPatch(context.Background(), cl, "default", "svc-user", "app=svc-user", bad); err == nil {
 			t.Errorf("%s accepted", name)
@@ -133,5 +153,37 @@ func TestSecretCreateUpdateAndDescribe(t *testing.T) {
 	cfg, err := DockerConfigJSON("ghcr.io", "bot", "pat")
 	if err != nil || !strings.Contains(string(cfg), `"ghcr.io"`) {
 		t.Fatalf("docker config: %s %v", cfg, err)
+	}
+}
+
+func TestPatchOptionalEnvFrom(t *testing.T) {
+	cl := fake.NewSimpleDynamicClient(runtime.NewScheme(), append(patchSecrets(), patchDeployment())...)
+	cl.PrependReactor("update", "deployments", func(action ktesting.Action) (bool, runtime.Object, error) {
+		return true, action.(ktesting.UpdateActionImpl).GetObject(), nil
+	})
+	_, err := PrepareDesktopPatch(context.Background(), cl, "default", "svc-user", "app=svc-user", WorkloadPatch{Container: "app", AddEnvFromSecrets: []string{"later"}})
+	if err == nil || !strings.Contains(err.Error(), "--optional") {
+		t.Fatalf("missing envFrom secret: %v", err)
+	}
+	p, err := PrepareDesktopPatch(context.Background(), cl, "default", "svc-user", "app=svc-user", WorkloadPatch{Container: "app", AddEnvFromSecrets: []string{"later"}, EnvFromOptional: true})
+	if err != nil || p.Changes[0] != "add optional envFrom secret later to app" {
+		t.Fatalf("optional: %v %v", p.Changes, err)
+	}
+	c, _, _ := unstructured.NestedSlice(p.candidate.Object, "spec", "template", "spec", "containers")
+	ref := c[0].(map[string]any)["envFrom"].([]any)[0].(map[string]any)["secretRef"].(map[string]any)
+	if ref["optional"] != true || ref["name"] != "later" {
+		t.Fatalf("secretRef: %v", ref)
+	}
+	d := patchDeployment()
+	containers, _, _ := unstructured.NestedSlice(d.Object, "spec", "template", "spec", "containers")
+	containers[0].(map[string]any)["envFrom"] = []any{map[string]any{"secretRef": map[string]any{"name": "app-keys"}}}
+	_ = unstructured.SetNestedSlice(d.Object, containers, "spec", "template", "spec", "containers")
+	cl = fake.NewSimpleDynamicClient(runtime.NewScheme(), append(patchSecrets(), d)...)
+	cl.PrependReactor("update", "deployments", func(action ktesting.Action) (bool, runtime.Object, error) {
+		return true, action.(ktesting.UpdateActionImpl).GetObject(), nil
+	})
+	p, err = PrepareDesktopPatch(context.Background(), cl, "default", "svc-user", "app=svc-user", WorkloadPatch{Container: "app", AddEnvFromSecrets: []string{"app-keys"}, EnvFromOptional: true})
+	if err != nil || p.Changes[0] != "set envFrom secret app-keys optional=true in app" {
+		t.Fatalf("toggle: %v %v", p.Changes, err)
 	}
 }

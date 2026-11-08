@@ -158,6 +158,7 @@ func cmdWorkloadPatch(args []string, stdout, stderr io.Writer) int {
 	fs.Var(&removeFrom, "remove-env-from-secret", "Secret name, repeatable")
 	fs.Var(&setEnv, "set-env-secret", "NAME=secret:key, repeatable")
 	fs.Var(&removeEnv, "remove-env", "env name backed by a secretKeyRef, repeatable")
+	optional := fs.Bool("optional", false, "make --add-env-from-secret optional: pods start while the Secret does not exist yet")
 	if err := fs.Parse(args); err != nil || fs.NArg() != 0 {
 		return 2
 	}
@@ -172,7 +173,7 @@ func cmdWorkloadPatch(args []string, stdout, stderr io.Writer) int {
 	if *workload == "" {
 		*workload = *application
 	}
-	patch := release.WorkloadPatch{Container: *container, AddImagePullSecrets: addPull, RemoveImagePullSecrets: removePull, AddEnvFromSecrets: addFrom, RemoveEnvFromSecrets: removeFrom, RemoveEnv: removeEnv}
+	patch := release.WorkloadPatch{Container: *container, AddImagePullSecrets: addPull, RemoveImagePullSecrets: removePull, AddEnvFromSecrets: addFrom, EnvFromOptional: *optional, RemoveEnvFromSecrets: removeFrom, RemoveEnv: removeEnv}
 	for _, v := range setEnv {
 		name, ref, ok1 := strings.Cut(v, "=")
 		secret, key, ok2 := strings.Cut(ref, ":")

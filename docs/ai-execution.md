@@ -83,6 +83,7 @@ devopspadcli workload patch --environment heartie-pro --application <app> [--wor
 
 - Secret 更新是整体替换数据（未给出的键会删除，计划里标为 removed），按 resourceVersion 检查并发修改；类型不能改，immutable Secret 拒绝修改。
 - `workload patch` 只改 `imagePullSecrets`、`envFrom.secretRef`、`env[].valueFrom.secretKeyRef`；不会写入或替换明文 `value` 的环境变量。修改会滚动 Pod。
+- 顺序：先 `secret set` 创建 Secret，再 `workload patch` 引用它。计划阶段会检查被引用的 Secret 存在：拉取凭据必须是 docker-registry 类型，`--set-env-secret` 的键必须存在，否则计划失败（Kubernetes 自己不检查，缺失会导致 ImagePullBackOff 或 CreateContainerConfigError）。`--add-env-from-secret … --optional` 写入 `optional: true`，允许 Secret 之后再建，Pod 照常启动。
 - 记录只含 Secret 名、键名的增删改和整体内容哈希前缀（`secret`），或修改的字段名（`patch`），不含任何值。
 
 ## 数据契约

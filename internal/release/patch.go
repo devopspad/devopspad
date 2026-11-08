@@ -22,13 +22,16 @@ type EnvSecretRef struct {
 // images and replicas: pull secrets and Secret-backed environment. Literal
 // environment values are never written or replaced.
 type WorkloadPatch struct {
-	Container              string         `json:"container,omitempty"`
-	AddImagePullSecrets    []string       `json:"addImagePullSecrets,omitempty"`
-	RemoveImagePullSecrets []string       `json:"removeImagePullSecrets,omitempty"`
-	AddEnvFromSecrets      []string       `json:"addEnvFromSecrets,omitempty"`
-	RemoveEnvFromSecrets   []string       `json:"removeEnvFromSecrets,omitempty"`
-	SetEnvSecretRefs       []EnvSecretRef `json:"setEnvSecretRefs,omitempty"`
-	RemoveEnv              []string       `json:"removeEnv,omitempty"`
+	Container              string   `json:"container,omitempty"`
+	AddImagePullSecrets    []string `json:"addImagePullSecrets,omitempty"`
+	RemoveImagePullSecrets []string `json:"removeImagePullSecrets,omitempty"`
+	AddEnvFromSecrets      []string `json:"addEnvFromSecrets,omitempty"`
+	// EnvFromOptional marks added envFrom Secrets optional: pods start while
+	// the Secret does not exist yet, and it is not required to exist now.
+	EnvFromOptional      bool           `json:"envFromOptional,omitempty"`
+	RemoveEnvFromSecrets []string       `json:"removeEnvFromSecrets,omitempty"`
+	SetEnvSecretRefs     []EnvSecretRef `json:"setEnvSecretRefs,omitempty"`
+	RemoveEnv            []string       `json:"removeEnv,omitempty"`
 }
 
 var (
@@ -73,6 +76,25 @@ func (w WorkloadPatch) validate() error {
 func PrepareDesktopPatch(ctx context.Context, cl dynamic.Interface, namespace, workload, selector string, patch WorkloadPatch) (DesktopPlan, error) {
 	if err := patch.validate(); err != nil {
 		return DesktopPlan{}, err
+	}
+	// Kubernetes accepts references to missing Secrets; pods would then fail
+	// to pull or start, so check them before planning.
+	for _, n := range patch.AddImagePullSecrets {
+		if _, err := checkPullSecret(ctx, cl, namespace, n); err != nil {
+			return DesktopPlan{}, err
+		}
+	}
+	if !patch.EnvFromOptional {
+		for _, n := range patch.AddEnvFromSecrets {
+			if _, err := getSecret(ctx, cl, namespace, n); err != nil {
+				return DesktopPlan{}, fmt.Errorf("%w; or add it with --optional so pods start without it", err)
+			}
+		}
+	}
+	for _, e := range patch.SetEnvSecretRefs {
+		if err := checkSecretKey(ctx, cl, namespace, e.Secret, e.Key); err != nil {
+			return DesktopPlan{}, err
+		}
 	}
 	return prepareDesktop(ctx, cl, namespace, workload, selector, "patch", func(obj *unstructured.Unstructured, p *DesktopPlan) error {
 		p.Container = patch.Container
@@ -132,9 +154,21 @@ func PrepareDesktopPatch(ctx context.Context, cl dynamic.Interface, namespace, w
 				return -1
 			}
 			for _, n := range patch.AddEnvFromSecrets {
-				if findFrom(n) < 0 {
-					envFrom = append(envFrom, map[string]any{"secretRef": map[string]any{"name": n}})
-					changes = append(changes, "add envFrom secret "+n+" to "+patch.Container)
+				ref := map[string]any{"name": n}
+				label := "envFrom secret "
+				if patch.EnvFromOptional {
+					ref["optional"] = true
+					label = "optional envFrom secret "
+				}
+				if i := findFrom(n); i < 0 {
+					envFrom = append(envFrom, map[string]any{"secretRef": ref})
+					changes = append(changes, "add "+label+n+" to "+patch.Container)
+				} else {
+					cur, _ := envFrom[i].(map[string]any)["secretRef"].(map[string]any)
+					if was, _ := cur["optional"].(bool); was != patch.EnvFromOptional {
+						envFrom[i] = map[string]any{"secretRef": ref}
+						changes = append(changes, fmt.Sprintf("set envFrom secret %s optional=%v in %s", n, patch.EnvFromOptional, patch.Container))
+					}
 				}
 			}
 			for _, n := range patch.RemoveEnvFromSecrets {

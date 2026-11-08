@@ -1485,3 +1485,4 @@
 .ops-secrets-change.added { color: var(--ops-good); }
 .ops-secrets-ok { margin: 0; color: var(--ops-good); font-size: 12px; }
 .ops-secrets-error { margin: 0; color: var(--ops-bad); font-size: 12px; }
+.ops-secrets-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ops-muted); }

@@ -77,6 +77,7 @@ test("Secrets page plans and applies a Secret without echoing values, then patch
   await page.getByLabel("Add imagePullSecret").fill("ghcr-pull");
   await page.getByLabel("Container", { exact: true }).fill("app");
   await page.getByLabel("Add envFrom Secret").fill("app-keys");
+  await page.getByLabel("Optional envFrom Secret").check();
   await page.getByRole("button", { name: "Plan" }).nth(1).click();
   await expect(page.getByRole("list", { name: "Deployment plan" })).toContainText("add envFrom secret app-keys to app");
   await page.getByRole("button", { name: "Apply and roll the pods" }).click();
@@ -85,6 +86,6 @@ test("Secrets page plans and applies a Secret without echoing values, then patch
   const calls = await page.evaluate(() => (window as any).__calls);
   expect(calls).toContainEqual(["planSecret", "pro", "svc-user", { name: "app-keys", type: "generic", data: { API_KEY: "sk-very-secret" }, server: "ghcr.io", username: "", password: "" }]);
   expect(calls).toContainEqual(["applySecret", "s1"]);
-  expect(calls).toContainEqual(["planPatch", "pro", "svc-user", "svc-user", { container: "app", addImagePullSecrets: ["ghcr-pull"], addEnvFromSecrets: ["app-keys"], setEnvSecretRefs: [] }]);
+  expect(calls).toContainEqual(["planPatch", "pro", "svc-user", "svc-user", { container: "app", addImagePullSecrets: ["ghcr-pull"], addEnvFromSecrets: ["app-keys"], envFromOptional: true, setEnvSecretRefs: [] }]);
   expect(calls).toContainEqual(["apply", "p1"]);
 });
