@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"devopspad/internal/ops"
@@ -178,7 +180,21 @@ func ApplyDesktop(ctx context.Context, cl dynamic.Interface, p DesktopPlan, prog
 			return errors.New("The Deployment was modified by another operation during the release; check the actual state")
 		}
 		if desktopRolloutReady(obj) {
-			return progress("Deployment is ready")
+			if err := progress("Deployment is ready"); err != nil {
+				return err
+			}
+			if p.Action != "release" {
+				return nil
+			}
+			desired, found, _ := unstructured.NestedInt64(obj.Object, "spec", "replicas")
+			if !found {
+				desired = 1
+			}
+			evidence, err := verifyReleasedDigest(ctx, cl, p, desired)
+			if err != nil {
+				return err
+			}
+			return progress(evidence)
 		}
 		observed, _, _ := unstructured.NestedInt64(obj.Object, "status", "observedGeneration")
 		conditions, _, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
@@ -194,6 +210,70 @@ func ApplyDesktop(ctx context.Context, cl dynamic.Interface, p DesktopPlan, prog
 		}
 	}
 }
+
+var podGVR = schema.GroupVersionResource{Version: "v1", Resource: "pods"}
+
+// verifyReleasedDigest checks that every running pod of this release (the
+// pods carrying its devopspad.io/release annotation) runs the released digest
+// in the target container. Registry names may be normalized by the runtime, so
+// only the sha256 digest is compared. Pods without an imageID yet are retried
+// briefly; a mismatch fails the release.
+func verifyReleasedDigest(ctx context.Context, cl dynamic.Interface, p DesktopPlan, desired int64) (string, error) {
+	_, digest, ok := strings.Cut(p.Image, "@")
+	if !ok || !strings.HasPrefix(digest, "sha256:") {
+		return "image-check skipped: the release image is not pinned by digest", nil
+	}
+	var last string
+	for attempt := 0; attempt < 15; attempt++ {
+		pods, err := cl.Resource(podGVR).Namespace(p.Namespace).List(ctx, metav1.ListOptions{Limit: 500})
+		if err != nil {
+			return "", fmt.Errorf("The rollout is ready, but listing pods for the image check failed (needs list pods): %w", err)
+		}
+		var checked []string
+		pending := false
+		for _, pod := range pods.Items {
+			if pod.GetAnnotations()["devopspad.io/release"] != p.ID || pod.GetDeletionTimestamp() != nil {
+				continue
+			}
+			phase, _, _ := unstructured.NestedString(pod.Object, "status", "phase")
+			if phase != "Running" {
+				continue
+			}
+			statuses, _, _ := unstructured.NestedSlice(pod.Object, "status", "containerStatuses")
+			imageID := ""
+			for _, raw := range statuses {
+				if st, ok := raw.(map[string]any); ok && st["name"] == p.Container {
+					imageID, _ = st["imageID"].(string)
+				}
+			}
+			switch {
+			case imageID == "":
+				pending, last = true, "pod "+pod.GetName()+" has not reported an imageID yet"
+			case !strings.HasSuffix(imageID, "@"+digest):
+				return "", fmt.Errorf("The rollout is ready, but pod %s runs %s instead of the released %s; the release is marked failed and was not rolled back", pod.GetName(), imageID, digest)
+			default:
+				checked = append(checked, pod.GetName())
+			}
+		}
+		if !pending && len(checked) == 0 && desired > 0 {
+			pending, last = true, "no running pod carries this release's annotation yet"
+		}
+		if !pending {
+			if len(checked) == 0 {
+				return "image-check: the Deployment has 0 replicas", nil
+			}
+			sort.Strings(checked)
+			return fmt.Sprintf("image-check: %s run %s", strings.Join(checked, ", "), digest), nil
+		}
+		select {
+		case <-ctx.Done():
+			return "", errors.New("The rollout is ready, but the image check timed out: " + last)
+		case <-time.After(2 * time.Second):
+		}
+	}
+	return "", errors.New("The rollout is ready, but the image check could not complete: " + last)
+}
+
 func desktopRolloutReady(obj *unstructured.Unstructured) bool {
 	desired, ok, _ := unstructured.NestedInt64(obj.Object, "spec", "replicas")
 	if !ok {

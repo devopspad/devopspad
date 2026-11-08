@@ -36,6 +36,8 @@ type ContainerInfo struct {
 	State    string `json:"state"`
 	Ready    bool   `json:"ready"`
 	Restarts int64  `json:"restarts"`
+	// ImageID is the resolved image the kubelet runs, e.g. registry/app@sha256:…
+	ImageID string `json:"imageId,omitempty"`
 }
 type ClusterDetails struct {
 	Ref        ClusterRef        `json:"ref"`
@@ -134,6 +136,7 @@ func podContainers(obj *unstructured.Unstructured) []ContainerInfo {
 				}
 				item.Ready, _, _ = unstructured.NestedBool(status, "ready")
 				item.Restarts, _, _ = unstructured.NestedInt64(status, "restartCount")
+				item.ImageID = objectString(status, "imageID")
 				for _, state := range []string{"running", "waiting", "terminated"} {
 					if _, exists, _ := unstructured.NestedMap(status, "state", state); exists {
 						item.State = state

@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
 	ktesting "k8s.io/client-go/testing"
 )
@@ -135,8 +136,13 @@ func TestDesktopApplyRecordsStepsAndReleasesLease(t *testing.T) {
 	obj := desktopObject()
 	var lease *unstructured.Unstructured
 	updates := 0
+	var pods []any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if strings.HasSuffix(r.URL.Path, "/pods") {
+			_ = json.NewEncoder(w).Encode(map[string]any{"apiVersion": "v1", "kind": "PodList", "metadata": map[string]any{}, "items": pods})
+			return
+		}
 		if strings.Contains(r.URL.Path, "/leases") {
 			switch r.Method {
 			case http.MethodGet:
@@ -186,11 +192,13 @@ func TestDesktopApplyRecordsStepsAndReleasesLease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	digest := "sha256:" + strings.Repeat("a", 64)
+	pods = []any{releasedPod("svc-user-b", p.ID, "docker.io/registry.local/app@"+digest), releasedPod("svc-user-a", p.ID, "registry.local/app@"+digest), releasedPod("svc-user-old", "previous", "old@sha256:"+strings.Repeat("0", 64))}
 	steps := []string{}
 	if err = ApplyDesktop(context.Background(), cl, p, func(s string) error { steps = append(steps, s); return nil }); err != nil {
 		t.Fatal(err)
 	}
-	if updates != 1 || len(steps) != 4 {
+	if updates != 1 || len(steps) != 5 || steps[4] != "image-check: svc-user-a, svc-user-b run "+digest {
 		t.Fatalf("updates=%d steps=%v", updates, steps)
 	}
 	holder, _, _ := unstructured.NestedString(lease.Object, "spec", "holderIdentity")
@@ -199,5 +207,39 @@ func TestDesktopApplyRecordsStepsAndReleasesLease(t *testing.T) {
 	}
 	if err = ApplyDesktop(context.Background(), cl, p, func(string) error { return nil }); err == nil {
 		t.Fatal("replayed stale plan accepted")
+	}
+}
+
+func releasedPod(name, release, imageID string) map[string]any {
+	return map[string]any{"apiVersion": "v1", "kind": "Pod",
+		"metadata": map[string]any{"name": name, "namespace": "default", "annotations": map[string]any{"devopspad.io/release": release}},
+		"status":   map[string]any{"phase": "Running", "containerStatuses": []any{map[string]any{"name": "app", "imageID": imageID}}}}
+}
+
+func TestVerifyReleasedDigest(t *testing.T) {
+	digest := "sha256:" + strings.Repeat("b", 64)
+	p := DesktopPlan{ID: "rel-1", Namespace: "default", Container: "app", Image: "ghcr.io/x/app@" + digest}
+	pods := func(items ...map[string]any) dynamic.Interface {
+		objs := []runtime.Object{}
+		for _, it := range items {
+			objs = append(objs, &unstructured.Unstructured{Object: it})
+		}
+		return fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{podGVR: "PodList"}, objs...)
+	}
+	if _, err := verifyReleasedDigest(context.Background(), pods(releasedPod("a", "rel-1", "ghcr.io/x/app@sha256:"+strings.Repeat("c", 64))), p, 1); err == nil || !strings.Contains(err.Error(), "pod a runs") {
+		t.Fatalf("mismatch accepted: %v", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if _, err := verifyReleasedDigest(ctx, pods(releasedPod("old", "other", "x@"+digest)), p, 2); err == nil || !strings.Contains(err.Error(), "annotation") {
+		t.Fatalf("missing pods accepted: %v", err)
+	}
+	if msg, err := verifyReleasedDigest(context.Background(), pods(), p, 0); err != nil || !strings.Contains(msg, "0 replicas") {
+		t.Fatalf("scaled-to-zero: %q %v", msg, err)
+	}
+	tag := p
+	tag.Image = "ghcr.io/x/app:1.2"
+	if msg, _ := verifyReleasedDigest(context.Background(), pods(), tag, 1); !strings.Contains(msg, "skipped") {
+		t.Fatalf("tag image: %q", msg)
 	}
 }

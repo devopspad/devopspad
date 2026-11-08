@@ -69,7 +69,7 @@ YAML 是第一版配置事实来源。CRDT 协同编辑、自动冲突解决和�
 - 生成计划会执行 Kubernetes server-side dry-run。确认后先在目标命名空间取得 `coordination.k8s.io/v1` Lease，然后再次核对 UID/resourceVersion。
 - 同一个 Deployment 的 DevOpsPad 客户端使用同一个 Lease 名称；执行期限 180 秒，Lease 有效期 300 秒，无续约。客户端需要时钟同步。异常退出后锁到期才能重试；其他运维工具不会自动遵循此锁，更新仍依赖资源版本校验。
 - 每一步写入本地发布记录。新增记录的 `action` 区分 release、rollback、scale、restart；副本操作另记 `beforeReplicas` 与 `replicas`，旧记录缺少 action 时按镜像发布显示。写入记录失败时停止继续执行；已经提交到集群的更新无法因此撤销。
-- 镜像更新和重启添加 `devopspad.io/release` Pod 模板注解；扩缩容保持 Pod 模板不变。成功要求控制器观察到新 generation，且 updated、available、total replicas 与期望值一致。
+- 镜像更新和重启添加 `devopspad.io/release` Pod 模板注解；扩缩容保持 Pod 模板不变。成功要求控制器观察到新 generation，且 updated、available、total replicas 与期望值一致。镜像发布还会核对本次发布的 Pod（带 `devopspad.io/release` 注解）：目标容器的 `imageID` 必须以发布的 `@sha256:` 摘要结尾（只比较摘要，忽略镜像仓库名的规范化），否则记为失败；核对过的 Pod 名和摘要写进发布记录。`devopspadcli cluster inspect` 的容器信息包含 `imageId`。
 - 超时、连接中断或 Deployment 被其他操作修改会记为未完成，提示核对实际状态，不自动重试或回滚。进程崩溃留下的 running 记录显示“执行中 / 待核实”。
 
 原 `devopspadcli release validate` 继续只校验完整 release spec。桌面这条发布路径尚未覆盖该规范的 ConfigMap、迁移 Job、Nginx、机群串行发布和健康检查步骤。
