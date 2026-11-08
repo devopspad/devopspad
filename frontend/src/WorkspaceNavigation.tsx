@@ -1,5 +1,5 @@
-import { Database, Server } from "lucide-react";
-export type Workspace = "workbench" | "infra";
+import { Archive, Database, Server } from "lucide-react";
+export type Workspace = "workbench" | "infra" | "archive";
 export function WorkspaceNavigation({
   active,
   disabled = false,
@@ -13,6 +13,7 @@ export function WorkspaceNavigation({
         [
           { id: "workbench", label: "Data", icon: Database },
           { id: "infra", label: "Infra", icon: Server },
+          { id: "archive", label: "Archive", icon: Archive },
         ] as const
       ).map(({ id, label, icon: Icon }) => (
         <button

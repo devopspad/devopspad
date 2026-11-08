@@ -1,0 +1,215 @@
+/* Archive page: reuses the Infra (.ops-console) layout and palette. */
+.archive-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.archive-sidebar .ops-nav-group button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.archive-count {
+  font-size: 11px;
+  color: var(--ops-dim);
+  font-variant-numeric: tabular-nums;
+}
+.archive-count.bad {
+  color: var(--ops-bad);
+}
+.archive-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 12px 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--ops-input-line, var(--ops-border));
+  border-radius: 6px;
+  color: var(--ops-dim);
+}
+.archive-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ops-fg);
+  font: inherit;
+  font-size: 12px;
+}
+.archive-git-chip {
+  font-variant-numeric: tabular-nums;
+}
+.archive-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+.archive-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--ops-border);
+  border-radius: 8px;
+  background: var(--ops-surface, transparent);
+}
+.archive-tile span {
+  font-size: 12px;
+  color: var(--ops-dim);
+}
+.archive-tile strong {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ops-fg);
+}
+.archive-tile.warn strong {
+  color: var(--ops-warning);
+}
+.archive-tile.bad strong {
+  color: var(--ops-bad);
+}
+.archive-severity,
+.archive-stage {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid var(--ops-border);
+}
+.archive-severity.error {
+  color: var(--ops-bad);
+  background: var(--ops-bad-bg);
+  border-color: var(--ops-bad-line);
+}
+.archive-severity.warn {
+  color: var(--ops-warning);
+  background: var(--ops-warning-bg);
+  border-color: var(--ops-warning-line);
+}
+.archive-stage.live {
+  color: var(--ops-good);
+  background: var(--ops-good-bg);
+  border-color: var(--ops-good-line);
+}
+.archive-stage.sunset,
+.archive-stage.paused {
+  color: var(--ops-dim);
+}
+.archive-row-bad td {
+  color: var(--ops-bad);
+}
+.archive-click {
+  cursor: pointer;
+}
+.archive-click:hover td {
+  background: var(--ops-hover);
+}
+.archive-ref {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ops-tag, var(--ops-primary));
+  font: inherit;
+  cursor: pointer;
+}
+.archive-ref:hover {
+  text-decoration: underline;
+}
+.archive-quiet {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  color: var(--ops-dim);
+}
+.archive-hint {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--ops-dim);
+}
+.archive-error {
+  padding: 8px 16px;
+  color: var(--ops-bad);
+}
+.archive-notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--ops-border);
+  border-radius: 8px;
+  color: var(--ops-secondary, var(--ops-fg));
+}
+.archive-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.archive-issues {
+  margin: 0;
+  padding: 8px 16px;
+  list-style: none;
+  color: var(--ops-bad);
+  font-size: 12px;
+}
+.archive-issues li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+.archive-relations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+.archive-relations h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.archive-relations p {
+  margin: 4px 0;
+  font-size: 12px;
+}
+.archive-relations p span {
+  color: var(--ops-dim);
+}
+.archive-json {
+  margin: 0;
+  padding: 12px 16px;
+  max-height: 320px;
+  overflow: auto;
+  font-size: 12px;
+  color: var(--ops-secondary, var(--ops-fg));
+}
+.archive-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ops-dim);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.archive-commit-message {
+  flex: 1;
+  min-width: 0;
+}
+.archive-empty .archive-actions {
+  justify-content: center;
+}
+/* Infra shows one full-height panel per page; archive pages stack several. */
+.archive-main > .ops-panel {
+  min-height: auto;
+  flex: 0 0 auto;
+}
+.archive-main > .ops-panel:last-child {
+  margin-bottom: 10px;
+}

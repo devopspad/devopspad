@@ -50,7 +50,7 @@ test("first launch has no seeded connections or demo entry, including old stored
   ).toHaveCount(0);
   await expect(
     page.getByRole("group", { name: "Workspace navigation" }).getByRole("button"),
-  ).toHaveCount(2);
+  ).toHaveText(["Data", "Infra", "Archive"]);
   await page
     .getByRole("group", { name: "Workspace navigation" })
     .getByRole("button", { name: "Infra", exact: true })

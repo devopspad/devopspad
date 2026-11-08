@@ -1,6 +1,6 @@
 # Infra：集群与应用
 
-最左侧只有“Data”和“Infra”两个入口。Infra 就是原应用服务，按环境与应用组织制品、发布、Deployment、Pod、监控、日志、事件和配置，默认沿用 Orca 深色风格。`/#infra` 打开 Infra，旧的 `/#apps` 链接自动归并到该入口。
+最左侧有“Data”“Infra”“Archive”三个入口（Archive 见 [OPC 档案库](archive.md)）。Infra 就是原应用服务，按环境与应用组织制品、发布、Deployment、Pod、监控、日志、事件和配置，默认沿用 Orca 深色风格。`/#infra` 打开 Infra，旧的 `/#apps` 链接自动归并到该入口。
 
 ## 环境与集群节点
 
@@ -55,9 +55,9 @@ YAML 是第一版配置事实来源。CRDT 协同编辑、自动冲突解决和�
 
 ## AI 执行端接入
 
-通过 `devopspadctl runs record --project <目录> -f <事件.json>` 上报 start / step / finish。成功构建派生制品索引，可直接在桌面发布；外部发布关联成功的 buildId。桌面“AI runs”每 10 秒及窗口获得焦点时读取更新，正在编辑项目配置时不覆盖草稿。协议、JSON Schema、重试约定及 AI 指令模板见 [AI 构建与发布接入规范](ai-execution.md)。
+通过 `devopspadcli runs record --project <目录> -f <事件.json>` 上报 start / step / finish。成功构建派生制品索引，可直接在桌面发布；外部发布关联成功的 buildId。桌面“AI runs”每 10 秒及窗口获得焦点时读取更新，正在编辑项目配置时不覆盖草稿。协议、JSON Schema、重试约定及 AI 指令模板见 [AI 构建与发布接入规范](ai-execution.md)。
 
-也可用 `devopspadctl cluster inspect --connection <本机连接名称> --namespace <命名空间>` 进行只读验证，用 `cluster attach --connection <名称> --namespace <命名空间> --environment <环境名>` 把此命名空间中发现的负载登记到本地项目。K3s 通过已有 kubeconfig 和可选 SSH 接入；[K3s 官方集群访问说明](https://docs.k3s.io/cluster-access) 说明了本机 kubeconfig 路径及远程访问方式。
+也可用 `devopspadcli cluster inspect --connection <本机连接名称> --namespace <命名空间>` 进行只读验证，用 `cluster attach --connection <名称> --namespace <命名空间> --environment <环境名>` 把此命名空间中发现的负载登记到本地项目。K3s 通过已有 kubeconfig 和可选 SSH 接入；[K3s 官方集群访问说明](https://docs.k3s.io/cluster-access) 说明了本机 kubeconfig 路径及远程访问方式。
 
 首次部署尚不存在的应用时，在 `cluster attach` 后同时添加 `--application <应用名> --selector <Pod 标签选择器>`，即可在已有项目中登记本地映射并开始上报构建记录；此模式不访问或修改集群。相同映射可重复登记，冲突映射会拒绝覆盖。
 
@@ -72,7 +72,7 @@ YAML 是第一版配置事实来源。CRDT 协同编辑、自动冲突解决和�
 - 镜像更新和重启添加 `devopspad.io/release` Pod 模板注解；扩缩容保持 Pod 模板不变。成功要求控制器观察到新 generation，且 updated、available、total replicas 与期望值一致。
 - 超时、连接中断或 Deployment 被其他操作修改会记为未完成，提示核对实际状态，不自动重试或回滚。进程崩溃留下的 running 记录显示“执行中 / 待核实”。
 
-原 `devopspadctl release validate` 继续只校验完整 release spec。桌面这条发布路径尚未覆盖该规范的 ConfigMap、迁移 Job、Nginx、机群串行发布和健康检查步骤。
+原 `devopspadcli release validate` 继续只校验完整 release spec。桌面这条发布路径尚未覆盖该规范的 ConfigMap、迁移 Job、Nginx、机群串行发布和健康检查步骤。
 
 ## 集群权限和可观测
 

@@ -262,7 +262,7 @@ test("node reads isolate pending requests, show permission failures, and support
   await expect(page.getByRole("status")).toContainText("not every node in the cluster");
 });
 
-test("Infra is the application console and the rail only has two workspaces", async ({
+test("Infra is the application console and the rail has Data, Infra and Archive", async ({
   page,
 }) => {
   await installWorkspace(page);
@@ -273,7 +273,7 @@ test("Infra is the application console and the rail only has two workspaces", as
   await editor.fill("SELECT 42 AS retained;");
   const nav = () =>
     page.getByRole("group", { name: "Workspace navigation", exact: true });
-  await expect(nav().getByRole("button")).toHaveCount(2);
+  await expect(nav().getByRole("button")).toHaveText(["Data", "Infra", "Archive"]);
   await nav().getByRole("button", { name: "Infra", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Artifacts", exact: true }),
