@@ -38,7 +38,9 @@ type DesktopPlan struct {
 	UID             string `json:"uid"`
 	ResourceVersion string `json:"resourceVersion"`
 	// Changes describes a patch plan in words (field names only, no values).
-	Changes   []string `json:"changes,omitempty"`
+	Changes []string `json:"changes,omitempty"`
+	// Warnings are preflight findings to review before confirming.
+	Warnings  []string `json:"warnings,omitempty"`
 	candidate *unstructured.Unstructured
 }
 
@@ -229,18 +231,26 @@ func ApplyDesktop(ctx context.Context, cl dynamic.Interface, p DesktopPlan, prog
 		conditions, _, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
 		for _, raw := range conditions {
 			if c, ok := raw.(map[string]any); ok && observed >= obj.GetGeneration() && c["type"] == "Progressing" && c["status"] == "False" && c["reason"] == "ProgressDeadlineExceeded" {
-				return errors.New("The Deployment exceeded its progress deadline; the change was applied and not rolled back")
+				return withWaiting(errors.New("The Deployment exceeded its progress deadline; the change was applied and not rolled back"), cl, p)
 			}
 		}
 		select {
 		case <-ctx.Done():
-			return errors.New("Timed out or cancelled while waiting for the rollout; the change may have been applied, refresh the cluster to check")
+			return withWaiting(errors.New("Timed out or cancelled while waiting for the rollout; the change may have been applied, refresh the cluster to check"), cl, p)
 		case <-ticker.C:
 		}
 	}
 }
 
 var podGVR = schema.GroupVersionResource{Version: "v1", Resource: "pods"}
+
+// withWaiting adds why the release's pods are stuck, when they are.
+func withWaiting(err error, cl dynamic.Interface, p DesktopPlan) error {
+	if s := PodWaitingSummary(cl, p.Namespace, ReleasePods(p.ID)); s != "" {
+		return fmt.Errorf("%w (%s)", err, s)
+	}
+	return err
+}
 
 // verifyReleasedDigest checks that every running pod of this release (the
 // pods carrying its devopspad.io/release annotation) runs the released digest

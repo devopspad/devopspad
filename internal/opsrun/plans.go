@@ -47,6 +47,7 @@ type SavedPlan struct {
 	ExpiresAt   string        `json:"expiresAt"`
 	Targets     []SavedTarget `json:"targets"`
 	Migrate     *SavedMigrate `json:"migrate,omitempty"`
+	Notes       []string      `json:"notes,omitempty"` // preflight findings shown with the plan
 }
 
 var planIDRE = regexp.MustCompile(`^[0-9a-f-]{36}$`)

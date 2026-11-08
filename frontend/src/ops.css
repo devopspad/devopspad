@@ -1486,3 +1486,4 @@
 .ops-secrets-ok { margin: 0; color: var(--ops-good); font-size: 12px; }
 .ops-secrets-error { margin: 0; color: var(--ops-bad); font-size: 12px; }
 .ops-secrets-check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ops-muted); }
+.ops-console .ops-plan-warnings { margin: 0; padding: 8px 12px 8px 28px; border: 1px solid var(--ops-warning-line, #e6c98a); border-radius: 8px; background: var(--ops-warning-bg, #fff8e6); color: var(--ops-warning, #8a5a00); font-size: 12px; }

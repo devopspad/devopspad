@@ -37,7 +37,8 @@ type releaseFlags struct {
 	artifact, image, version, root                string
 	migrate                                       string
 	targets                                       targetList
-	yes                                           bool
+	yes, ackRegistryChange, verifyPull            bool
+	placeholder                                   string
 	timeout, migrateWait                          time.Duration
 }
 
@@ -52,6 +53,9 @@ func addReleaseFlags(fs *flag.FlagSet, f *releaseFlags) {
 	fs.StringVar(&f.version, "version", "", "version label for the record (default: the artifact's)")
 	fs.StringVar(&f.migrate, "migrate", "", "Job manifest to run with the new image before switching (see docs)")
 	fs.DurationVar(&f.migrateWait, "migrate-timeout", 180*time.Second, "how long to wait for the migration Job (max 600s)")
+	fs.StringVar(&f.placeholder, "migrate-placeholder", opsrun.ImagePlaceholder, "text in the Job manifest replaced by the release image (e.g. IMAGE)")
+	fs.BoolVar(&f.ackRegistryChange, "ack-registry-change", false, "allow moving to another registry or owner without a pull secret for it (public image)")
+	fs.BoolVar(&f.verifyPull, "verify-pull", false, "request the image manifest from the registry with the pull secrets (needs network access to the registry)")
 	fs.StringVar(&f.root, "project", "", "local project directory")
 	fs.DurationVar(&f.timeout, "timeout", maxRolloutTimeout, "rollout timeout per workload (max 180s)")
 }
@@ -192,22 +196,34 @@ func makeReleasePlan(f releaseFlags, stderr io.Writer) (opsrun.SavedPlan, error)
 		return saved, err
 	}
 	defer closeFn()
+	var pulls []release.PullTarget
 	for i, st := range f.targets {
 		p, err := release.PrepareDesktop(ctx, cl, ts[i].Environment.Namespace, st.Workload, st.Container, saved.Image, ts[i].Application.Selector)
 		if err != nil {
 			return saved, fmt.Errorf("%s: %w", st.Workload, err)
 		}
+		pulls = append(pulls, release.PullTargetOf(p))
 		st.BeforeImage, st.UID, st.ResourceVersion = p.BeforeImage, p.UID, p.ResourceVersion
 		saved.Targets = append(saved.Targets, st)
 		fmt.Fprintf(stderr, "Plan: %s/%s container %s: %s -> %s (server dry-run passed)\n", ts[i].Environment.Namespace, st.Workload, st.Container, p.BeforeImage, saved.Image)
 	}
 	if f.migrate != "" {
-		m, err := planMigration(ctx, cl, f.migrate, ts[0].Environment.Namespace, saved, f.migrateWait)
+		m, pull, err := planMigration(ctx, cl, f.migrate, ts[0].Environment.Namespace, saved, f.migrateWait, f.placeholder)
 		if err != nil {
 			return saved, err
 		}
 		saved.Migrate = m
-		fmt.Fprintf(stderr, "Plan: run migration Job from %s first (server dry-run passed)\n", f.migrate)
+		pulls = append(pulls, pull)
+		fmt.Fprintf(stderr, "Plan: run migration Job %s from %s first (server dry-run passed)\n", m.Name, f.migrate)
+	}
+	// A server dry-run accepts missing pull secrets and never pulls; check before applying.
+	notes, err := release.PreflightPull(ctx, cl, pulls, release.PreflightOptions{AckRegistryChange: f.ackRegistryChange, Verify: f.verifyPull})
+	if err != nil {
+		return saved, err
+	}
+	saved.Notes = notes
+	for _, n := range notes {
+		fmt.Fprintln(stderr, "Plan: "+n)
 	}
 	dir, err := configDir()
 	if err != nil {

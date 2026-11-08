@@ -84,6 +84,7 @@ test("desktop application bridge requires a reviewed plan and reports rollout fa
               beforeImage: "old:1",
               image,
               expiresAt: "2099-10-23T00:00:00Z",
+              warnings: ["deployment svc-user: the image moves from docker.io/library to registry.local/svc-user; no pull secret has credentials for registry.local (acknowledged as public)"],
             };
           },
           PlanOpsWorkloadAction: async (...args: any[]) => {
@@ -144,6 +145,7 @@ test("desktop application bridge requires a reviewed plan and reports rollout fa
           .length,
     ),
   ).toBe(0);
+  await expect(page.getByRole("list", { name: "Plan warnings" })).toContainText("no pull secret has credentials for registry.local");
   await page.getByRole("button", { name: "Confirm release", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("Timed out waiting for the rollout");
   const calls = await page.evaluate(() => (window as any).__opsCalls);

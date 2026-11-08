@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
 	ktesting "k8s.io/client-go/testing"
@@ -166,8 +167,12 @@ func TestRunJob(t *testing.T) {
 			t.Fatalf("failed: %v", err)
 		}
 	}
-	cl := fake.NewSimpleDynamicClient(runtime.NewScheme())
-	if err := RunJob(context.Background(), cl, job, 2*time.Second, func(string) error { return nil }); err == nil || !strings.Contains(err.Error(), "did not complete") {
+	stuck := &unstructured.Unstructured{Object: map[string]any{"apiVersion": "v1", "kind": "Pod",
+		"metadata": map[string]any{"name": job.GetName() + "-x", "namespace": "default", "labels": map[string]any{"job-name": job.GetName()}},
+		"status":   map[string]any{"containerStatuses": []any{map[string]any{"name": "c", "image": digestImage, "state": map[string]any{"waiting": map[string]any{"reason": "ImagePullBackOff"}}}}}}}
+	cl := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{{Version: "v1", Resource: "pods"}: "PodList"}, stuck)
+	err = RunJob(context.Background(), cl, job, 2*time.Second, func(string) error { return nil })
+	if err == nil || !strings.Contains(err.Error(), "did not complete") || !strings.Contains(err.Error(), "pods waiting: ImagePullBackOff for "+digestImage) {
 		t.Fatalf("timeout: %v", err)
 	}
 }

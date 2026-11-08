@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"devopspad/internal/release"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -40,6 +42,14 @@ type SavedMigrate struct {
 // repository; the name gets the plan's short ID so each run is unique; the
 // namespace is the environment's.
 func RenderJob(manifest []byte, image, namespace, planID string) (*unstructured.Unstructured, error) {
+	return RenderJobWith(manifest, image, namespace, planID, ImagePlaceholder)
+}
+
+// RenderJobWith is RenderJob with a custom image placeholder (e.g. IMAGE).
+func RenderJobWith(manifest []byte, image, namespace, planID, placeholder string) (*unstructured.Unstructured, error) {
+	if placeholder == "" {
+		placeholder = ImagePlaceholder
+	}
 	if len(manifest) > maxJobManifest {
 		return nil, errors.New("the Job manifest exceeds 1 MiB")
 	}
@@ -52,8 +62,8 @@ func RenderJob(manifest []byte, image, namespace, planID string) (*unstructured.
 	if docs != 1 {
 		return nil, errors.New("the Job manifest must contain exactly one document")
 	}
-	placeholder := bytes.Contains(manifest, []byte(ImagePlaceholder))
-	manifest = bytes.ReplaceAll(manifest, []byte(ImagePlaceholder), []byte(image))
+	hasPlaceholder := bytes.Contains(manifest, []byte(placeholder))
+	manifest = bytes.ReplaceAll(manifest, []byte(placeholder), []byte(image))
 	js, err := yaml.YAMLToJSON(manifest)
 	if err != nil {
 		return nil, fmt.Errorf("Job manifest: %w", err)
@@ -69,7 +79,7 @@ func RenderJob(manifest []byte, image, namespace, planID string) (*unstructured.
 		return nil, fmt.Errorf("the Job namespace %s differs from the environment's %s", ns, namespace)
 	}
 	repo := imageRepository(image)
-	replaced := placeholder
+	replaced := hasPlaceholder
 	for _, path := range [][]string{{"spec", "template", "spec", "containers"}, {"spec", "template", "spec", "initContainers"}} {
 		containers, _, _ := unstructured.NestedSlice(obj.Object, path...)
 		for _, raw := range containers {
@@ -85,7 +95,7 @@ func RenderJob(manifest []byte, image, namespace, planID string) (*unstructured.
 		}
 	}
 	if !replaced {
-		return nil, fmt.Errorf("no container in the Job uses %s; set image: %s", repo, ImagePlaceholder)
+		return nil, fmt.Errorf("no container in the Job uses %s; set its image to %s (or pass the manifest's own placeholder with --migrate-placeholder)", repo, placeholder)
 	}
 	base := obj.GetName()
 	if base == "" {
@@ -167,7 +177,11 @@ func RunJob(ctx context.Context, cl dynamic.Interface, job *unstructured.Unstruc
 		}
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("Job %s did not complete within %s; it was left running for inspection", job.GetName(), wait)
+			msg := fmt.Sprintf("Job %s did not complete within %s; it was left running for inspection", job.GetName(), wait)
+			if s := release.PodWaitingSummary(cl, job.GetNamespace(), func(p *unstructured.Unstructured) bool { return p.GetLabels()["job-name"] == job.GetName() }); s != "" {
+				msg += " (" + s + ")"
+			}
+			return errors.New(msg)
 		case <-ticker.C:
 		}
 	}

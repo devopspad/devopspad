@@ -132,7 +132,24 @@ devopspadcli release image --environment heartie-pro --application sitemoment-ap
 ```
 
 - `--target 应用:工作负载:容器` 可重复，共用同一镜像的工作负载进同一条发布记录（`targets` 列出每个工作负载的状态）。也可用 `--image <ref@sha256:…>` 代替 `--artifact`。
-- 迁移：`--migrate job.yaml [--migrate-timeout 180s]`。Job 中的 `${DEVOPSPAD_IMAGE}`，或与发布镜像同仓库的容器镜像，会被替换为本次摘要；名字加上计划 ID 前缀以保证唯一。计划阶段 dry-run，执行时先创建 Job 并等待完成，**失败则不改任何镜像**。记录只保存 Job 名、耗时和结果，最后几行日志只打印在执行端。服务的 `service.release.yaml` 里的 `migrate.jobFile` 可直接传给 `--migrate`。
+- 拉取预检：服务端 dry-run 不检查镜像能否拉取，所以计划阶段会额外检查：目标 Deployment（含其 ServiceAccount）和迁移 Job 引用的每个 imagePullSecret 都存在且是 docker-registry 类型；镜像换了 registry 或 owner 时，必须有一个拉取凭据包含新 registry 的认证，否则计划失败，公开镜像加 `--ack-registry-change`。`--verify-pull` 用这些凭据向 registry 请求镜像 manifest，报告可读 / 401 / 403 / 404（凭据只在内存中，不打印、不记录；registry 只能从集群内访问时不要用）。rollout 或 Job 超时时，错误会写明 Pod 在等什么，例如 `pods waiting: ImagePullBackOff for <image>`。
+- 迁移：`--migrate job.yaml [--migrate-timeout 180s]`。Job 的容器镜像写成 `${DEVOPSPAD_IMAGE}`（已有仓库用自己的占位符时加 `--migrate-placeholder IMAGE`），例如：
+
+  ```yaml
+  apiVersion: batch/v1
+  kind: Job
+  metadata: { name: api-migrate }           # 实际名字会加上计划 ID 后缀
+  spec:
+    backoffLimit: 0
+    template:
+      spec:
+        restartPolicy: Never
+        imagePullSecrets: [{ name: ghcr-pull }]
+        containers:
+          - { name: migrate, image: "${DEVOPSPAD_IMAGE}", args: ["--job=migrate"] }
+  ```
+
+  Job 中的 `${DEVOPSPAD_IMAGE}`，或与发布镜像同仓库的容器镜像，会被替换为本次摘要；名字加上计划 ID 前缀以保证唯一。计划阶段 dry-run，执行时先创建 Job 并等待完成，**失败则不改任何镜像**。记录只保存 Job 名、耗时和结果，最后几行日志只打印在执行端。服务的 `service.release.yaml` 里的 `migrate.jobFile` 可直接传给 `--migrate`。
 - 单独运行一次性 Job：`devopspadcli job run --environment … --application … -f job.yaml --image <ref@sha256:…> [--wait 180s] --yes`。
 - 成功时 stdout 是最终记录 JSON、退出码 0；失败退出码 1（stdout 仍有记录，stderr 有原因）；参数错误 2。`image-check` 不通过时发布记为失败，不自动回滚。
 - 多工作负载的发布不能在桌面一键回退；用 `release image --image <之前的摘要>` 逐个发布。

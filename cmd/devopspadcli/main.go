@@ -220,7 +220,12 @@ Archive (a Git repository describing every product, service, host, domain and ac
 
 Desktop project, releases and records:
   devopspadcli release plan --environment <env> (--application <app> --container <c> [--workload <w>] | --target <app>:<workload>:<container> ...)
-                            (--artifact <id|run id> | --image <ref@sha256:...>) [--migrate job.yaml [--migrate-timeout 180s]]
+                            (--artifact <id|run id> | --image <ref@sha256:...>) [--migrate job.yaml [--migrate-timeout 180s] [--migrate-placeholder IMAGE]]
+                            [--verify-pull] [--ack-registry-change]
+                            The migration Job's container image must be ${DEVOPSPAD_IMAGE} (or --migrate-placeholder, or the
+                            release image's repository); the Job name gets a unique suffix. The plan checks that every pull
+                            secret exists, that a registry/owner move has credentials, and with --verify-pull that the
+                            registry serves the image with them.
   devopspadcli release apply --plan <plan id> [--timeout 180s]
   devopspadcli release image <same flags as plan> --yes [--timeout 180s]
   devopspadcli job run --environment <env> --application <app> -f job.yaml --image <ref@sha256:...> [--wait 180s] [--yes]

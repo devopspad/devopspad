@@ -130,6 +130,17 @@ const titles: Record<Page, string> = {
   project: "Project mapping",
   sharing: "Sharing & sync",
 };
+// PlanWarnings lists preflight findings; confirming the plan acknowledges them.
+function PlanWarnings({ plan }: { plan?: OpsPlan }) {
+  if (!plan?.warnings?.length) return null;
+  return (
+    <ul className="ops-plan-warnings" aria-label="Plan warnings">
+      {plan.warnings.map((w) => (
+        <li key={w}>{w}</li>
+      ))}
+    </ul>
+  );
+}
 function operationName(record: Pick<OpsRecord, "action">) {
   if (record.action === "nginx") return "Nginx config";
   if (record.action === "config") return "Config update";
@@ -2012,6 +2023,7 @@ function ReleaseDialog({
               Target image<code>{artifact.image}</code>
             </label>
           </div>
+          <PlanWarnings plan={plan} />
           {plan ? (
             <p className="ops-muted">
               Dry-run passed. On confirm the image is updated and DevOpsPad waits up to 180
@@ -2226,6 +2238,7 @@ function WorkloadActionDialog({
               </p>
             </div>
           )}
+          <PlanWarnings plan={plan} />
           <p className="ops-muted">
             {plan
               ? `Dry-run passed. DevOpsPad waits up to 180 seconds for the rollout. Plan valid until ${date(plan.expiresAt)}.`

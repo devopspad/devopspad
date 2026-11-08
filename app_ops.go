@@ -215,6 +215,10 @@ func (a *App) PlanOpsRelease(environment, application, workload, container, arti
 	if err != nil {
 		return plan, err
 	}
+	// The confirm dialog shows registry moves; confirming acknowledges them.
+	if plan.Warnings, err = release.PreflightPull(ctx, cl, []release.PullTarget{release.PullTargetOf(plan)}, release.PreflightOptions{AckRegistryChange: true}); err != nil {
+		return plan, err
+	}
 	return a.queueOpsPlan(s, c, env, app, plan, artifact.Version, artifact.RunID)
 }
 
@@ -263,6 +267,9 @@ func (a *App) PlanOpsRollback(environment, application, recordID string) (releas
 	defer close()
 	plan, err := release.PrepareDesktop(ctx, cl, env.Namespace, record.Workload, record.Container, record.Image, app.Selector)
 	if err != nil {
+		return plan, err
+	}
+	if plan.Warnings, err = release.PreflightPull(ctx, cl, []release.PullTarget{release.PullTargetOf(plan)}, release.PreflightOptions{AckRegistryChange: true}); err != nil {
 		return plan, err
 	}
 	plan.Action = "rollback"

@@ -13,6 +13,7 @@ import (
 
 	"devopspad/internal/ops"
 	"devopspad/internal/opsrun"
+	"devopspad/internal/release"
 	"devopspad/internal/workspace"
 
 	"github.com/google/uuid"
@@ -36,23 +37,23 @@ func readJobManifest(path string) ([]byte, error) {
 }
 
 // planMigration renders the Job with the release image and dry-runs it.
-func planMigration(ctx context.Context, cl dynamic.Interface, file, namespace string, saved opsrun.SavedPlan, wait time.Duration) (*opsrun.SavedMigrate, error) {
+func planMigration(ctx context.Context, cl dynamic.Interface, file, namespace string, saved opsrun.SavedPlan, wait time.Duration, placeholder string) (*opsrun.SavedMigrate, release.PullTarget, error) {
 	b, err := readJobManifest(file)
 	if err != nil {
-		return nil, err
+		return nil, release.PullTarget{}, err
 	}
-	job, err := opsrun.RenderJob(b, saved.Image, namespace, saved.ID)
+	job, err := opsrun.RenderJobWith(b, saved.Image, namespace, saved.ID, placeholder)
 	if err != nil {
-		return nil, err
+		return nil, release.PullTarget{}, err
 	}
 	if err := opsrun.DryRunJob(ctx, cl, job); err != nil {
-		return nil, err
+		return nil, release.PullTarget{}, err
 	}
 	js, err := json.Marshal(job.Object)
 	if err != nil {
-		return nil, err
+		return nil, release.PullTarget{}, err
 	}
-	return &opsrun.SavedMigrate{JobFile: file, Name: job.GetName(), Manifest: string(js), WaitTimeoutSeconds: int(wait / time.Second)}, nil
+	return &opsrun.SavedMigrate{JobFile: file, Name: job.GetName(), Manifest: string(js), WaitTimeoutSeconds: int(wait / time.Second)}, release.PullTargetOfJob(job, saved.Image), nil
 }
 
 func migrationStep(t opsrun.Target, saved opsrun.SavedPlan) func(context.Context, dynamic.Interface, func(string) error) error {

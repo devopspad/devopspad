@@ -135,6 +135,7 @@ export type OpsPlan = {
   beforeImage: string;
   image: string;
   expiresAt: string;
+  warnings?: string[];
 };
 export type OpsBridge = {
   ReadOpsNginx(environment: string, application: string): Promise<OpsNginxConfig>;
