@@ -92,6 +92,10 @@ type Snapshot struct {
 type Store struct {
 	Root string
 	mu   sync.Mutex
+	// OnFinished, when set, observes every record written with a final status
+	// (used to mirror operations into the archive). Its failure never fails
+	// the operation.
+	OnFinished func(Record, Application)
 }
 
 var nameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
@@ -342,7 +346,24 @@ func (s *Store) WriteRecord(r Record) error {
 	if err != nil {
 		return err
 	}
-	return writeAtomic(filepath.Join(s.Root, "releases", r.ID+".json"), b)
+	if err := writeAtomic(filepath.Join(s.Root, "releases", r.ID+".json"), b); err != nil {
+		return err
+	}
+	if s.OnFinished != nil && r.Status != "" && r.Status != "running" {
+		app := Application{Name: r.Application}
+		if snap, err := s.project(); err == nil {
+			for _, a := range snap.Project.Applications {
+				if a.Name == r.Application {
+					app = a
+				}
+			}
+		}
+		func() {
+			defer func() { _ = recover() }()
+			s.OnFinished(r, app)
+		}()
+	}
+	return nil
 }
 func readBounded(path string) ([]byte, error) {
 	info, err := os.Lstat(path)

@@ -56,6 +56,9 @@ type configMeta struct {
 }
 
 func cmdConfig(args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && (args[0] == "pull" || args[0] == "diff" || args[0] == "push") {
+		return cmdConfigArchive(args[0], args[1:], stdout, stderr)
+	}
 	if len(args) == 0 || (args[0] != "get" && args[0] != "set") {
 		fmt.Fprint(stderr, usage)
 		return 2

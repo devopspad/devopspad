@@ -41,22 +41,18 @@
 
 **验收**：所有产品域名的真实到期日和证书到期日能自动核对；集群里未登记的工作负载能列出；新电脑上“克隆 → 补密钥 → connect sync”后 Infra / Data 页面可直接使用。
 
-## A3 配置归档（约 1–2 周）
+## A3 配置归档 ✅（2026-11-08）
 
-- [ ] `config pull` / `config diff`：Nginx（SFTP 读取）、ConfigMap（现有读取）、systemd unit、普通文件。
-- [ ] 拉取时做密钥扫描，命中则拒绝写入，并提示改成 `${secret:…}` 占位符。
+- [x] `config pull` / `config diff`：Nginx 和其它宿主机文件（SSH 只读）、ConfigMap 键（集群读取）。
+- [x] `${secret:…}` 占位符只在本机渲染；比较时换回占位符、其余像密钥的值显示为 `***`；`pull` 遇到其它密钥拒绝写入。
 
-**验收**：所有线上 Nginx 和 ConfigMap 都已存档；之后每次线上改动都能在 `config diff` 中看到。
+## A4 并入执行路径 ✅ 核心部分（2026-11-08）
 
-## A4 并入 Action 引擎（与 M1 合并）
-
-- [ ] Infra 页面、`config set`、`workload restart`、桌面发版改为从档案读取环境和应用映射；`project.yaml` 只读兼容。
-- [ ] 操作记录统一写到 `records/actions/`，旧 `releases/`、`runs/`、`artifacts/` 导入并兼容读取。
-- [ ] `config push`：档案中的配置经计划 / 确认 / 记录下发，渲染 `${secret:…}`。
-- [ ] `fleet.json` 改为 Host label 选择器；OPC 发版规范的 `fleet` 字段指向选择器。
-- [ ] 协议定为 `v1`。
-
-**验收**：桌面和 CLI 的所有写操作都使用档案作为输入，记录落在档案库并自动提交；旧项目目录不再需要。
+- [x] `config push`：Nginx（远端脚本，revision + `nginx -t` + 恢复）和 ConfigMap 键（dry-run + resourceVersion），渲染占位符，写 `config.push` 档案记录。
+- [x] 操作记录统一：桌面和 CLI 所有写操作结束时同时写入档案库 `records/actions/`（按集群连接名 + 命名空间 + 选择器匹配服务），`DEVOPSPAD_ACTOR` 标明 AI；`archive import --records` 导入旧记录（幂等）。Cloudflare 路由 / DNS 和 `config push` 直接写档案记录。
+- [x] `archive project [--write]`：由档案生成桌面 `project.yaml`，Infra、`release`、`config`、`nginx` 命令以档案为唯一来源（配合 `connect sync`）。
+- [ ] `fleet.json` 改为 Host 标签选择器：只有 2 台机器，和 M4 一起降为最低优先级。
+- [ ] 协议定为 `v1`：在真实矩阵上使用一段时间、字段稳定后再定。
 
 ## 与现有路线的关系
 

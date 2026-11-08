@@ -50,7 +50,7 @@ func cmdEdge(args []string, stdout, stderr io.Writer) int {
 	if *actor == "" {
 		*actor = "human/" + slugName(archive.GitUser(a.Dir))
 	}
-	in := archive.EdgeInput{Zone: *zone, Provider: *provider, TokenRef: *tokenRef, Actor: *actor, Session: *session, Revision: archive.Revision(a.Dir)}
+	in := archive.OpInput{Zone: *zone, Provider: *provider, TokenRef: *tokenRef, Actor: *actor, Session: *session, Revision: archive.Revision(a.Dir)}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	switch group + " " + sub {

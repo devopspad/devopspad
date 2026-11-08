@@ -5,12 +5,15 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"devopspad/internal/archive"
 	"devopspad/internal/ops"
 	"devopspad/internal/opsrun"
 	"devopspad/internal/release"
 	"devopspad/internal/workspace"
+	"github.com/gotomicro/ego/core/elog"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -36,7 +39,25 @@ func (a *App) opsStore() (*ops.Store, error) {
 		root = string(path)
 	}
 	a.ops, err = ops.New(root)
+	if err == nil {
+		a.ops.OnFinished = a.mirrorToArchive
+	}
 	return a.ops, err
+}
+
+// mirrorToArchive copies finished operation records into the selected archive.
+func (a *App) mirrorToArchive(r ops.Record, app ops.Application) {
+	ar, err := a.archive()
+	if err != nil {
+		return
+	}
+	actor := "human/" + strings.ReplaceAll(strings.TrimSpace(archive.GitUser(ar.Dir)), " ", "-")
+	if actor == "human/" {
+		actor = "human/desktop"
+	}
+	if _, err := ar.MirrorRecord(r, app, actor); err != nil {
+		elog.Warn("archive mirror failed: " + err.Error())
+	}
 }
 func (a *App) GetOpsProject() (ops.Snapshot, error) {
 	s, err := a.opsStore()
@@ -74,6 +95,7 @@ func (a *App) SelectOpsProject() (ops.Snapshot, error) {
 	if err = os.WriteFile(filepath.Join(dir, "DevOpsPad", "project-path"), []byte(root), 0600); err != nil {
 		return ops.Snapshot{}, err
 	}
+	s.OnFinished = a.mirrorToArchive
 	a.opsMu.Lock()
 	a.ops = s
 	a.opsMu.Unlock()

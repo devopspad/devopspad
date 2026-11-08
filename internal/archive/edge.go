@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-// EdgeInput selects a Cloudflare zone and who acts on it.
-type EdgeInput struct {
+// OpInput says who acts, for the record; Zone, Provider and TokenRef are used by edge operations.
+type OpInput struct {
 	Zone     string
 	Provider string // default provider:cloudflare
 	TokenRef string // a token with Workers Routes Edit / DNS Edit for changes
@@ -22,7 +22,7 @@ type EdgeInput struct {
 	Revision string
 }
 
-func (a *Archive) edgeZone(ctx context.Context, in EdgeInput) (cloudflare, cfZone, error) {
+func (a *Archive) edgeZone(ctx context.Context, in OpInput) (cloudflare, cfZone, error) {
 	token, _, err := a.cloudflareToken(defaultProvider(in.Provider), in.TokenRef)
 	if err != nil {
 		return cloudflare{}, cfZone{}, err
@@ -42,7 +42,7 @@ func (a *Archive) edgeZone(ctx context.Context, in EdgeInput) (cloudflare, cfZon
 }
 
 // ListRoutes returns a zone's Workers routes; an empty script is "no Worker".
-func (a *Archive) ListRoutes(ctx context.Context, in EdgeInput) ([]WorkerRoute, error) {
+func (a *Archive) ListRoutes(ctx context.Context, in OpInput) ([]WorkerRoute, error) {
 	cf, z, err := a.edgeZone(ctx, in)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ type RoutePlan struct {
 	routeID string
 }
 
-func (a *Archive) PlanRoute(ctx context.Context, in EdgeInput, action, pattern, script string) (RoutePlan, error) {
+func (a *Archive) PlanRoute(ctx context.Context, in OpInput, action, pattern, script string) (RoutePlan, error) {
 	p := RoutePlan{Zone: strings.ToLower(in.Zone), Action: action, Pattern: pattern, Script: script}
 	if action != "add" && action != "remove" {
 		return p, errors.New("action must be add or remove")
@@ -145,7 +145,7 @@ func sameRoutes(a, b []WorkerRoute) bool {
 
 // ApplyRoute re-reads the routes, refuses if they changed since the plan,
 // applies the change and records the route list before and after.
-func (a *Archive) ApplyRoute(ctx context.Context, in EdgeInput, p RoutePlan) (*ActionRecord, error) {
+func (a *Archive) ApplyRoute(ctx context.Context, in OpInput, p RoutePlan) (*ActionRecord, error) {
 	cf, z, err := a.edgeZone(ctx, in)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (a *Archive) zoneTargets(zone string) []string {
 }
 
 // ListDNS returns every record of a zone.
-func (a *Archive) ListDNS(ctx context.Context, in EdgeInput) ([]CloudflareRecord, error) {
+func (a *Archive) ListDNS(ctx context.Context, in OpInput) ([]CloudflareRecord, error) {
 	cf, z, err := a.edgeZone(ctx, in)
 	if err != nil {
 		return nil, err
@@ -224,7 +224,7 @@ var dnsTypes = map[string]bool{"A": true, "AAAA": true, "CNAME": true, "TXT": tr
 
 // PlanDNS prepares a record. target may be a host reference (A record to its
 // public address) instead of content.
-func (a *Archive) PlanDNS(ctx context.Context, in EdgeInput, name, typ, content, target string, proxied bool, ttl int) (DNSPlan, error) {
+func (a *Archive) PlanDNS(ctx context.Context, in OpInput, name, typ, content, target string, proxied bool, ttl int) (DNSPlan, error) {
 	zone := strings.ToLower(in.Zone)
 	p := DNSPlan{Zone: zone}
 	typ = strings.ToUpper(typ)
@@ -286,7 +286,7 @@ func recordLine(r *CloudflareRecord) string {
 	return fmt.Sprintf("%s %s %s proxied=%v ttl=%d", r.Name, r.Type, r.Content, r.Proxied, r.TTL)
 }
 
-func (a *Archive) ApplyDNS(ctx context.Context, in EdgeInput, p DNSPlan) (*ActionRecord, error) {
+func (a *Archive) ApplyDNS(ctx context.Context, in OpInput, p DNSPlan) (*ActionRecord, error) {
 	cf, z, err := a.edgeZone(ctx, in)
 	if err != nil {
 		return nil, err
@@ -325,7 +325,7 @@ func (a *Archive) ApplyDNS(ctx context.Context, in EdgeInput, p DNSPlan) (*Actio
 }
 
 // appendRecord writes one finished ActionRecord to records/actions.
-func (a *Archive) appendRecord(in EdgeInput, action string, targets []string, status, message string, steps []Step, start time.Time) (*ActionRecord, error) {
+func (a *Archive) appendRecord(in OpInput, action string, targets []string, status, message string, steps []Step, start time.Time) (*ActionRecord, error) {
 	if !actorRE.MatchString(in.Actor) {
 		return nil, errors.New("actor must be human/<name> or ai/<name>")
 	}

@@ -8,8 +8,8 @@
    - `ci`：触发代码仓库的 CI，不要手工部署。
    - `manual`：按 release notes 执行，执行前把计划给用户确认。
 4. 不要直接 `ssh` / `kubectl` 修改线上；`config set` 必须带 `config get` 返回的 `--expect-revision`。
-5. 改的是档案库里登记的配置文件（`configs[].source`）时：先改档案库文件并提交，再把同样内容下发到线上，保持两边一致。
-6. 线上操作不是由 DevOpsPad 记录的（manual、ci、手工 ssh）→ `devopspadcli note add --refs service:<p>/<s>@<env> -m "<做了什么、结果>" --actor ai/<名字>`，然后 `archive commit -m "record(service:<p>/<s>): …"`。
+5. 改的是档案库里登记的配置文件（`configs[].source`）时：改档案文件 → `devopspadcli config push <产品>/<服务>@<环境> --name <配置>` 给用户看差异 → 确认后加 `--yes` → `archive commit`。线上被手改过时先 `config diff`，以哪边为准问用户；以线上为准用 `config pull`。密钥写 `${secret:…}` 占位，不要写值。
+6. 通过 DevOpsPad 执行时先 `export DEVOPSPAD_ACTOR=ai/<你的名字>`，操作结束会自动写入档案库记录，之后 `archive commit`。线上操作不是由 DevOpsPad 记录的（manual、ci、手工 ssh）→ `devopspadcli note add --refs service:<p>/<s>@<env> -m "<做了什么、结果>" --actor ai/<名字>`，然后 `archive commit -m "record(service:<p>/<s>): …"`。
 7. 汇报：做了什么、结果、验证方式（健康检查 URL 见 endpoints）。
 
 ## Cloudflare 路由和 DNS

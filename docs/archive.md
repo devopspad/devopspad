@@ -137,6 +137,28 @@ devopspadcli edge dns set --zone example.com --name @ --type A --target host:hk-
 - 集群里在跑、档案里没登记的服务（`kube-system` 等系统命名空间除外）；
 - 机器上 Nginx 配置与档案 `configs/` 副本不一致、或还没存档的配置文件；角色（nginx、k3s、docker、mysql）对应的服务没在运行。
 
+## 配置文件归档与下发
+
+服务的 `spec.configs` 登记了 Nginx 文件或 ConfigMap 键时：
+
+```sh
+devopspadcli config diff heartie/admin@pro --name nginx    # 档案副本 vs 线上；不一致时退出码 1
+devopspadcli config pull heartie/admin@pro --name nginx    # 线上内容写回档案（之后 archive commit）
+devopspadcli config push heartie/admin@pro --name app      # 打印要写入的差异
+devopspadcli config push heartie/admin@pro --name app --yes
+```
+
+- 档案里的 `${secret:keychain:…}` 只在本机渲染：比较时，线上与渲染结果相同的行会换回占位符，其它像密钥的值显示为 `***`，差异里永远不出现密钥值。`pull` 遇到占位符以外的密钥会拒绝，并提示先在档案副本里改成占位符。
+- `push` 支持 Nginx（经远端脚本：加锁、revision 检查、`nginx -t`、reload、失败恢复，需要 Python 3）和 ConfigMap 键（dry-run + resourceVersion 检查，只改这一个键，不自动重启）。其它类型只支持 diff / pull。每次下发写一条 `config.push` 档案记录，只含行数和哈希。
+
+## 操作记录统一进档案库
+
+配置了档案库后（`archive init` / `archive use` / 桌面 Archive 页面打开过），桌面和 CLI 的每次发布、回退、扩缩容、重启、改配置、Nginx、Secret、工作负载修改、Job 结束时，都会在档案库 `records/actions/` 写一条对应的记录（按集群连接名、命名空间和应用选择器匹配到服务；匹配不到的只留在原项目目录）。CLI 用环境变量 `DEVOPSPAD_ACTOR=ai/claude-code` 标明执行者，默认 `human/<git user.name>`。旧记录可一次导入：`devopspadcli archive import --records <桌面项目目录>`（可重复执行）。
+
+## 用档案生成 Infra 映射
+
+`devopspadcli archive project` 预览由档案生成的 `project.yaml`（环境 `<产品>-<环境>`、应用 `<产品>-<服务>`、选择器、nginxPath），`--write` 写入桌面项目目录。之后改映射请改档案再重新生成，档案就是唯一来源；配合 `connect sync`（连接名就是集群名）即可直接使用 Infra 页面和 `release`/`config`/`nginx` 命令。
+
 ## 生成本机连接
 
 档案里的集群和数据库可以直接生成 DevOpsPad 桌面连接（新电脑恢复时最有用）：在桌面 **Archive** 页面点 **Sync connections**，先看计划再应用；或者**关闭桌面应用后**运行：

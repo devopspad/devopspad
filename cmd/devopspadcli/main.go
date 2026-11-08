@@ -203,6 +203,9 @@ Archive (a Git repository describing every product, service, host, domain and ac
   devopspadcli edge routes list|add|remove --zone <zone> [--pattern '<zone>/path*'] [--script <worker>|none] [--yes]
   devopspadcli edge dns list|set --zone <zone> [--name <n> --type A --content <v>|--target host:<h>] [--proxied] [--yes]
                                                        Cloudflare Workers routes and DNS, recorded in the archive
+  devopspadcli config diff|pull|push <product>/<service>@<env> [--name <config>] [--yes]
+                                                       archive configs/ vs live Nginx file or ConfigMap key;
+                                                       ${secret:...} placeholders are rendered locally, never shown
   devopspadcli connect sync [--dry-run]                create/update desktop connections from clusters and datastores
                                                        (close the desktop app first, or use its Archive page)
   devopspadcli secrets check                           which secret references resolve on this machine

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"devopspad/internal/archive"
 	"devopspad/internal/ops"
 )
 
@@ -39,7 +40,37 @@ func projectStore(root string) (*ops.Store, error) {
 	if _, err := os.Stat(filepath.Join(root, "project.yaml")); err != nil {
 		return nil, errors.New("project.yaml not found; attach an application in DevOpsPad or specify --project")
 	}
-	return ops.New(root)
+	s, err := ops.New(root)
+	if err == nil {
+		s.OnFinished = mirrorToArchive(os.Stderr)
+	}
+	return s, err
+}
+
+// mirrorToArchive copies finished operation records into the default archive,
+// if one is configured, as ActionRecords. DEVOPSPAD_ACTOR (human/<name> or
+// ai/<name>) names who acted; failures only warn.
+func mirrorToArchive(warn io.Writer) func(ops.Record, ops.Application) {
+	return func(r ops.Record, app ops.Application) {
+		cfg, _ := configDir()
+		dir, err := archive.Find("", cfg)
+		if err != nil {
+			return
+		}
+		a, err := archive.Load(dir)
+		if err != nil {
+			return
+		}
+		actor := os.Getenv("DEVOPSPAD_ACTOR")
+		if actor == "" {
+			actor = "human/" + slugName(archive.GitUser(dir))
+		}
+		if ok, err := a.MirrorRecord(r, app, actor); err != nil {
+			fmt.Fprintf(warn, "warning: not recorded in the archive: %v\n", err)
+		} else if ok {
+			fmt.Fprintf(warn, "Recorded in the archive %s; commit it with devopspadcli archive commit\n", dir)
+		}
+	}
 }
 func cmdRuns(args []string, stdout, stderr io.Writer) int {
 	fail := func(err error) int {

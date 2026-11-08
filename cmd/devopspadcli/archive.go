@@ -322,9 +322,46 @@ func cmdArchive(args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "project":
+		write := fs.Bool("write", false, "replace project.yaml of the desktop project directory")
+		root := fs.String("project", "", "desktop project directory (default: the desktop's)")
+		if pos, err := parseInterleaved(fs, args); err != nil || len(pos) != 0 {
+			return c.usage("archive project [--project <dir>] [--write]")
+		}
+		a, err := c.load()
+		if err != nil {
+			return c.fail(err)
+		}
+		p, notes := a.ProjectFromArchive(a.Root.Metadata.Name)
+		text, err := archive.ProjectYAML(p, a.Root.Metadata.Name)
+		if err != nil {
+			return c.fail(err)
+		}
+		for _, n := range notes {
+			fmt.Fprintln(stderr, "note:", n)
+		}
+		if !*write {
+			fmt.Fprint(stdout, text)
+			fmt.Fprintln(stderr, "Preview only; --write replaces project.yaml of the desktop project")
+			return 0
+		}
+		store, err := projectStore(*root)
+		if err != nil {
+			return c.fail(err)
+		}
+		snap, err := store.Read()
+		if err != nil {
+			return c.fail(err)
+		}
+		if _, err := store.Save(text, snap.Revision); err != nil {
+			return c.fail(err)
+		}
+		fmt.Fprintf(stdout, "Wrote %d environments and %d applications to %s/project.yaml\n", len(p.Environments), len(p.Applications), store.Root)
+		return 0
 	case "import":
 		ws := fs.Bool("workspace", false, "import desktop connections (hosts, clusters, datastores)")
 		fleet := fs.Bool("fleet", false, "import fleet.json machines as hosts")
+		records := fs.String("records", "", "mirror the finished release records of a desktop project directory")
 		cloudflare := fs.Bool("cloudflare", false, "import every Cloudflare zone as a domain (read-only API calls)")
 		tokenRef := fs.String("token-ref", "", "Cloudflare token reference (default: the provider's credential, or "+archive.DefaultCloudflareTokenRef+")")
 		cfProvider := fs.String("provider", "provider:cloudflare", "Cloudflare provider ref")
@@ -332,7 +369,7 @@ func cmdArchive(args []string, stdout, stderr io.Writer) int {
 		product := fs.String("product", "", "product name for --project (default: the project name)")
 		dry := fs.Bool("dry-run", false, "only list the files that would be written")
 		if pos, err := parseInterleaved(fs, args); err != nil || len(pos) != 0 {
-			return c.usage("archive import [--workspace] [--fleet] [--project <dir> [--product <name>]] [--cloudflare [--token-ref <ref>]] [--dry-run]")
+			return c.usage("archive import [--workspace] [--fleet] [--project <dir> [--product <name>]] [--cloudflare [--token-ref <ref>]] [--records <project dir>] [--dry-run]")
 		}
 		dir, err := c.dir()
 		if err != nil {
@@ -341,6 +378,29 @@ func cmdArchive(args []string, stdout, stderr io.Writer) int {
 		cfg, err := configDir()
 		if err != nil {
 			return c.fail(err)
+		}
+		if *records != "" {
+			store, err := projectStore(*records)
+			if err != nil {
+				return c.fail(err)
+			}
+			store.OnFinished = nil
+			a, err := archive.Load(dir)
+			if err != nil {
+				return c.fail(err)
+			}
+			actor := os.Getenv("DEVOPSPAD_ACTOR")
+			if actor == "" {
+				actor = "human/" + slugName(archive.GitUser(dir))
+			}
+			n, skipped, err := a.ImportRecords(store, actor)
+			if err != nil {
+				return c.fail(err)
+			}
+			fmt.Fprintf(stdout, "Mirrored %d records into records/actions (%d without a matching archive service)\n", n, skipped)
+			if !*ws && !*fleet && *project == "" && !*cloudflare {
+				return 0
+			}
 		}
 		res, err := archive.Import(dir, archive.ImportInput{ConfigDir: cfg, Workspace: *ws, Fleet: *fleet, ProjectDir: *project, Product: *product, Cloudflare: *cloudflare, TokenRef: *tokenRef, Provider: *cfProvider, DryRun: *dry})
 		if err != nil {

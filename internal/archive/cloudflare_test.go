@@ -271,7 +271,7 @@ func TestEdgeRoutesAndDNS(t *testing.T) {
 	fakeCloudflare(t)
 	dir := copyExample(t)
 	a := load(t, dir)
-	in := EdgeInput{Zone: "heartie.example", TokenRef: "env:CF_TOKEN", Actor: "ai/claude-code", Session: "s1"}
+	in := OpInput{Zone: "heartie.example", TokenRef: "env:CF_TOKEN", Actor: "ai/claude-code", Session: "s1"}
 	routes, err := a.ListRoutes(context.Background(), in)
 	if err != nil || len(routes) != 2 {
 		t.Fatalf("list: %+v %v", routes, err)
