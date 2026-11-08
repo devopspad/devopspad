@@ -1108,6 +1108,8 @@ export namespace ops {
 	    message: string;
 	    steps: string[];
 	    targets?: RecordTarget[];
+	    configMap?: string;
+	    key?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Record(source);
@@ -1135,6 +1137,8 @@ export namespace ops {
 	        this.message = source["message"];
 	        this.steps = source["steps"];
 	        this.targets = this.convertValues(source["targets"], RecordTarget);
+	        this.configMap = source["configMap"];
+	        this.key = source["key"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1489,6 +1493,7 @@ export namespace release {
 	    uid: string;
 	    resourceVersion: string;
 	    changes?: string[];
+	    warnings?: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new DesktopPlan(source);
@@ -1509,6 +1514,7 @@ export namespace release {
 	        this.uid = source["uid"];
 	        this.resourceVersion = source["resourceVersion"];
 	        this.changes = source["changes"];
+	        this.warnings = source["warnings"];
 	    }
 	}
 	export class EnvSecretRef {
@@ -1610,6 +1616,7 @@ export namespace release {
 	    addImagePullSecrets?: string[];
 	    removeImagePullSecrets?: string[];
 	    addEnvFromSecrets?: string[];
+	    envFromOptional?: boolean;
 	    removeEnvFromSecrets?: string[];
 	    setEnvSecretRefs?: EnvSecretRef[];
 	    removeEnv?: string[];
@@ -1624,6 +1631,7 @@ export namespace release {
 	        this.addImagePullSecrets = source["addImagePullSecrets"];
 	        this.removeImagePullSecrets = source["removeImagePullSecrets"];
 	        this.addEnvFromSecrets = source["addEnvFromSecrets"];
+	        this.envFromOptional = source["envFromOptional"];
 	        this.removeEnvFromSecrets = source["removeEnvFromSecrets"];
 	        this.setEnvSecretRefs = this.convertValues(source["setEnvSecretRefs"], EnvSecretRef);
 	        this.removeEnv = source["removeEnv"];
