@@ -133,7 +133,7 @@ export function OpsRuns({
             <Terminal size={28} />
             <strong>No runs yet</strong>
             <p>
-              Have the AI call devopspadctl runs record
+              Have the AI call devopspadcli runs record
               to report the start, then each step and the result.
             </p>
           </div>

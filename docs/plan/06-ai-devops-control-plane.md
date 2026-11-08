@@ -25,7 +25,7 @@
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
-│ 入口: 桌面 UI │ devopspadctl CLI │ MCP Server（给 AI） │ 桌面内置 AI │
+│ 入口: 桌面 UI │ devopspadcli CLI │ MCP Server（给 AI） │ 桌面内置 AI │
 ├──────────────────────────────────────────────────────────┤
 │ 策略与审批 Policy: 风险分级、环境规则、审批、预算/频率限制      │
 ├──────────────────────────────────────────────────────────┤
@@ -89,7 +89,7 @@ Action {
 
 ## 4. 给 AI 的接口：MCP Server
 
-`devopspadctl mcp`（stdio）把能力暴露为 MCP 工具，Claude Code 等代理可直接接入，不需要任何服务端：
+`devopspadcli mcp`（stdio）把能力暴露为 MCP 工具，Claude Code 等代理可直接接入，不需要任何服务端：
 
 | 工具组 | 示例 | 风险 |
 | --- | --- | --- |
@@ -122,7 +122,7 @@ limits:
   aiActionsPerHour: 30
 ```
 
-- 审批入口：桌面通知 + 审批面板（展示 diff 和风险），也可以用 CLI `devopspadctl approve <planId>`。
+- 审批入口：桌面通知 + 审批面板（展示 diff 和风险），也可以用 CLI `devopspadcli approve <planId>`。
 - 每条记录区分 actor（人 / AI 名称 + 会话）和 approver。
 - 记录仍是本地 JSON + Git 共享，不承诺防篡改；如果以后需要，可以加哈希链。
 

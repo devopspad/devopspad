@@ -28,7 +28,7 @@
 
 先让 AI “看得见”，此时还不能写。
 
-- [ ] `devopspadctl mcp`：查询类工具（集群、日志、事件、指标、机器信息、记录、中间件只读查询）。
+- [ ] `devopspadcli mcp`：查询类工具（集群、日志、事件、指标、机器信息、记录、中间件只读查询）。
 - [ ] 输出预算与 secret 过滤。
 - [ ] 桌面内置助手改为 tool calling，复用同一组工具。
 - [ ] 在真实 K3s 上验收：AI 能定位一个故障 Pod 的原因。
@@ -37,7 +37,7 @@
 
 - [ ] `policy.yaml`：按环境和动作给 AI 分级授权、设置审批要求和频率限制。
 - [ ] 计划类和执行类 MCP 工具，以及 `action.wait` 审批等待。
-- [ ] 桌面审批面板 + 系统通知；CLI `devopspadctl approve`。
+- [ ] 桌面审批面板 + 系统通知；CLI `devopspadcli approve`。
 - [ ] 记录 actor（人 / AI + 会话）和 approver。
 
 **验收**：AI 在 dev 环境自动发版；在 prod 环境生成计划，人在桌面审批后执行。

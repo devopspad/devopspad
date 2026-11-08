@@ -1,15 +1,15 @@
 # AI 构建与发布接入规范
 
-AI 是实际执行者；DevOpsPad 接收执行记录、关联源码与镜像、展示构建和发布历史。无需创建流水线，也无需运行桌面窗口。`devopspadctl` 与桌面读取同一个本地项目目录，可以在其他机器上对各自的 Git 副本上报后同步。
+AI 是实际执行者；DevOpsPad 接收执行记录、关联源码与镜像、展示构建和发布历史。无需创建流水线，也无需运行桌面窗口。`devopspadcli` 与桌面读取同一个本地项目目录，可以在其他机器上对各自的 Git 副本上报后同步。
 
 ## 调用入口
 
 ```sh
-go build -o build/bin/devopspadctl ./cmd/devopspadctl
-build/bin/devopspadctl runs record --project /absolute/path/to/project -f event.json
-build/bin/devopspadctl runs record --project /absolute/path/to/project -f - < event.json
-build/bin/devopspadctl runs list --project /absolute/path/to/project
-build/bin/devopspadctl runs get --project /absolute/path/to/project --id <run-id>
+go build -o build/bin/devopspadcli ./cmd/devopspadcli
+build/bin/devopspadcli runs record --project /absolute/path/to/project -f event.json
+build/bin/devopspadcli runs record --project /absolute/path/to/project -f - < event.json
+build/bin/devopspadcli runs list --project /absolute/path/to/project
+build/bin/devopspadcli runs get --project /absolute/path/to/project --id <run-id>
 ```
 
 不传 `--project` 时依次读取 `DEVOPSPAD_PROJECT_DIR`、DevOpsPad 配置目录下 `project-path`、默认 `applications` 目录。配置目录可通过 `DEVOPSPAD_CONFIG_DIR` 指定。项目必须已存在，应用须先在桌面或 CLI 接入；传错目录不会悄悄建立一个空项目。
@@ -17,7 +17,7 @@ build/bin/devopspadctl runs get --project /absolute/path/to/project --id <run-id
 新应用首次构建前，可显式登记本地映射，无需先创建 Kubernetes 工作负载：
 
 ```sh
-build/bin/devopspadctl cluster attach --connection heartie-pro --namespace default --environment heartie-pro --application thumbspark --selector app=thumbspark
+build/bin/devopspadcli cluster attach --connection heartie-pro --namespace default --environment heartie-pro --application thumbspark --selector app=thumbspark
 ```
 
 `--application` 和 `--selector` 必须同时提供，且只能用于 `attach`。此模式验证已保存的集群连接及本地项目配置，复用配置版本校验和写入锁，只登记映射，不连接集群、创建或修改工作负载。省略两个参数时仍从集群发现已有工作负载。
@@ -30,19 +30,19 @@ build/bin/devopspadctl cluster attach --connection heartie-pro --namespace defau
 
 ```sh
 # 读取一个键，写入 0600 文件；stdout 打印 resourceVersion 和 sha256
-devopspadctl config get --environment heartie-pro --application thumbspark \
+devopspadcli config get --environment heartie-pro --application thumbspark \
   --configmap thumbspark-config-toml --key config.toml -o config.toml
 
 # 写回：先打印 diff；ConfigMap 自 get 之后被改过则拒绝写入
-devopspadctl config set --environment heartie-pro --application thumbspark \
+devopspadcli config set --environment heartie-pro --application thumbspark \
   --configmap thumbspark-config-toml --key config.toml -f config.toml \
   --expect-revision <resourceVersion> [--dry-run]
 
 # 写入后在同一条记录里滚动重启（需要 --yes）
-devopspadctl config set ... --expect-revision <resourceVersion> --restart --yes [--workload thumbspark]
+devopspadcli config set ... --expect-revision <resourceVersion> --restart --yes [--workload thumbspark]
 
 # 只重启：不带 --yes 只打印计划，带 --yes 执行并等待就绪
-devopspadctl workload restart --environment heartie-pro --application thumbspark \
+devopspadcli workload restart --environment heartie-pro --application thumbspark \
   --workload thumbspark [--yes] [--timeout 180s]
 ```
 

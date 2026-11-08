@@ -1,5 +1,5 @@
 // Package opsrun resolves project targets and applies Deployment plans with
-// local operation records. The desktop and devopspadctl share it so both
+// local operation records. The desktop and devopspadcli share it so both
 // paths enforce the same checks and leave the same records.
 package opsrun
 

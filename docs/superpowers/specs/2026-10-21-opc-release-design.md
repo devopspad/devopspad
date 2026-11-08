@@ -2,7 +2,7 @@
 
 日期：2026-10-21
 
-桌面负责查看和群控多台 OPC 机器。`devopspadctl` 负责可重复发版。两者调用同一套 `internal/release`。本文件是该规范的仓库副本。查询工作台保持只读。发版和 Nginx 写入只来自 `internal/release`，当前只实现了规范校验和本机 fleet 文件。
+桌面负责查看和群控多台 OPC 机器。`devopspadcli` 负责可重复发版。两者调用同一套 `internal/release`。本文件是该规范的仓库副本。查询工作台保持只读。发版和 Nginx 写入只来自 `internal/release`，当前只实现了规范校验和本机 fleet 文件。
 
 ## 机群
 
@@ -61,7 +61,7 @@ check:
 9. `waitTimeoutSeconds` 和 `timeoutSeconds` 的范围是 1–180。
 10. 规范文件不包含 DSN（`@tcp(`）、私钥、kubeconfig 正文或 shell 替换。
 
-`devopspadctl release validate -f <spec>` 只做上述文件校验。它不打开 SSH，也不写发布记录。
+`devopspadcli release validate -f <spec>` 只做上述文件校验。它不打开 SSH，也不写发布记录。
 
 ## 执行顺序
 
@@ -88,7 +88,7 @@ Git 中的规范文件是发版事实来源。漂移等于远端对象或文件�
 
 | 期 | 交付 | 状态 |
 | --- | --- | --- |
-| 1 | 发版规范校验、fleet 文件、`devopspadctl release validate` 和 `fleet list` | 已实现 |
+| 1 | 发版规范校验、fleet 文件、`devopspadcli release validate` 和 `fleet list` | 已实现 |
 | 2 | 单机和机群的 plan/apply，覆盖镜像、重启、ConfigMap、迁移 Job、Nginx 测试与 reload | 未实现 |
 | 3 | 桌面机群状态、漂移、服务表、Nginx 只读 | 未实现 |
 | 4 | 桌面确认后调用同一个 Apply；手工 Nginx 编辑带 `-t` 恢复 | 未实现 |

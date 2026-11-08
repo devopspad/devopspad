@@ -2,7 +2,7 @@
 #   - Run manually (Actions → Release → Run workflow): the DMG is attached to the run as an artifact.
 #     Without the Apple secrets a manual run still builds, ad-hoc signed and not notarized (testing only).
 #   - Push a tag vX.Y.Z matching info.productVersion in wails.json: signing and notarization are
-#     required, and the DMG and devopspadctl are attached to a draft GitHub Release, published by hand.
+#     required, and the DMG and devopspadcli are attached to a draft GitHub Release, published by hand.
 #
 # Secrets of the `release` environment:
 #   MACOS_CSC_P12_BASE64     base64 of the "Developer ID Application" certificate exported as .p12
@@ -87,14 +87,16 @@ jobs:
           echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
 
       - name: Build app and CLI
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           go run github.com/wailsapp/wails/v2/cmd/wails@v2.12.0 build -clean -platform darwin/arm64
-          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o build/cli/devopspadctl ./cmd/devopspadctl
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o build/cli/devopspadcli ./cmd/devopspadcli
 
       - name: Sign app and CLI
         if: env.SIGNED == 'true'
         run: |
-          codesign --force --options runtime --timestamp --sign "$MACOS_SIGNING_IDENTITY" build/cli/devopspadctl
+          codesign --force --options runtime --timestamp --sign "$MACOS_SIGNING_IDENTITY" build/cli/devopspadcli
           codesign --force --options runtime --timestamp --sign "$MACOS_SIGNING_IDENTITY" "$APP"
 
       - name: Notarize app and CLI
@@ -110,7 +112,7 @@ jobs:
           notarize "$RUNNER_TEMP/app.zip"
           staple "$APP"
           # A bare Mach-O cannot be stapled; Gatekeeper finds its ticket online.
-          ditto -c -k --keepParent build/cli/devopspadctl "$RUNNER_TEMP/cli.zip"
+          ditto -c -k --keepParent build/cli/devopspadcli "$RUNNER_TEMP/cli.zip"
           notarize "$RUNNER_TEMP/cli.zip"
 
       - name: Package
@@ -121,8 +123,8 @@ jobs:
           cp -R "$APP" "$RUNNER_TEMP/dmg/DevOpsPad.app"
           ln -s /Applications "$RUNNER_TEMP/dmg/Applications"
           hdiutil create -volname DevOpsPad -srcfolder "$RUNNER_TEMP/dmg" -ov -format UDZO "dist/DevOpsPad-$VERSION-macos-arm64.dmg"
-          name="devopspadctl-$VERSION-darwin-arm64"
-          mkdir "$RUNNER_TEMP/$name" && cp build/cli/devopspadctl "$RUNNER_TEMP/$name/"
+          name="devopspadcli-$VERSION-darwin-arm64"
+          mkdir "$RUNNER_TEMP/$name" && cp build/cli/devopspadcli "$RUNNER_TEMP/$name/"
           tar -C "$RUNNER_TEMP" -czf "dist/$name.tar.gz" "$name"
 
       - name: Sign and notarize DMG
@@ -141,7 +143,7 @@ jobs:
       - name: Verify
         run: |
           codesign --verify --deep --strict --verbose=2 "$APP"
-          codesign --verify --strict --verbose=2 build/cli/devopspadctl
+          codesign --verify --strict --verbose=2 build/cli/devopspadcli
           if [ "$NOTARIZE" = true ]; then
             # stapler talks to CloudKit, which sometimes drops the connection on hosted runners.
             retry() { for i in 1 2 3 4 5; do "$@" && return; sleep 15; done; return 1; }

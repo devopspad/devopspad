@@ -36,7 +36,7 @@ func TestCheckUpdatePicksArchitectureDMG(t *testing.T) {
 			t.Errorf("User-Agent = %q", r.Header.Get("User-Agent"))
 		}
 		w.Write([]byte(`{"tag_name":"v0.1.2","html_url":"https://github.com/devopspad/devopspad/releases/tag/v0.1.2","body":"notes","assets":[
-			{"name":"devopspadctl-0.1.2-darwin-arm64.tar.gz","browser_download_url":"https://example.test/cli"},
+			{"name":"devopspadcli-0.1.2-darwin-arm64.tar.gz","browser_download_url":"https://example.test/cli"},
 			{"name":"DevOpsPad-0.1.2-macos-amd64.dmg","browser_download_url":"https://example.test/amd64"},
 			{"name":"DevOpsPad-0.1.2-macos-arm64.dmg","browser_download_url":"https://example.test/arm64"}]}`))
 	}))

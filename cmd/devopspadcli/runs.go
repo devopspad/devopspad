@@ -47,7 +47,7 @@ func cmdRuns(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "usage: devopspadctl runs record|list|get --project <directory> [-f <event.json>|--id <run-id>]")
+		fmt.Fprintln(stderr, "usage: devopspadcli runs record|list|get --project <directory> [-f <event.json>|--id <run-id>]")
 		return 2
 	}
 	fs := flag.NewFlagSet("runs "+args[0], flag.ContinueOnError)
