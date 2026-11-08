@@ -20,6 +20,8 @@
 
 发布镜像时使用 `devopspadcli release plan` → `release apply --plan <id>`（或 `release image … --yes`），带迁移时加 `--migrate <job.yaml>`；不要用 `kubectl set image`。它会自动写发布记录并核对运行中的镜像摘要，此时不需要再用 `runs record` 上报 release。
 
+需要新的 Secret、拉取凭据或让工作负载引用 Secret 时，使用 `devopspadcli secret set`（值从文件或 stdin）和 `devopspadcli workload patch`，不要 `kubectl create secret` / `kubectl edit`；不要把值写进命令行、日志或回复。
+
 修改宿主机 Nginx 配置时使用 `devopspadcli nginx get` → 修改 → `devopspadcli nginx set --expect-revision <revision>`，不要 `scp` + `ssh` + `nginx -s reload`。
 
 修改应用 ConfigMap 或重启 Deployment 时，使用 `devopspadcli config get/set` 和 `devopspadcli workload restart`（见 docs/ai-execution.md“修改应用配置与重启”），不要直接 `ssh` + `kubectl`。`config set` 必须带 `config get` 输出的 `--expect-revision`；不要把 ConfigMap 内容写进日志或上报内容。

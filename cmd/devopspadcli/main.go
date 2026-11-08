@@ -66,6 +66,12 @@ func dispatch(args []string, stdout, stderr io.Writer) int {
 		return cmdReport(args[1:], stdout, stderr)
 	case "secrets":
 		return cmdSecrets(args[1:], stdout, stderr)
+	case "secret":
+		if len(args) < 2 || (args[1] != "set" && args[1] != "keys") {
+			fmt.Fprintln(stderr, "usage: devopspadcli secret set|keys --environment <env> --application <app> --name <secret> ...")
+			return 2
+		}
+		return cmdSecretK8s(args[1:], stdout, stderr)
 	case "note":
 		return cmdNote(args[1:], stdout, stderr)
 	case "skill":
@@ -224,6 +230,11 @@ Desktop project, releases and records:
   devopspadcli nginx get --environment <name> --application <name> -o <file|->
   devopspadcli nginx set --environment <name> --application <name> -f <file|-> --expect-revision <sha256> [--dry-run]
   devopspadcli app set --application <name> --nginx-path </etc/nginx/conf.d/site.conf | "">
+  devopspadcli secret set --environment <name> --application <name> --name <secret> [--type generic] --from-file KEY=path ... [--yes]
+  devopspadcli secret set ... --type docker-registry --docker-server <host> --docker-username <user> --password-stdin [--yes]
+  devopspadcli secret keys --environment <name> --application <name> --name <secret>       (key names only, never values)
+  devopspadcli workload patch --environment <name> --application <name> [--workload <name>] [--add-image-pull-secret <s>]
+                          [--container <c> --add-env-from-secret <s> | --set-env-secret NAME=secret:key | --remove-env NAME ...] [--yes]
   devopspadcli workload restart --environment <name> --application <name> [--workload <name>] [--yes] [--timeout 180s]
 
 Config:

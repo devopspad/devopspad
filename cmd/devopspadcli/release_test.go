@@ -58,3 +58,31 @@ func TestNginxAndAppArguments(t *testing.T) {
 		t.Fatalf("app set: code=%d out=%s err=%s", code, out, errOut)
 	}
 }
+
+func TestSecretAndPatchArguments(t *testing.T) {
+	t.Setenv("DEVOPSPAD_CONFIG_DIR", t.TempDir())
+	for _, args := range [][]string{
+		{"secret"},
+		{"secret", "get", "--environment", "pro"},
+		{"secret", "set", "--environment", "pro", "--application", "api"},
+		{"workload", "patch", "--environment", "pro"},
+		{"workload", "patch", "--environment", "pro", "--application", "api", "--set-env-secret", "TOKEN"},
+	} {
+		if code, _, _ := run(args); code != 2 {
+			t.Errorf("%v: code=%d, want 2", args, code)
+		}
+	}
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "a"), []byte("one"), 0o600)
+	stdin = strings.NewReader("two")
+	defer func() { stdin = os.Stdin }()
+	data, err := readSecretFiles([]string{"a=" + filepath.Join(dir, "a"), "b=-"})
+	if err != nil || string(data["a"]) != "one" || string(data["b"]) != "two" {
+		t.Fatalf("files: %v %v", data, err)
+	}
+	for _, bad := range [][]string{{"novalue"}, {"a=-", "b=-"}, {"a=x", "a=y"}} {
+		if _, err := readSecretFiles(bad); err == nil {
+			t.Errorf("%v accepted", bad)
+		}
+	}
+}

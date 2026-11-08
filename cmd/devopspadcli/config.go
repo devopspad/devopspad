@@ -242,6 +242,9 @@ func configSet(ch configChange, stdout, stderr io.Writer) int {
 }
 
 func cmdWorkload(args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "patch" {
+		return cmdWorkloadPatch(args[1:], stdout, stderr)
+	}
 	if len(args) == 0 || args[0] != "restart" {
 		fmt.Fprint(stderr, usage)
 		return 2

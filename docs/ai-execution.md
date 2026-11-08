@@ -63,6 +63,28 @@ devopspadcli nginx set --environment heartie-pro --application <app> -f site.con
 
 和桌面“Nginx config”同一套远端流程：只允许 `/etc/nginx/conf.d/` 下已有的普通 `.conf` 文件，加锁、核对 revision、原子替换、`nginx -t` 后 reload，失败自动恢复原文件。每次修改写一条 `action: nginx` 记录，只含增删行数和哈希前缀，不含文件内容。环境的集群连接需要配置 SSH，远端需要 Python 3。
 
+## Secret 与拉取凭据
+
+```sh
+# 创建或更新 Secret：值只从文件或 stdin 读取，不出现在命令行；不带 --yes 只打印计划（键名和 added/changed/removed）
+devopspadcli secret set --environment heartie-pro --application <app> --name app-keys \
+  --from-file OWNERS=owners.txt --from-file API_KEY=- --yes < api-key.txt
+# 镜像拉取凭据（kubernetes.io/dockerconfigjson）
+echo "$GHCR_TOKEN" | devopspadcli secret set --environment heartie-pro --application <app> --name ghcr-pull \
+  --type docker-registry --docker-server ghcr.io --docker-username <user> --password-stdin --yes
+# 只看键名和最后修改时间，永远不回显值
+devopspadcli secret keys --environment heartie-pro --application <app> --name app-keys
+
+# 让 Deployment 使用它们：白名单字段，和镜像发布同一套 dry-run / 发布锁 / rollout
+devopspadcli workload patch --environment heartie-pro --application <app> [--workload <deploy>] \
+  --add-image-pull-secret ghcr-pull --container api --add-env-from-secret app-keys \
+  [--set-env-secret TOKEN=app-keys:token] [--remove-env OLD] --yes
+```
+
+- Secret 更新是整体替换数据（未给出的键会删除，计划里标为 removed），按 resourceVersion 检查并发修改；类型不能改，immutable Secret 拒绝修改。
+- `workload patch` 只改 `imagePullSecrets`、`envFrom.secretRef`、`env[].valueFrom.secretKeyRef`；不会写入或替换明文 `value` 的环境变量。修改会滚动 Pod。
+- 记录只含 Secret 名、键名的增删改和整体内容哈希前缀（`secret`），或修改的字段名（`patch`），不含任何值。
+
 ## 数据契约
 
 机器可读结构见 [run-event.schema.json](integration/run-event.schema.json)。CLI 还执行跨事件和项目关联校验；JSON Schema 单独校验不代表记录可接受。

@@ -37,7 +37,9 @@ type DesktopPlan struct {
 	// UID and ResourceVersion identify the Deployment the plan was made against.
 	UID             string `json:"uid"`
 	ResourceVersion string `json:"resourceVersion"`
-	candidate       *unstructured.Unstructured
+	// Changes describes a patch plan in words (field names only, no values).
+	Changes   []string `json:"changes,omitempty"`
+	candidate *unstructured.Unstructured
 }
 
 // Rebind gives a freshly prepared plan an earlier plan's ID, so a plan saved
@@ -57,27 +59,59 @@ func (p *DesktopPlan) Rebind(id string) {
 }
 
 func PrepareDesktop(ctx context.Context, cl dynamic.Interface, namespace, workload, container, image, selector string) (DesktopPlan, error) {
-	return prepareDesktop(ctx, cl, namespace, workload, container, image, selector, "release", 0)
+	if !ops.ValidName(container) || !ops.ValidImage(image) {
+		return DesktopPlan{}, errors.New("Invalid release target or image digest")
+	}
+	return prepareDesktop(ctx, cl, namespace, workload, selector, "release", func(obj *unstructured.Unstructured, p *DesktopPlan) error {
+		p.Container, p.Image = container, image
+		containers, _, _ := unstructured.NestedSlice(obj.Object, "spec", "template", "spec", "containers")
+		found := false
+		for _, raw := range containers {
+			c, ok := raw.(map[string]any)
+			if ok && c["name"] == container {
+				found = true
+				p.BeforeImage, _ = c["image"].(string)
+				c["image"] = image
+			}
+		}
+		if !found {
+			return errors.New("Target container not found")
+		}
+		if p.BeforeImage == image {
+			return errors.New("The target container already runs this artifact")
+		}
+		return unstructured.SetNestedSlice(obj.Object, containers, "spec", "template", "spec", "containers")
+	})
 }
 
 // PrepareDesktopAction uses the same optimistic concurrency and lease as image releases.
 func PrepareDesktopAction(ctx context.Context, cl dynamic.Interface, namespace, workload, selector, action string, replicas int64) (DesktopPlan, error) {
-	if action != "scale" && action != "restart" {
-		return DesktopPlan{}, errors.New("Unsupported Deployment operation")
+	switch action {
+	case "restart":
+		return prepareDesktop(ctx, cl, namespace, workload, selector, action, nil)
+	case "scale":
+		if replicas < 0 || replicas > 1000 {
+			return DesktopPlan{}, errors.New("Replicas must be between 0 and 1000")
+		}
+		return prepareDesktop(ctx, cl, namespace, workload, selector, action, func(obj *unstructured.Unstructured, p *DesktopPlan) error {
+			if replicas == p.BeforeReplicas {
+				return errors.New("The replica count is unchanged")
+			}
+			p.Replicas = replicas
+			return unstructured.SetNestedField(obj.Object, replicas, "spec", "replicas")
+		})
 	}
-	return prepareDesktop(ctx, cl, namespace, workload, "", "", selector, action, replicas)
+	return DesktopPlan{}, errors.New("Unsupported Deployment operation")
 }
 
-func prepareDesktop(ctx context.Context, cl dynamic.Interface, namespace, workload, container, image, selector, action string, replicas int64) (DesktopPlan, error) {
-	p := DesktopPlan{ID: uuid.NewString(), Action: action, Namespace: namespace, Workload: workload, Container: container, Image: image, ExpiresAt: time.Now().Add(10 * time.Minute).UTC().Format(time.RFC3339)}
+// prepareDesktop reads the Deployment, checks it belongs to the application,
+// applies mutate to a copy and validates the result with a server dry-run.
+// Every action except scale also stamps the Pod template with the plan ID,
+// which rolls the Pods and makes the rollout traceable.
+func prepareDesktop(ctx context.Context, cl dynamic.Interface, namespace, workload, selector, action string, mutate func(*unstructured.Unstructured, *DesktopPlan) error) (DesktopPlan, error) {
+	p := DesktopPlan{ID: uuid.NewString(), Action: action, Namespace: namespace, Workload: workload, ExpiresAt: time.Now().Add(10 * time.Minute).UTC().Format(time.RFC3339)}
 	if !ops.ValidName(namespace) || !ops.ValidName(workload) {
 		return p, errors.New("Invalid Deployment target")
-	}
-	if action == "release" && (!ops.ValidName(container) || !ops.ValidImage(image)) {
-		return p, errors.New("Invalid release target or image digest")
-	}
-	if action == "scale" && (replicas < 0 || replicas > 1000) {
-		return p, errors.New("Replicas must be between 0 and 1000")
 	}
 	obj, err := cl.Resource(deploymentGVR).Namespace(namespace).Get(ctx, workload, metav1.GetOptions{})
 	if err != nil {
@@ -104,38 +138,13 @@ func prepareDesktop(ctx context.Context, cl dynamic.Interface, namespace, worklo
 		p.BeforeReplicas = 1
 	}
 	p.Replicas = p.BeforeReplicas
-	if action == "scale" {
-		if replicas == p.BeforeReplicas {
-			return p, errors.New("The replica count is unchanged")
-		}
-		p.Replicas = replicas
-		if err = unstructured.SetNestedField(obj.Object, replicas, "spec", "replicas"); err != nil {
-			return p, err
-		}
-	} else if action == "release" {
-		containers, _, _ := unstructured.NestedSlice(obj.Object, "spec", "template", "spec", "containers")
-		found := false
-		for _, raw := range containers {
-			c, ok := raw.(map[string]any)
-			if ok && c["name"] == container {
-				found = true
-				p.BeforeImage, _ = c["image"].(string)
-				c["image"] = image
-			}
-		}
-		if !found {
-			return p, errors.New("Target container not found")
-		}
-		if p.BeforeImage == image {
-			return p, errors.New("The target container already runs this artifact")
-		}
-		if err = unstructured.SetNestedSlice(obj.Object, containers, "spec", "template", "spec", "containers"); err != nil {
+	if mutate != nil {
+		if err := mutate(obj, &p); err != nil {
 			return p, err
 		}
 	}
 	// Scaling must not change the Pod template: that would cause an unintended rollout.
 	if action != "scale" {
-		// A release id in the Pod template makes each rollout traceable.
 		annotations, _, _ := unstructured.NestedStringMap(obj.Object, "spec", "template", "metadata", "annotations")
 		if annotations == nil {
 			annotations = map[string]string{}
