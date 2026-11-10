@@ -14,6 +14,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
@@ -211,9 +212,14 @@ func TestDesktopApplyRecordsStepsAndReleasesLease(t *testing.T) {
 }
 
 func releasedPod(name, release, imageID string) map[string]any {
+	return workloadPod(name, "svc-user", "app", release, imageID)
+}
+
+func workloadPod(name, app, container, release, imageID string) map[string]any {
 	return map[string]any{"apiVersion": "v1", "kind": "Pod",
-		"metadata": map[string]any{"name": name, "namespace": "default", "annotations": map[string]any{"devopspad.io/release": release}},
-		"status":   map[string]any{"phase": "Running", "containerStatuses": []any{map[string]any{"name": "app", "imageID": imageID}}}}
+		"metadata": map[string]any{"name": name, "namespace": "default", "labels": map[string]any{"app": app}, "annotations": map[string]any{"devopspad.io/release": release}},
+		"spec":     map[string]any{"containers": []any{map[string]any{"name": container}}},
+		"status":   map[string]any{"phase": "Running", "containerStatuses": []any{map[string]any{"name": container, "imageID": imageID}}}}
 }
 
 func TestVerifyReleasedDigest(t *testing.T) {
@@ -226,21 +232,100 @@ func TestVerifyReleasedDigest(t *testing.T) {
 		}
 		return fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{podGVR: "PodList"}, objs...)
 	}
-	if _, err := verifyReleasedDigest(context.Background(), pods(releasedPod("a", "rel-1", "ghcr.io/x/app@sha256:"+strings.Repeat("c", 64))), p, 1); err == nil || !strings.Contains(err.Error(), "pod a runs") {
+	all := labels.Everything()
+	if _, err := verifyReleasedDigest(context.Background(), pods(releasedPod("a", "rel-1", "ghcr.io/x/app@sha256:"+strings.Repeat("c", 64))), p, all, 1); err == nil || !strings.Contains(err.Error(), "pod a runs") {
 		t.Fatalf("mismatch accepted: %v", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	if _, err := verifyReleasedDigest(ctx, pods(releasedPod("old", "other", "x@"+digest)), p, 2); err == nil || !strings.Contains(err.Error(), "annotation") {
+	if _, err := verifyReleasedDigest(ctx, pods(releasedPod("old", "other", "x@"+digest)), p, all, 2); err == nil || !strings.Contains(err.Error(), "annotation") {
 		t.Fatalf("missing pods accepted: %v", err)
 	}
-	if msg, err := verifyReleasedDigest(context.Background(), pods(), p, 0); err != nil || !strings.Contains(msg, "0 replicas") {
+	if msg, err := verifyReleasedDigest(context.Background(), pods(), p, all, 0); err != nil || !strings.Contains(msg, "0 replicas") {
 		t.Fatalf("scaled-to-zero: %q %v", msg, err)
 	}
 	tag := p
 	tag.Image = "ghcr.io/x/app:1.2"
-	if msg, _ := verifyReleasedDigest(context.Background(), pods(), tag, 1); !strings.Contains(msg, "skipped") {
+	if msg, _ := verifyReleasedDigest(context.Background(), pods(), tag, all, 1); !strings.Contains(msg, "skipped") {
 		t.Fatalf("tag image: %q", msg)
+	}
+}
+
+// A multi-target release stamps one release ID on every target, so the check
+// for one Deployment must only look at that Deployment's pods.
+func TestVerifyReleasedDigestOnlyChecksTargetWorkload(t *testing.T) {
+	digest := "sha256:" + strings.Repeat("b", 64)
+	cl := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{podGVR: "PodList"},
+		&unstructured.Unstructured{Object: workloadPod("api-1", "api", "api", "rel-1", "")},
+		&unstructured.Unstructured{Object: workloadPod("worker-1", "worker", "worker", "rel-1", "ghcr.io/x/app@"+digest)})
+	worker := desktopObject()
+	_ = unstructured.SetNestedField(worker.Object, map[string]any{"matchLabels": map[string]any{"app": "worker"}}, "spec", "selector")
+	p := DesktopPlan{ID: "rel-1", Namespace: "default", Container: "worker", Image: "ghcr.io/x/app@" + digest}
+	msg, err := verifyReleasedDigest(context.Background(), cl, p, podSelector(worker), 1)
+	if err != nil || msg != "image-check: worker-1 run "+digest {
+		t.Fatalf("worker check: %q %v", msg, err)
+	}
+	// Pods without the target container are skipped, even if a selector overlaps.
+	if msg, err = verifyReleasedDigest(context.Background(), cl, p, labels.Everything(), 1); err != nil || msg != "image-check: worker-1 run "+digest {
+		t.Fatalf("container filter: %q %v", msg, err)
+	}
+}
+
+func TestDesktopLeaseRenewTimeIsMicroTime(t *testing.T) {
+	cl := fake.NewSimpleDynamicClient(runtime.NewScheme(), desktopObject())
+	var written []string
+	record := func(action ktesting.Action) (bool, runtime.Object, error) {
+		obj := action.(interface{ GetObject() runtime.Object }).GetObject().(*unstructured.Unstructured)
+		if renew, found, _ := unstructured.NestedString(obj.Object, "spec", "renewTime"); found {
+			written = append(written, renew)
+		}
+		return false, nil, nil
+	}
+	cl.PrependReactor("create", "leases", record)
+	cl.PrependReactor("update", "leases", record)
+	old := leaseClock
+	defer func() { leaseClock = old }()
+	p := DesktopPlan{ID: "first", Namespace: "default", Workload: "svc-user"}
+	// From the issue: microseconds ending in 0, and a full nanosecond clock.
+	for _, at := range []time.Time{time.Date(2026, 11, 9, 5, 21, 38, 950670000, time.UTC), time.Date(2026, 11, 9, 5, 21, 38, 123456789, time.UTC)} {
+		leaseClock = func() time.Time { return at }
+		unlock, err := acquireDesktopLease(context.Background(), cl, p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		unlock()
+	}
+	if len(written) == 0 {
+		t.Fatal("renewTime not written")
+	}
+	for _, renew := range written {
+		// The API server parses MicroTime with exactly six fractional digits.
+		if _, frac, _ := strings.Cut(strings.TrimSuffix(renew, "Z"), "."); len(frac) != 6 {
+			t.Fatalf("renewTime %q is not a MicroTime", renew)
+		}
+	}
+}
+
+func TestDesktopLeaseIsReentrantForThePlan(t *testing.T) {
+	cl := fake.NewSimpleDynamicClient(runtime.NewScheme(), desktopObject())
+	p := DesktopPlan{ID: "plan-1", Namespace: "default", Workload: "svc-user"}
+	outer, err := LockDesktop(context.Background(), cl, p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inner, err := acquireDesktopLease(context.Background(), cl, p)
+	if err != nil {
+		t.Fatalf("same plan could not re-acquire its lock: %v", err)
+	}
+	other := p
+	other.ID = "plan-2"
+	if _, err = acquireDesktopLease(context.Background(), cl, other); err == nil {
+		t.Fatal("another plan acquired a held lock")
+	}
+	inner()
+	outer()
+	if _, err = acquireDesktopLease(context.Background(), cl, other); err != nil {
+		t.Fatalf("lock not released: %v", err)
 	}
 }
 

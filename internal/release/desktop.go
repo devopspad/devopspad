@@ -16,6 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
@@ -200,6 +201,7 @@ func ApplyDesktop(ctx context.Context, cl dynamic.Interface, p DesktopPlan, prog
 	if err = progress("Deployment updated; waiting for rollout"); err != nil {
 		return fmt.Errorf("The change was applied, but writing the record failed: %w", err)
 	}
+	pods := podSelector(updated)
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 	for {
@@ -221,7 +223,7 @@ func ApplyDesktop(ctx context.Context, cl dynamic.Interface, p DesktopPlan, prog
 			if !found {
 				desired = 1
 			}
-			evidence, err := verifyReleasedDigest(ctx, cl, p, desired)
+			evidence, err := verifyReleasedDigest(ctx, cl, p, pods, desired)
 			if err != nil {
 				return err
 			}
@@ -231,12 +233,12 @@ func ApplyDesktop(ctx context.Context, cl dynamic.Interface, p DesktopPlan, prog
 		conditions, _, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
 		for _, raw := range conditions {
 			if c, ok := raw.(map[string]any); ok && observed >= obj.GetGeneration() && c["type"] == "Progressing" && c["status"] == "False" && c["reason"] == "ProgressDeadlineExceeded" {
-				return withWaiting(errors.New("The Deployment exceeded its progress deadline; the change was applied and not rolled back"), cl, p)
+				return withWaiting(errors.New("The Deployment exceeded its progress deadline; the change was applied and not rolled back"), cl, p, pods)
 			}
 		}
 		select {
 		case <-ctx.Done():
-			return withWaiting(errors.New("Timed out or cancelled while waiting for the rollout; the change may have been applied, refresh the cluster to check"), cl, p)
+			return withWaiting(errors.New("Timed out or cancelled while waiting for the rollout; the change may have been applied, refresh the cluster to check"), cl, p, pods)
 		case <-ticker.C:
 		}
 	}
@@ -244,34 +246,58 @@ func ApplyDesktop(ctx context.Context, cl dynamic.Interface, p DesktopPlan, prog
 
 var podGVR = schema.GroupVersionResource{Version: "v1", Resource: "pods"}
 
+// podSelector selects the Deployment's pods. Every target of a multi-target
+// release carries the same release annotation, so pods must also be narrowed
+// to the target workload. A Deployment without a usable selector falls back to
+// the annotation and container checks alone.
+func podSelector(deployment *unstructured.Unstructured) labels.Selector {
+	raw, found, _ := unstructured.NestedMap(deployment.Object, "spec", "selector")
+	if !found {
+		return labels.Everything()
+	}
+	var ls metav1.LabelSelector
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw, &ls); err != nil {
+		return labels.Everything()
+	}
+	sel, err := metav1.LabelSelectorAsSelector(&ls)
+	if err != nil {
+		return labels.Everything()
+	}
+	return sel
+}
+
 // withWaiting adds why the release's pods are stuck, when they are.
-func withWaiting(err error, cl dynamic.Interface, p DesktopPlan) error {
-	if s := PodWaitingSummary(cl, p.Namespace, ReleasePods(p.ID)); s != "" {
+func withWaiting(err error, cl dynamic.Interface, p DesktopPlan, selector labels.Selector) error {
+	release := ReleasePods(p.ID)
+	match := func(pod *unstructured.Unstructured) bool {
+		return release(pod) && selector.Matches(labels.Set(pod.GetLabels()))
+	}
+	if s := PodWaitingSummary(cl, p.Namespace, match); s != "" {
 		return fmt.Errorf("%w (%s)", err, s)
 	}
 	return err
 }
 
 // verifyReleasedDigest checks that every running pod of this release (the
-// pods carrying its devopspad.io/release annotation) runs the released digest
-// in the target container. Registry names may be normalized by the runtime, so
-// only the sha256 digest is compared. Pods without an imageID yet are retried
-// briefly; a mismatch fails the release.
-func verifyReleasedDigest(ctx context.Context, cl dynamic.Interface, p DesktopPlan, desired int64) (string, error) {
+// target Deployment's pods carrying its devopspad.io/release annotation) runs
+// the released digest in the target container. Registry names may be
+// normalized by the runtime, so only the sha256 digest is compared. Pods
+// without an imageID yet are retried briefly; a mismatch fails the release.
+func verifyReleasedDigest(ctx context.Context, cl dynamic.Interface, p DesktopPlan, selector labels.Selector, desired int64) (string, error) {
 	_, digest, ok := strings.Cut(p.Image, "@")
 	if !ok || !strings.HasPrefix(digest, "sha256:") {
 		return "image-check skipped: the release image is not pinned by digest", nil
 	}
 	var last string
 	for attempt := 0; attempt < 15; attempt++ {
-		pods, err := cl.Resource(podGVR).Namespace(p.Namespace).List(ctx, metav1.ListOptions{Limit: 500})
+		pods, err := cl.Resource(podGVR).Namespace(p.Namespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String(), Limit: 500})
 		if err != nil {
 			return "", fmt.Errorf("The rollout is ready, but listing pods for the image check failed (needs list pods): %w", err)
 		}
 		var checked []string
 		pending := false
 		for _, pod := range pods.Items {
-			if pod.GetAnnotations()["devopspad.io/release"] != p.ID || pod.GetDeletionTimestamp() != nil {
+			if pod.GetAnnotations()["devopspad.io/release"] != p.ID || pod.GetDeletionTimestamp() != nil || !selector.Matches(labels.Set(pod.GetLabels())) || !hasContainer(&pod, p.Container) {
 				continue
 			}
 			phase, _, _ := unstructured.NestedString(pod.Object, "status", "phase")
@@ -313,6 +339,16 @@ func verifyReleasedDigest(ctx context.Context, cl dynamic.Interface, p DesktopPl
 	return "", errors.New("The rollout is ready, but the image check could not complete: " + last)
 }
 
+func hasContainer(pod *unstructured.Unstructured, name string) bool {
+	containers, _, _ := unstructured.NestedSlice(pod.Object, "spec", "containers")
+	for _, raw := range containers {
+		if c, ok := raw.(map[string]any); ok && c["name"] == name {
+			return true
+		}
+	}
+	return false
+}
+
 func desktopRolloutReady(obj *unstructured.Unstructured) bool {
 	desired, ok, _ := unstructured.NestedInt64(obj.Object, "spec", "replicas")
 	if !ok {
@@ -324,6 +360,18 @@ func desktopRolloutReady(obj *unstructured.Unstructured) bool {
 	total, _, _ := unstructured.NestedInt64(obj.Object, "status", "replicas")
 	return observed >= obj.GetGeneration() && updated == desired && ready == desired && total == desired
 }
+
+// LockDesktop takes the plan's release lock ahead of ApplyDesktop, e.g. before
+// a migration Job, so a lock held by another client stops the release before
+// anything changes. ApplyDesktop re-acquires it for the same plan ID.
+func LockDesktop(ctx context.Context, cl dynamic.Interface, p DesktopPlan) (func(), error) {
+	return acquireDesktopLease(ctx, cl, p)
+}
+
+// leaseClock is replaced in tests.
+var leaseClock = time.Now
+
+// acquireDesktopLease is re-entrant for the plan that holds the lease.
 func acquireDesktopLease(ctx context.Context, cl dynamic.Interface, p DesktopPlan) (func(), error) {
 	h := sha256.Sum256([]byte(p.Workload))
 	name := "devopspad-release-" + hex.EncodeToString(h[:12])
@@ -333,7 +381,7 @@ func acquireDesktopLease(ctx context.Context, cl dynamic.Interface, p DesktopPla
 	if err != nil && !missing {
 		return nil, fmt.Errorf("Cannot acquire the release lock (needs get/create/update on leases): %w", err)
 	}
-	now := time.Now().UTC()
+	now := leaseClock().UTC()
 	if missing {
 		obj = &unstructured.Unstructured{Object: map[string]any{"apiVersion": "coordination.k8s.io/v1", "kind": "Lease", "metadata": map[string]any{"name": name, "namespace": p.Namespace}}}
 	} else {
@@ -341,11 +389,12 @@ func acquireDesktopLease(ctx context.Context, cl dynamic.Interface, p DesktopPla
 		renew, _, _ := unstructured.NestedString(obj.Object, "spec", "renewTime")
 		duration, _, _ := unstructured.NestedInt64(obj.Object, "spec", "leaseDurationSeconds")
 		at, parseErr := time.Parse(time.RFC3339Nano, renew)
-		if holder != "" && (parseErr != nil || duration <= 0 || now.Before(at.Add(time.Duration(duration)*time.Second))) {
+		if holder != "" && holder != p.ID && (parseErr != nil || duration <= 0 || now.Before(at.Add(time.Duration(duration)*time.Second))) {
 			return nil, errors.New("Another client is releasing this Deployment; try again later")
 		}
 	}
-	obj.Object["spec"] = map[string]any{"holderIdentity": p.ID, "leaseDurationSeconds": int64(300), "renewTime": now.Format(time.RFC3339Nano)}
+	// renewTime is a MicroTime: the API server rejects anything but six fractional digits.
+	obj.Object["spec"] = map[string]any{"holderIdentity": p.ID, "leaseDurationSeconds": int64(300), "renewTime": now.Format(metav1.RFC3339Micro)}
 	if missing {
 		_, err = leases.Create(ctx, obj, metav1.CreateOptions{})
 	} else {

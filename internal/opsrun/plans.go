@@ -157,8 +157,9 @@ func unique(list []string) []string {
 }
 
 // ApplyBatch applies prepared plans in order with one record, stopping at the
-// first failure; later workloads stay not-started. pre, when set, runs first
-// (the migration Job) and a failure there changes no image.
+// first failure; later workloads stay not-started. The release locks of all
+// targets are taken up front. pre, when set, then runs (the migration Job) and
+// a failure there changes no image.
 func ApplyBatch(ctx context.Context, store *ops.Store, c workspace.Connection, plans []release.DesktopPlan, r ops.Record, pre func(context.Context, dynamic.Interface, func(string) error) error, onStep func(string)) (ops.Record, error) {
 	r.Targets = append([]ops.RecordTarget(nil), r.Targets...) // never alias the caller's slice
 	r.StartedAt = time.Now().UTC().Format(time.RFC3339Nano)
@@ -186,6 +187,15 @@ func ApplyBatch(ctx context.Context, store *ops.Store, c workspace.Connection, p
 		return Finish(store, r, err, "")
 	}
 	defer closeFn()
+	// Take every target's lock first, so a release held by another client
+	// stops before the migration Job runs or any workload changes.
+	for _, p := range plans {
+		unlock, err := release.LockDesktop(ctx, cl, p)
+		if err != nil {
+			return Finish(store, r, fmt.Errorf("%s: %w; nothing was changed", p.Workload, err), "")
+		}
+		defer unlock()
+	}
 	if pre != nil {
 		if err := pre(ctx, cl, step("migrate")); err != nil {
 			return Finish(store, r, fmt.Errorf("migration failed, no image was changed: %w", err), "")

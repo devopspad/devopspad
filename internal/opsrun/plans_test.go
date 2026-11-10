@@ -95,6 +95,38 @@ func TestBatchRecordAndApplyStopsAtFirstFailure(t *testing.T) {
 	}
 }
 
+// A lock held by another client must stop the release before the migration Job runs.
+func TestApplyBatchLocksBeforeMigration(t *testing.T) {
+	store, err := ops.New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved := SavedPlan{ID: uuid.NewString(), Image: digestImage, Targets: []SavedTarget{{Application: "api", Workload: "api", Container: "app"}, {Application: "worker", Workload: "worker", Container: "worker"}}}
+	r := BatchRecord(ops.Environment{Name: "pro", Connection: "hk", Namespace: "default"}, saved)
+	cl := fake.NewSimpleDynamicClient(runtime.NewScheme())
+	if _, err := release.LockDesktop(context.Background(), cl, release.DesktopPlan{ID: "someone-else", Namespace: "default", Workload: "worker"}); err != nil {
+		t.Fatal(err)
+	}
+	old := openCluster
+	defer func() { openCluster = old }()
+	openCluster = func(context.Context, workspace.Connection) (dynamic.Interface, func(), error) {
+		return cl, func() {}, nil
+	}
+	plans := []release.DesktopPlan{{ID: saved.ID, Namespace: "default", Workload: "api"}, {ID: saved.ID, Namespace: "default", Workload: "worker"}}
+	ran := false
+	out, _ := ApplyBatch(context.Background(), store, workspace.Connection{}, plans, r, func(context.Context, dynamic.Interface, func(string) error) error {
+		ran = true
+		return nil
+	}, nil)
+	if ran || out.Status != "failed" || !strings.HasPrefix(out.Message, "worker: ") || out.Targets[0].Status != "not-started" {
+		t.Fatalf("locked release: ran=%v %+v", ran, out)
+	}
+	// The api lock taken for this attempt was released.
+	if _, err := release.LockDesktop(context.Background(), cl, release.DesktopPlan{ID: "next", Namespace: "default", Workload: "api"}); err != nil {
+		t.Fatalf("api lock leaked: %v", err)
+	}
+}
+
 func TestRenderJob(t *testing.T) {
 	id := "0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0"
 	manifest := `apiVersion: batch/v1
